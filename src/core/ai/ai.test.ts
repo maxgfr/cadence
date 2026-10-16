@@ -1,12 +1,13 @@
 import { describe, expect, test } from 'bun:test'
 import { MockLanguageModelV4 } from 'ai/test'
 import { instantiate, TEMPLATES } from '../demo/programs.ts'
-import { Program } from '../model/schemas.ts'
+import { Exercise, Program } from '../model/schemas.ts'
 import { ATHLETE, DISCIPLINES, entry, IDX, must, session, set } from '../testkit.test.ts'
 import catalogJson from './catalog.json'
 import { Catalog, findProvider, nativeModelId, sortedModels, sortedProviders, toCatalogModels } from './catalog.ts'
 import { createModel, describeAiError, generateStructured } from './client.ts'
-import { adjustWeekDraft, generateProgramDraft } from './features.ts'
+import { type AiExercises, exercisesFromAi, exercisesPrompt } from './exercises.ts'
+import { adjustWeekDraft, generateExercisesDraft, generateProgramDraft } from './features.ts'
 import { type AiProgram, contextPrompt, draftFromAi, scratchPrompt, summarizeContext } from './program.ts'
 
 const usage = {
@@ -290,5 +291,72 @@ describe('client', () => {
   test('errors become sentences the user can act on', () => {
     expect(describeAiError(new Error('401 Unauthorized'))).toContain('refused the key')
     expect(describeAiError(new TypeError('Failed to fetch'))).toContain('could not be reached')
+  })
+})
+
+const exercise = (
+  name: string,
+  p: Partial<AiExercises['exercises'][number]> = {},
+): AiExercises['exercises'][number] => ({
+  name,
+  discipline: null,
+  metric: 'weight_reps',
+  distanceMeters: null,
+  pace: null,
+  muscles: null,
+  notes: null,
+  ...p,
+})
+
+describe('exercise drafts', () => {
+  const library: AiExercises = {
+    exercises: [
+      exercise('Good morning', { discipline: 'gym', muscles: ['hamstrings', 'glutes', 'glutes'] }),
+      exercise('back squat', { discipline: 'Gym' }),
+      exercise('Good Morning', { discipline: 'Gym' }),
+      exercise('Flying 20 m', { discipline: 'Track and field', metric: 'distance_time', distanceMeters: 20 }),
+      exercise('Recovery run', { discipline: 'Track and field', metric: 'distance_time', muscles: ['calves'] }),
+      exercise('Hangboard repeaters', { discipline: 'Climbing', metric: 'time', notes: '  7 s on, 3 s off  ' }),
+      exercise('   ', { discipline: 'Bouldering' }),
+    ],
+  }
+
+  test('a model answer becomes valid new exercises: known and repeated names left out, fields fitted to the metric', () => {
+    const d = exercisesFromAi(library, ATHLETE)
+    expect(d.exercises.map((e) => e.name)).toEqual([
+      'Good morning',
+      'Flying 20 m',
+      'Recovery run',
+      'Hangboard repeaters',
+    ])
+    for (const e of d.exercises) expect(Exercise.safeParse(e).success).toBe(true)
+    expect(d.skipped).toEqual(['Back squat'])
+    const [rdl, flying, easy, hang] = d.exercises
+    expect(rdl).toMatchObject({ disciplineId: 'demo-gym', muscles: ['hamstrings', 'glutes'] })
+    expect(flying).toMatchObject({ disciplineId: 'demo-track', distance: 20 })
+    expect(flying?.pace).toBeUndefined()
+    expect(easy).toMatchObject({ pace: '100m' })
+    expect(easy?.muscles).toBeUndefined()
+    expect(d.disciplines).toHaveLength(1)
+    expect(d.disciplines[0]).toMatchObject({ name: 'Climbing', color: 'orange' })
+    expect(hang).toMatchObject({ disciplineId: d.disciplines[0]?.id, metric: 'time', notes: '7 s on, 3 s off' })
+  })
+
+  test('an answer with nothing new is refused', () => {
+    expect(() => exercisesFromAi({ exercises: [exercise('Back squat')] }, ATHLETE)).toThrow('already in your library')
+    expect(() => exercisesFromAi({ exercises: [] }, ATHLETE)).toThrow('no exercise')
+  })
+
+  test('generation through a model sends the sports and what the athlete already has', async () => {
+    const model = jsonModel(library)
+    const pair = exercisesPrompt(
+      { sports: ['Climbing'], level: 'beginner', size: 'complete', equipment: 'Bouldering gym', notes: '' },
+      ATHLETE,
+    )
+    expect(pair.prompt).toContain('Climbing')
+    expect(pair.prompt).toContain('Bouldering gym')
+    expect(pair.system).toContain('Back squat (Gym)')
+    const d = await generateExercisesDraft(model, pair, ATHLETE)
+    expect(d.exercises).toHaveLength(4)
   })
 })

@@ -1,4 +1,4 @@
-import { Dumbbell, Plus, Search } from 'lucide-react'
+import { Dumbbell, Plus, Search, Sparkles } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { Link } from 'wouter'
 import { useData } from '../../app/data.tsx'
@@ -64,13 +64,17 @@ export function Exercises() {
         >
           New discipline
         </Button>
+        <Link href="/exercises/generate" className={buttonClass({ variant: 'secondary' })}>
+          <Sparkles size={18} strokeWidth={1.75} aria-hidden="true" />
+          With AI
+        </Link>
       </div>
 
       {empty ? (
         <EmptyState
           icon={Dumbbell}
           title="Your library is empty"
-          body="Create the disciplines you train (Gym, Swimming, Climbing…) and their exercises, or load a demo sport as a starting point."
+          body="Create the disciplines you train (Gym, Swimming, Climbing…) and their exercises, have them proposed with AI, or load a demo sport as a starting point."
           action={
             <Link href="/settings/demo" className={buttonClass({ variant: 'secondary' })}>
               Load a demo sport

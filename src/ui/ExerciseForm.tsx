@@ -50,11 +50,21 @@ interface ExerciseFormProps {
   /** Pre-selected discipline for a new exercise (the session's). Without it, none is selected. */
   initialDisciplineId?: string
   onDone: (saved?: Exercise) => void
+  /**
+   * Edits an exercise of an AI draft instead: nothing is stored, the result (and a discipline created on the way)
+   * goes back to the draft. `disciplines` are the draft's new ones, `names` the names of its other exercises.
+   */
+  draft?: {
+    disciplines: readonly Discipline[]
+    names: readonly string[]
+    onSave(ex: Exercise, created?: Discipline): void
+  }
 }
 
 /** Creates or edits an exercise. A new discipline can be created on the way. */
-export function ExerciseForm({ exercise, initialName = '', initialDisciplineId, onDone }: ExerciseFormProps) {
+export function ExerciseForm({ exercise, initialName = '', initialDisciplineId, onDone, draft }: ExerciseFormProps) {
   const data = useData()
+  const disciplines = [...data.disciplines, ...(draft?.disciplines ?? [])]
   const units = useUnits()
   const toast = useToast()
   const [name, setName] = useState(exercise?.name ?? initialName)
@@ -62,7 +72,7 @@ export function ExerciseForm({ exercise, initialName = '', initialDisciplineId, 
     exercise ? (exercise.disciplineId ?? '') : (initialDisciplineId ?? ''),
   )
   const [newName, setNewName] = useState('')
-  const [newColor, setNewColor] = useState<DisciplineColor>(freeColor(data.disciplines))
+  const [newColor, setNewColor] = useState<DisciplineColor>(freeColor(disciplines))
   const [metric, setMetric] = useState<Metric>(
     exercise?.metric ?? usualMetric(data.exercises, initialDisciplineId) ?? 'weight_reps',
   )
@@ -77,13 +87,14 @@ export function ExerciseForm({ exercise, initialName = '', initialDisciplineId, 
   const [muscles, setMuscles] = useState<Muscle[]>(exercise?.muscles ?? [])
   const [error, setError] = useState<string>()
   const [newError, setNewError] = useState<string>()
-  const used = exercise
-    ? data.sessions.some((s) => s.entries.some((e) => e.exerciseId === exercise.id)) ||
-      data.programs.some((p) =>
-        p.weeks.some((w) => w.days.some((d) => d.blocks.some((b) => b.exerciseId === exercise.id))),
-      ) ||
-      data.goals.some((g) => g.exerciseId === exercise.id)
-    : false
+  const used =
+    exercise && !draft
+      ? data.sessions.some((s) => s.entries.some((e) => e.exerciseId === exercise.id)) ||
+        data.programs.some((p) =>
+          p.weeks.some((w) => w.days.some((d) => d.blocks.some((b) => b.exerciseId === exercise.id))),
+        ) ||
+        data.goals.some((g) => g.exerciseId === exercise.id)
+      : false
   const d = Number.parseFloat(distance.replace(',', '.'))
   const fixed = metric === 'distance_time' && Number.isFinite(d) && d > 0
 
@@ -97,22 +108,27 @@ export function ExerciseForm({ exercise, initialName = '', initialDisciplineId, 
           setError('Give it a name.')
           return
         }
-        if (data.exercises.some((x) => x.id !== exercise?.id && normalizeName(x.name) === normalizeName(n))) {
+        const taken = [
+          ...data.exercises.filter((x) => x.id !== exercise?.id).map((x) => x.name),
+          ...(draft?.names ?? []),
+        ]
+        if (taken.some((x) => normalizeName(x) === normalizeName(n))) {
           setError('An exercise with this name already exists.')
           return
         }
         let did = disciplineId
+        let created: Discipline | undefined
         if (disciplineId === NEW) {
           const dn = newName.trim()
           if (!dn) {
             setNewError('Name the new discipline.')
             return
           }
-          const existing = data.disciplines.find((x) => normalizeName(x.name) === normalizeName(dn))
+          const existing = disciplines.find((x) => normalizeName(x.name) === normalizeName(dn))
           if (existing) did = existing.id
           else {
-            const created: Discipline = { id: newId(), name: dn.slice(0, 40), color: newColor }
-            await data.put('disciplines', created)
+            created = { id: newId(), name: dn.slice(0, 40), color: newColor }
+            if (!draft) await data.put('disciplines', created)
             did = created.id
           }
         }
@@ -126,6 +142,10 @@ export function ExerciseForm({ exercise, initialName = '', initialDisciplineId, 
           ...(muscles.length > 0 ? { muscles } : {}),
           ...(exercise?.stroke ? { stroke: exercise.stroke } : {}),
           ...(exercise?.notes ? { notes: exercise.notes } : {}),
+        }
+        if (draft) {
+          draft.onSave(next, created)
+          return
         }
         await data.put('exercises', next)
         toast(exercise ? 'Exercise saved' : `${n} added`)
@@ -144,7 +164,10 @@ export function ExerciseForm({ exercise, initialName = '', initialDisciplineId, 
         value={disciplineId}
         options={[
           { value: '', label: 'No discipline' },
-          ...data.disciplines.map((x) => ({ value: x.id, label: x.name })),
+          ...disciplines.map((x) => ({
+            value: x.id,
+            label: draft?.disciplines.includes(x) ? `${x.name} (new)` : x.name,
+          })),
           { value: NEW, label: 'New discipline…' },
         ]}
         onChange={(e) => setDisciplineId(e.target.value)}
@@ -209,7 +232,7 @@ export function ExerciseForm({ exercise, initialName = '', initialDisciplineId, 
       <Button type="submit" variant="primary" size="large" full>
         {exercise ? 'Save' : 'Add exercise'}
       </Button>
-      {exercise && !used && (
+      {exercise && !used && !draft && (
         <Button
           variant="danger"
           full

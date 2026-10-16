@@ -127,8 +127,74 @@ test('advanced mode shows per-set effort; AI stays out of the way until set up',
   await expect(page.getByLabel('Bench press, set 1, RPE')).toBeVisible()
   await page.goto('./#/programs')
   await expect(page.getByRole('link', { name: /Design with AI \(optional\)/ })).toBeVisible()
+  // The demo is managed from Settings only.
+  await expect(page.getByRole('link', { name: /Demo programs/ })).toHaveCount(0)
   await page.goto('./#/programs/generate')
   await expect(page.getByRole('heading', { name: 'No AI model set up' })).toBeVisible()
+})
+
+test('AI proposes exercises, picked and edited before they reach the library', async ({ page }) => {
+  const proposal = {
+    exercises: [
+      ['Campus board', 'reps'],
+      ['Dead hang', 'time'],
+      ['Hangboard repeaters', 'time'],
+    ].map(([name, metric]) => ({
+      name,
+      discipline: 'Climbing',
+      metric,
+      distanceMeters: null,
+      pace: null,
+      muscles: null,
+      notes: null,
+    })),
+  }
+  // A local OpenAI-compatible server, answered by the test.
+  await page.route('http://127.0.0.1:9/v1/chat/completions', (route) =>
+    route.fulfill({
+      contentType: 'application/json',
+      headers: { 'access-control-allow-origin': '*' },
+      body: JSON.stringify({
+        id: 'mock',
+        object: 'chat.completion',
+        created: 0,
+        model: 'mock',
+        choices: [
+          { index: 0, finish_reason: 'stop', message: { role: 'assistant', content: JSON.stringify(proposal) } },
+        ],
+        usage: { prompt_tokens: 1, completion_tokens: 1, total_tokens: 2 },
+      }),
+    }),
+  )
+  await page.goto('./')
+  await page.getByRole('button', { name: 'Start empty' }).click()
+  await page.goto('./#/settings/ai')
+  await page.getByLabel('Provider').selectOption({ label: 'Custom endpoint (OpenAI-compatible)' })
+  await page.getByLabel('Endpoint address').fill('http://127.0.0.1:9/v1')
+  await page.getByLabel('Model').fill('mock')
+  await page.getByRole('button', { name: 'Save', exact: true }).click()
+  await expect(page.getByText('Saved.')).toBeVisible()
+
+  await page.goto('./#/exercises')
+  await page.getByRole('link', { name: 'With AI' }).click()
+  await page.getByLabel('Sports').fill('Climbing')
+  await page.getByText('Essentials', { exact: true }).click()
+  await accessible(page, 'exercises with AI')
+  await page.getByRole('button', { name: 'Propose exercises' }).click()
+  await expect(page.getByRole('heading', { name: 'Proposed exercises' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Climbing (new discipline)' })).toBeVisible()
+  await accessible(page, 'proposed exercises')
+  await page.getByRole('checkbox', { name: 'Add Dead hang' }).uncheck()
+  await page.getByRole('button', { name: 'Edit Campus board' }).click()
+  await page.getByLabel('Name').fill('Campus board ladders')
+  await page.getByRole('button', { name: 'Save', exact: true }).click()
+  await page.getByRole('button', { name: 'Add 2 exercises' }).click()
+
+  await expect(page.getByRole('heading', { name: 'Exercises', exact: true })).toBeVisible()
+  await expect(page.getByRole('button', { name: /Climbing.*2 exercises/ })).toBeVisible()
+  await expect(page.getByRole('button', { name: /Campus board ladders/ })).toBeVisible()
+  await expect(page.getByRole('button', { name: /Hangboard repeaters/ })).toBeVisible()
+  await expect(page.getByRole('button', { name: /Dead hang/ })).toHaveCount(0)
 })
 
 test('once loaded, the app opens offline', async ({ page, context }) => {
