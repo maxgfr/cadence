@@ -92,6 +92,15 @@ describe('parseBackup', () => {
       ),
     ).toThrow('damaged')
   })
+
+  test('a version 2 backup reads as it is, its programs laid out in weeks', async () => {
+    const store = memoryStore()
+    await store.put('programs', instantiate(must(TEMPLATES[0]), new Set(['gym'] as const)))
+    const b = parseBackup(JSON.stringify({ ...(await exportBackup(store)), version: 2 }))
+    expect(b.programs).toHaveLength(1)
+    expect(b.version).toBe(3)
+    expect(b.programs.every((p) => p.layout === undefined)).toBe(true)
+  })
 })
 
 describe('version 1 backups', () => {
@@ -142,7 +151,7 @@ describe('version 1 backups', () => {
       ],
     }
     const b = parseBackup(JSON.stringify(v1))
-    expect(b.version).toBe(2)
+    expect(b.version).toBe(3)
     expect(b.disciplines.map((d) => d.name).sort()).toEqual(['Gym', 'Swimming', 'Track and field'])
     expect(b.exercises.find((e) => e.id === 'my-run')).toMatchObject({ disciplineId: 'demo-track', pace: 'km' })
     expect(b.exercises.find((e) => e.id === 'back-squat')?.disciplineId).toBe('demo-gym')

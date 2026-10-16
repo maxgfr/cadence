@@ -28,6 +28,15 @@ export const METRIC_LABEL: Record<Metric, string> = {
   distance_time: 'Distance and time',
 }
 
+/** What each way of measuring logs per set, with examples and the record it keeps. */
+export const METRIC_HELP: Record<Metric, string> = {
+  weight_reps: 'Each set logs a load and reps: squat, bench press, curl. Record: estimated one-rep max.',
+  reps: 'Each set logs reps, no load: push-ups, pull-ups, jumps. Record: most reps in a set.',
+  time: 'Each set logs how long it lasted: plank, wall sit, dead hang. Record: longest set.',
+  distance_time:
+    'Each set logs a distance and its time: swims, runs, sprints. Record: best time over a fixed distance, or best pace.',
+}
+
 export const MUSCLE_NAMES: Record<Muscle, string> = {
   quads: 'Quads',
   hamstrings: 'Hamstrings',
@@ -190,7 +199,7 @@ export function ExerciseForm({ exercise, initialName = '', initialDisciplineId, 
         value={metric}
         options={(Object.keys(METRIC_LABEL) as Metric[]).map((m) => ({ value: m, label: METRIC_LABEL[m] }))}
         onChange={(e) => setMetric(e.target.value as Metric)}
-        {...(used ? { hint: 'Changing this changes how logged sets of this exercise are read.' } : {})}
+        hint={`${METRIC_HELP[metric]}${used ? ' Changing it changes how the sets already logged are read.' : ''}`}
       />
       {metric === 'distance_time' && (
         <>

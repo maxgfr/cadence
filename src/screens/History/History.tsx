@@ -11,7 +11,6 @@ import { EmptyState } from '../../ui/components/EmptyState.tsx'
 import { IconButton } from '../../ui/components/IconButton.tsx'
 import { ListGroup, ListRow } from '../../ui/components/List.tsx'
 import { download } from '../../ui/download.ts'
-import { Screen } from '../../ui/shell/Screen.tsx'
 import { useUnits } from '../../ui/units.ts'
 import styles from './History.module.css'
 import { sessionSummary } from './summary.ts'
@@ -31,7 +30,8 @@ const MONTHS = [
   'December',
 ]
 
-export function History() {
+/** Every session, newest first, grouped by month: the History view of Progress. */
+export function HistoryList() {
   const data = useData()
   const units = useUnits()
   const active = data.sessions.filter((s) => s.status === 'active')
@@ -65,25 +65,7 @@ export function History() {
   const year = new Date().getFullYear()
 
   return (
-    <Screen
-      title="History"
-      subtitle={done.length > 0 ? `${done.length} ${done.length === 1 ? 'session' : 'sessions'}` : undefined}
-      trailing={
-        done.length > 0 ? (
-          <IconButton
-            icon={Download}
-            label="Export sessions as CSV"
-            onClick={() =>
-              download(
-                `cadence-sessions-${data.today}.csv`,
-                sessionsCsv(data.sessions, data.index, data.disciplineIndex),
-                'text/csv',
-              )
-            }
-          />
-        ) : undefined
-      }
-    >
+    <>
       {active.length > 0 && (
         <ListGroup title="In progress">
           {active.map((s) => (
@@ -127,13 +109,31 @@ export function History() {
                       </span>
                     ) : undefined
                   }
-                  href={`/history/${s.id}`}
+                  href={`/progress/sessions/${s.id}`}
                 />
               )
             })}
           </ListGroup>
         ))
       )}
-    </Screen>
+    </>
+  )
+}
+
+/** Downloads every session as CSV (shown with the History view once a session is logged). */
+export function ExportCsvButton() {
+  const data = useData()
+  return (
+    <IconButton
+      icon={Download}
+      label="Export sessions as CSV"
+      onClick={() =>
+        download(
+          `cadence-sessions-${data.today}.csv`,
+          sessionsCsv(data.sessions, data.index, data.disciplineIndex),
+          'text/csv',
+        )
+      }
+    />
   )
 }

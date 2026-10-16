@@ -1,4 +1,4 @@
-import { Check, ChevronLeft, Plus, Trash2 } from 'lucide-react'
+import { Check, ChevronLeft, Plus, Timer, Trash2 } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useLocation, useParams } from 'wouter'
 import { useData } from '../../app/data.tsx'
@@ -6,6 +6,7 @@ import { useToast } from '../../app/toast.tsx'
 import { newId } from '../../core/model/ids.ts'
 import { describeBlock, emptySet } from '../../core/model/program.ts'
 import type { Entry, Exercise, Session, SetLog } from '../../core/model/schemas.ts'
+import { formatTime } from '../../core/model/units.ts'
 import { Button } from '../../ui/components/Button.tsx'
 import { DisciplineTag } from '../../ui/components/Discipline.tsx'
 import { EmptyState } from '../../ui/components/EmptyState.tsx'
@@ -18,23 +19,10 @@ import styles from './Log.module.css'
 import { RestTimer, useRestTimer } from './RestTimer.tsx'
 import { SetRow, setColumns } from './SetRow.tsx'
 
-function useElapsed(startedAt: string | undefined): number {
-  const [now, setNow] = useState(() => Date.now())
-  useEffect(() => {
-    const t = setInterval(() => setNow(Date.now()), 1000)
-    return () => clearInterval(t)
-  }, [])
-  return startedAt ? Math.max(0, Math.floor((now - Date.parse(startedAt)) / 1000)) : 0
-}
-
-const clock = (s: number) => {
-  const h = Math.floor(s / 3600)
-  const m = Math.floor((s % 3600) / 60)
-  const ss = String(s % 60).padStart(2, '0')
-  return h > 0 ? `${h}:${String(m).padStart(2, '0')}:${ss}` : `${m}:${ss}`
-}
-
-/** The logging screen: one card per exercise, one row per set, a tick per set done, a rest timer between. */
+/**
+ * The logging screen: one card per exercise, one row per set, a tick per set done. No clock runs: the rest timer
+ * starts only when asked, from an exercise.
+ */
 export function Log() {
   const { id } = useParams<{ id: string }>()
   const data = useData()
@@ -44,7 +32,6 @@ export function Log() {
   const [picking, setPicking] = useState(false)
   const [finishing, setFinishing] = useState(false)
   const rest = useRestTimer()
-  const elapsed = useElapsed(session?.startedAt)
   const advanced = data.settings.mode === 'advanced'
   const units = useUnits()
   const toast = useToast()
@@ -87,8 +74,8 @@ export function Log() {
           <ChevronLeft size={20} strokeWidth={2} aria-hidden="true" />
           Today
         </Link>
-        <span className={styles.clock} role="timer" aria-label={`Elapsed ${clock(elapsed)}`}>
-          {clock(elapsed)}
+        <span className={styles.count}>
+          {setDone} of {setTotal} sets
         </span>
         <Button variant="primary" onClick={() => setFinishing(true)}>
           Finish
@@ -101,10 +88,6 @@ export function Log() {
         </h1>
         <p className={styles.sub}>
           <DisciplineTag disciplineId={session.disciplineId} />
-          <span aria-hidden="true">·</span>
-          <span>
-            {setDone} of {setTotal} sets
-          </span>
         </p>
       </div>
 
@@ -132,9 +115,8 @@ export function Log() {
                   update({ ...session, entries: session.entries.filter((e) => e.id !== entry.id) })
                   toast(`${ex?.name ?? 'Exercise'} removed`, [{ label: 'Undo', onClick: () => update(before) }])
                 }}
-                onSetDone={(done) => {
-                  if (done) rest.start(entry.planned?.rest ?? data.settings.defaultRest)
-                }}
+                rest={entry.planned?.rest ?? data.settings.defaultRest}
+                onRest={(seconds) => rest.start(seconds)}
               />
             </li>
           )
@@ -167,14 +149,16 @@ export function Log() {
       <FinishSheet
         open={finishing}
         session={session}
-        elapsedMinutes={Math.round(elapsed / 60)}
+        elapsedMinutes={
+          session.startedAt ? Math.round(Math.max(0, Date.now() - Date.parse(session.startedAt)) / 60000) : 0
+        }
         onClose={() => setFinishing(false)}
         onSave={async (patch) => {
           const done: Session = { ...session, ...patch, status: 'done' }
           await saving.current
           await data.put('sessions', done)
           rest.stop()
-          navigate(`/history/${done.id}?saved=1`)
+          navigate(`/progress/sessions/${done.id}?saved=1`)
         }}
         onDiscard={async () => {
           await saving.current
@@ -197,10 +181,12 @@ interface EntryCardProps {
   plan: string | undefined
   onChange: (fn: (e: Entry) => Entry) => void
   onRemove: () => void
-  onSetDone: (done: boolean) => void
+  /** Seconds of rest for this exercise (its plan's, or the default); 0 for none. */
+  rest: number
+  onRest: (seconds: number) => void
 }
 
-function EntryCard({ entry, exercise, advanced, plan, onChange, onRemove, onSetDone }: EntryCardProps) {
+function EntryCard({ entry, exercise, advanced, plan, onChange, onRemove, rest, onRest }: EntryCardProps) {
   const cols = setColumns(exercise, advanced)
   const units = useUnits()
   const allDone = entry.sets.length > 0 && entry.sets.every((s) => s.done)
@@ -217,7 +203,19 @@ function EntryCard({ entry, exercise, advanced, plan, onChange, onRemove, onSetD
           {plan && <p className={styles.plan}>Plan {plan}</p>}
           {entry.planned?.notes && <p className={styles.plan}>{entry.planned.notes}</p>}
         </div>
-        <IconButton icon={Trash2} label={`Remove ${exercise?.name ?? 'exercise'}`} onClick={onRemove} />
+        <div className={styles.entryTools}>
+          {rest > 0 && (
+            <Button
+              variant="plain"
+              icon={<Timer size={18} strokeWidth={1.75} aria-hidden="true" />}
+              aria-label={`Rest ${formatTime(rest, false)} after ${exercise?.name ?? 'this exercise'}`}
+              onClick={() => onRest(rest)}
+            >
+              Rest {formatTime(rest, false)}
+            </Button>
+          )}
+          <IconButton icon={Trash2} label={`Remove ${exercise?.name ?? 'exercise'}`} onClick={onRemove} />
+        </div>
       </header>
       <div className={styles.table}>
         <div
@@ -241,10 +239,7 @@ function EntryCard({ entry, exercise, advanced, plan, onChange, onRemove, onSetD
               exercise={exercise}
               columns={cols}
               planned={entry.planned}
-              onChange={(next) => {
-                setAt(i, next)
-                if (next.done !== s.done) onSetDone(next.done)
-              }}
+              onChange={(next) => setAt(i, next)}
             />
           ))}
       </div>

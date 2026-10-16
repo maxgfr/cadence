@@ -47,7 +47,7 @@ export function WeekStrip() {
           return (
             <li key={d}>
               {day.length === 1 && day[0] ? (
-                <Link href={`/history/${day[0].id}`} className={cls} aria-label={sr}>
+                <Link href={`/progress/sessions/${day[0].id}`} className={cls} aria-label={sr}>
                   {body}
                 </Link>
               ) : (

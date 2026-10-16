@@ -276,3 +276,58 @@ export function goalProgress(
     daysLeft,
   }
 }
+
+export interface GoalBaseline {
+  /** Where the athlete stands: their best (a lift, a time) or their average of the last four full weeks. */
+  current: number
+  basis: 'best' | 'recent_weeks'
+  lowerIsBetter: boolean
+  /** A target that stretches the current value by the deadline without being out of reach. */
+  suggested: number
+}
+
+const roundTo = (v: number, step: number, up: boolean) => (up ? Math.ceil(v / step) : Math.floor(v / step)) * step
+
+/**
+ * The starting point of a goal being set, from what is logged: nothing is suggested without data. The stretch grows
+ * with the time to the deadline and is capped: about 1% a week on a lift (15% at most), 0.5% a week off a time (6%),
+ * 2% a week on a weekly volume (30%), one more session a week.
+ */
+export function goalBaseline(
+  draft: Pick<Goal, 'kind' | 'deadline'> & Partial<Pick<Goal, 'exerciseId' | 'disciplineId' | 'volume'>>,
+  sessions: readonly Session[],
+  exercises: ExerciseIndex,
+  today: string,
+  weekStart: 0 | 1,
+): GoalBaseline | undefined {
+  const goal: Goal = { id: 'baseline', target: 1, createdAt: today, ...draft }
+  const { series, lower, weekly } = goalSeries(goal, sessions, exercises, today, weekStart)
+  let current: number
+  if (weekly) {
+    const full = series.slice(0, -1).slice(-4)
+    if (full.length === 0) return undefined
+    current = full.reduce((n, p) => n + p.value, 0) / full.length
+  } else {
+    if (series.length === 0) return undefined
+    const values = series.map((p) => p.value)
+    current = lower ? Math.min(...values) : Math.max(...values)
+  }
+  if (!(current > 0)) return undefined
+  const weeks = Math.max(1, daysBetween(today, goal.deadline) / 7)
+  let suggested: number
+  switch (goal.kind) {
+    case 'e1rm':
+      suggested = roundTo(current * (1 + Math.min(0.15, 0.01 * weeks)), 2.5, true)
+      break
+    case 'best_time':
+      suggested = roundTo(current * (1 - Math.min(0.06, 0.005 * weeks)), 0.1, false)
+      break
+    case 'frequency':
+      suggested = Math.min(7, Math.round(current) + 1)
+      break
+    case 'weekly_volume':
+      suggested = roundTo(current * (1 + Math.min(0.3, 0.02 * weeks)), 100, true)
+      break
+  }
+  return { current, basis: weekly ? 'recent_weeks' : 'best', lowerIsBetter: lower, suggested }
+}

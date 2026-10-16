@@ -174,3 +174,19 @@ button.goal {
   color: var(--ink-3);
   font-size: var(--text-caption);
 }
+
+.baseline {
+  display: grid;
+  gap: var(--space-1);
+  padding: var(--space-3);
+  border-radius: var(--radius-control);
+  background: var(--surface-pressed);
+  color: var(--ink-2);
+  font-size: var(--text-footnote);
+  font-variant-numeric: tabular-nums;
+}
+
+.baselineLabel {
+  color: var(--ink);
+  font-weight: 700;
+}

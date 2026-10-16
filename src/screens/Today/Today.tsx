@@ -1,10 +1,11 @@
-import { ClipboardList, Play, Plus, Sparkles, Target } from 'lucide-react'
+import { ClipboardList, ListChecks, Play, Plus, Sparkles, Target } from 'lucide-react'
+import { useState } from 'react'
 import { Link } from 'wouter'
 import { useStartSession } from '../../app/actions.ts'
 import { useAi } from '../../app/ai.tsx'
 import { useData } from '../../app/data.tsx'
 import { formatDay } from '../../core/model/dates.ts'
-import { completedDays, describeBlock, nextDay, totalDays } from '../../core/model/program.ts'
+import { completedDays, describeBlock, isSessionSet, nextDay, totalDays } from '../../core/model/program.ts'
 import { goalProgress } from '../../core/stats/trends.ts'
 import { Button, buttonClass } from '../../ui/components/Button.tsx'
 import { DisciplineDot, DisciplineTag } from '../../ui/components/Discipline.tsx'
@@ -12,6 +13,7 @@ import { EmptyState } from '../../ui/components/EmptyState.tsx'
 import { Screen } from '../../ui/shell/Screen.tsx'
 import { useUnits } from '../../ui/units.ts'
 import { GoalLine } from '../Progress/Goals.tsx'
+import { SessionChooser, useChoosableSessions } from './SessionChooser.tsx'
 import styles from './Today.module.css'
 import { WeekStrip } from './WeekStrip.tsx'
 
@@ -25,6 +27,9 @@ export function Today() {
   const program = data.programs.find((p) => p.id === data.settings.activeProgramId)
   const next = program ? nextDay(program, data.sessions) : undefined
   const day = program && next ? program.weeks[next.week]?.days[next.day] : undefined
+  const set = program ? isSessionSet(program) : false
+  const choices = useChoosableSessions()
+  const [choosing, setChoosing] = useState(false)
   const goal = data.goals
     .filter((g) => !g.achievedAt && g.deadline >= data.today)
     .sort((a, b) => a.deadline.localeCompare(b.deadline))[0]
@@ -52,8 +57,9 @@ export function Today() {
             <span>{program.name}</span>
             <span aria-hidden="true">·</span>
             <span>
-              {program.weeks[next.week]?.name ?? `Week ${next.week + 1}`} · day {next.day + 1} of{' '}
-              {program.weeks[next.week]?.days.length}
+              {set
+                ? `session ${next.day + 1} of ${program.weeks[0]?.days.length ?? 0}, in any order`
+                : `${program.weeks[next.week]?.name ?? `Week ${next.week + 1}`} · day ${next.day + 1} of ${program.weeks[next.week]?.days.length ?? 0}`}
             </span>
           </p>
           <h2 id="next-title" className={styles.heroTitle}>
@@ -81,9 +87,14 @@ export function Today() {
           >
             Start session
           </Button>
+          <Button variant="plain" full onClick={() => setChoosing(true)}>
+            Choose another session
+          </Button>
           <p className={styles.progressLine}>
-            {completedDays(program, data.sessions)} of {totalDays(program)} sessions done ·{' '}
-            <Link href={`/programs/${program.id}`}>See program</Link>
+            {set
+              ? `${completedDays(program, data.sessions)} ${completedDays(program, data.sessions) === 1 ? 'session' : 'sessions'} done`
+              : `${completedDays(program, data.sessions)} of ${totalDays(program)} sessions done`}{' '}
+            · <Link href={`/programs/${program.id}`}>See program</Link>
           </p>
         </section>
       ) : program ? (
@@ -140,6 +151,13 @@ export function Today() {
             {program && next ? 'Or log something else' : 'Log a session'}
           </h2>
           <div className={styles.freeButtons}>
+            {!(program && next) && choices.length > 0 && (
+              <button type="button" className={styles.freeButton} onClick={() => setChoosing(true)}>
+                <ListChecks size={18} strokeWidth={1.75} aria-hidden="true" />
+                <span className={styles.freeName}>From a program</span>
+                <Plus className={styles.freePlus} size={18} strokeWidth={2} aria-hidden="true" />
+              </button>
+            )}
             {data.disciplines.map((d) => (
               <button key={d.id} type="button" className={styles.freeButton} onClick={() => start.free(d.id)}>
                 <DisciplineDot disciplineId={d.id} />
@@ -154,6 +172,8 @@ export function Today() {
           </div>
         </section>
       )}
+
+      <SessionChooser open={choosing} onClose={() => setChoosing(false)} />
 
       <WeekStrip />
 

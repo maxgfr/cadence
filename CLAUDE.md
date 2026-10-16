@@ -7,7 +7,7 @@ under `/cadence/`, no server.
 
 - `bun run dev` / `bun run build` / `bun run preview`
 - `bun run typecheck`, `bun run lint`, `bun run test` (`bun test` on `src/core`)
-- `bun run test:e2e` (Playwright + axe smoke test, phone and desktop; needs `bun run build` first)
+- `bun run test:e2e` (Playwright + axe smoke test, phone and desktop; needs `bun run build` first; `E2E_PORT=…` when port 4173 is taken)
 - `bun run catalog` (rebuild `src/core/ai/catalog.json` from `llm-models`, with a CORS probe per provider)
 - `bun run check` = typecheck + lint + test + build
 

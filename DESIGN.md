@@ -121,14 +121,14 @@ components:
 
 Cadence reads like a training card a coach hands over at the start of a session: the plan written in the sport's own shorthand ("5×5 @80%", "8×50 m @1:50", "6×60 m @95% max · rest 3:00"), set in tabular figures, with room to write down what actually happened next to it. Neutral graphite surfaces, deep ink, and one track-orange accent that marks the next action and the sets already done.
 
-It is used in bright places (gym lights, pool decks, outdoor tracks) with sweaty hands and a few seconds of attention between sets, so the logging screen is the loudest part of the system: thumb-sized cells, a big tick per set, a rest bar that rises from the bottom. Planning and review screens are calmer and denser. Dark mode is designed on its own: near-black ground, lifted graphite surfaces, a lighter orange carrying dark ink.
+It is used in bright places (gym lights, pool decks, outdoor tracks) with sweaty hands and a few seconds of attention between sets, so the logging screen is the loudest part of the system: thumb-sized cells, a big tick per set, and no running clock (a rest bar rises from the bottom only when the athlete starts it). Planning and review screens are calmer and denser. Dark mode is designed on its own: near-black ground, lifted graphite surfaces, a lighter orange carrying dark ink.
 
 **Key characteristics:**
 - One accent (track orange) for the primary action, the current place, a ticked set and a record point. Never decoration.
 - The user's disciplines each take one of eight palette colours, shown as 10px dots, always beside a text label; a hollow ring means "no discipline".
 - Plans and values in tabular figures, joined to their units with no-break spaces so "800 m" never splits.
-- Bottom tab bar (Today, History, Programs, Progress, Settings) under 1000px; a 260px sidebar from 1000px, which adds Exercises.
-- Logging is a focus route: no tab bar, a sticky bar with Back, the session clock and Finish.
+- Bottom tab bar (Today, Programs, Progress, Settings) under 1000px; a 260px sidebar from 1000px, which adds Exercises. History is the second view of Progress (Overview | History).
+- Logging is a focus route: no tab bar, a sticky bar with Back, the count of sets done and Finish. No clock runs on screen.
 
 ## Colors
 
@@ -176,7 +176,7 @@ Danger, warning and success each pair a strong tone with a soft ground, used in 
 
 ## Layout
 
-4px rhythm. Screens are one column capped at 720px with a gutter of max(16px, safe-area insets). Under 1000px a fixed bottom tab bar of five items (hidden on the logging screen); from 1000px a sidebar. Sections are separated by 32px; a heading sits 12px above its content. The logging screen keeps 7rem free at the bottom for the rest bar.
+4px rhythm. Screens are one column capped at 720px with a gutter of max(16px, safe-area insets). Under 1000px a fixed bottom tab bar of four items (hidden on the logging screen); from 1000px a sidebar. Sections are separated by 32px; a heading sits 12px above its content. The logging screen keeps 7rem free at the bottom for the rest bar.
 
 ## Elevation & Depth
 
@@ -192,10 +192,10 @@ Four radii, one job each: small (4px) for chart bar tops and cells in the calend
 Control radius, min height 44px (50px large). Primary orange; secondary soft orange with orange ink; plain text-only; danger soft red. Press scales to 0.98; loading shows a spinner and `aria-busy`.
 
 ### Set row (signature)
-`Set # | value cells | (RPE in Advanced) | tick`. Cells are 52px, centred, tabular, on the ground colour; the plan pre-fills them so logging is mostly confirming. The tick is a 52px ring; pressing it fills it orange with a 200ms pop and starts the rest timer. A ticked row's cells flatten to Surface Pressed. When every set of an exercise is ticked, its name gains a green check.
+`Set # | value cells | (RPE in Advanced) | tick`. Cells are 52px, centred, tabular, on the ground colour; the plan pre-fills them so logging is mostly confirming. The tick is a 52px ring; pressing it fills it orange with a 200ms pop; it starts nothing else. A ticked row's cells flatten to Surface Pressed. When every set of an exercise is ticked, its name gains a green check.
 
 ### Rest bar (signature)
-Pinned to the bottom of the logging screen, ink ground, a 4px orange band draining left to right, the countdown in Headline, then −15, +15 and Skip as 44px outlined buttons. It buzzes (where vibration exists) when the rest ends, says "Rest over, go", and leaves after four seconds.
+Started by hand from an exercise's *Rest* button (its planned rest, or the length set in Settings), never by a tick. Pinned to the bottom of the logging screen, ink ground, a 4px orange band draining left to right, the countdown in Headline, then −15, +15 and Skip as 44px outlined buttons. It buzzes (where vibration exists) when the rest ends, says "Rest over, go", and leaves after four seconds.
 
 ### Coach's card
 On Today and in the program editor: exercise name left (600), the prescription right in Footnote tabular figures, hairline between lines. Today's card ends with the full-width Start button and a progress line ("3 of 16 sessions done · See program").

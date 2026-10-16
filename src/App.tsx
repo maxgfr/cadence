@@ -1,5 +1,5 @@
 import { Suspense } from 'react'
-import { Route, Router, Switch } from 'wouter'
+import { Redirect, Route, Router, Switch } from 'wouter'
 import { AiProvider } from './app/ai.tsx'
 import { DataProvider, useData } from './app/data.tsx'
 import { DraftProvider } from './app/drafts.tsx'
@@ -8,7 +8,6 @@ import { lazyChunk, ScreenBoundary } from './app/lazyChunk.tsx'
 import { useTheme } from './app/theme.ts'
 import { ToastProvider } from './app/toast.tsx'
 import { Exercises } from './screens/Exercises/Exercises.tsx'
-import { History } from './screens/History/History.tsx'
 import { SessionDetail } from './screens/History/SessionDetail.tsx'
 import { Log } from './screens/Log/Log.tsx'
 import { NotFound } from './screens/NotFound.tsx'
@@ -39,13 +38,17 @@ function Routes() {
           <Switch>
             <Route path="/" component={Today} />
             <Route path="/log/:id" component={Log} />
-            <Route path="/history" component={History} />
-            <Route path="/history/:id" component={SessionDetail} />
+            {/* History lives in Progress; older links still land there. */}
+            <Route path="/history">
+              <Redirect to="/progress?view=history" replace />
+            </Route>
+            <Route path="/history/:id">{(p) => <Redirect to={`/progress/sessions/${p.id}`} replace />}</Route>
             <Route path="/programs" component={Programs} />
             <Route path="/programs/generate" component={Generate} />
             <Route path="/programs/draft" component={DraftEditor} />
             <Route path="/programs/:id" component={ProgramEditor} />
             <Route path="/progress" component={Progress} />
+            <Route path="/progress/sessions/:id" component={SessionDetail} />
             <Route path="/exercises" component={Exercises} />
             <Route path="/exercises/generate" component={GenerateExercises} />
             <Route path="/settings" component={Settings} />

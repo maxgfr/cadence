@@ -194,7 +194,7 @@ function BlockForm({ block, onSave, onDelete }: { block: Block; onSave: (b: Bloc
         Done
       </Button>
       <Button variant="danger" full onClick={onDelete}>
-        Remove from day
+        Remove from the plan
       </Button>
       <ExercisePicker
         open={picking}

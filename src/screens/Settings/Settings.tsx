@@ -14,7 +14,7 @@ import { useAi } from '../../app/ai.tsx'
 import { BUILD } from '../../app/buildInfo.ts'
 import { useData } from '../../app/data.tsx'
 import { useToast } from '../../app/toast.tsx'
-import { DEFAULT_SETTINGS } from '../../core/model/schemas.ts'
+import { BACKUP_VERSION, DEFAULT_SETTINGS } from '../../core/model/schemas.ts'
 import { BackupError, exportBackup, parseBackup, sessionsCsv } from '../../core/storage/backup.ts'
 import { Button } from '../../ui/components/Button.tsx'
 import { ListGroup, ListRow } from '../../ui/components/List.tsx'
@@ -26,10 +26,13 @@ import { Screen } from '../../ui/shell/Screen.tsx'
 import { MODE_OPTIONS } from '../Onboarding/Welcome.tsx'
 import styles from './Settings.module.css'
 
-const REST_OPTIONS = [30, 45, 60, 90, 120, 150, 180, 240, 300].map((s) => ({
-  value: String(s),
-  label: s < 60 ? `${s} s` : `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`,
-}))
+const REST_OPTIONS = [
+  { value: '0', label: 'Only when planned' },
+  ...[30, 45, 60, 90, 120, 150, 180, 240, 300].map((s) => ({
+    value: String(s),
+    label: s < 60 ? `${s} s` : `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`,
+  })),
+]
 
 function usePersisted(): [boolean | undefined, () => Promise<void>] {
   const [persisted, setPersisted] = useState<boolean>()
@@ -106,10 +109,10 @@ export function Settings() {
               onChange={(v) => data.updateSettings({ weekStart: v === '0' ? 0 : 1 })}
             />
             <SelectField
-              label="Default rest"
+              label="Rest timer"
               value={String(s.defaultRest)}
               options={REST_OPTIONS}
-              hint="Used when the plan gives no rest."
+              hint="Never starts on its own: you start it from an exercise. Its length when the plan gives no rest."
               onChange={(e) => data.updateSettings({ defaultRest: Number(e.target.value) })}
             />
           </div>
@@ -238,7 +241,7 @@ export function Settings() {
                 onClick={async () => {
                   await data.replaceAll({
                     app: 'cadence',
-                    version: 2,
+                    version: BACKUP_VERSION,
                     exportedAt: new Date().toISOString(),
                     settings: { ...DEFAULT_SETTINGS, ...s, activeProgramId: undefined },
                     disciplines: [],

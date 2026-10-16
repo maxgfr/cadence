@@ -49,6 +49,11 @@ export function describeBlock(block: Block, exercise: Exercise | undefined, unit
   return parts.join(' · ')
 }
 
+/** A set of sessions done in any order and repeated, rather than a plan of weeks. */
+export function isSessionSet(program: Program): boolean {
+  return program.layout === 'sessions'
+}
+
 export function dayAt(program: Program, ref: Pick<ProgramRef, 'week' | 'day'>): Day | undefined {
   return program.weeks[ref.week]?.days[ref.day]
 }
@@ -68,6 +73,18 @@ const order = (r: Pick<ProgramRef, 'week' | 'day'>, program: Program) => {
  * leaves the athlete behind. Undefined once every day is done.
  */
 export function nextDay(program: Program, sessions: readonly Session[]): ProgramRef | undefined {
+  if (isSessionSet(program)) {
+    // A set of sessions never ends: the one after the latest done, round again after the last.
+    const count = program.weeks[0]?.days.length ?? 0
+    if (count === 0) return undefined
+    let latest: Session | undefined
+    for (const s of sessions) {
+      if (s.status !== 'done' || s.programRef?.programId !== program.id) continue
+      if (!latest || s.date > latest.date || (s.date === latest.date && (s.startedAt ?? '') > (latest.startedAt ?? '')))
+        latest = s
+    }
+    return { programId: program.id, week: 0, day: latest?.programRef ? (latest.programRef.day + 1) % count : 0 }
+  }
   let furthest = -1
   for (const s of sessions) {
     if (s.status !== 'done' || s.programRef?.programId !== program.id) continue
@@ -81,9 +98,24 @@ export function nextDay(program: Program, sessions: readonly Session[]): Program
   return undefined
 }
 
+/** Days done so far: up to the next one for a plan of weeks, every session logged for a set of sessions. */
 export function completedDays(program: Program, sessions: readonly Session[]): number {
+  if (isSessionSet(program))
+    return sessions.filter((s) => s.status === 'done' && s.programRef?.programId === program.id).length
   const next = nextDay(program, sessions)
   return next ? order(next, program) : totalDays(program)
+}
+
+/**
+ * The days to pick from when starting a session of this program out of turn: every session of a set, or the days of
+ * the current week of a plan (its last week once it is finished).
+ */
+export function choosableDays(program: Program, sessions: readonly Session[]): ProgramRef[] {
+  const week = isSessionSet(program) ? 0 : (nextDay(program, sessions)?.week ?? program.weeks.length - 1)
+  return (program.weeks[week]?.days ?? [])
+    .map((d, day) => ({ d, ref: { programId: program.id, week, day } }))
+    .filter(({ d }) => d.blocks.length > 0)
+    .map(({ ref }) => ref)
 }
 
 /** Weight to load for a planned block: the absolute load, or a share of the estimated 1RM rounded to 2.5 kg. */
@@ -138,7 +170,7 @@ export function sessionFromDay(
   return {
     id: newId(),
     date,
-    title: day ? `${day.name} · ${weekName}` : program.name,
+    title: day ? (isSessionSet(program) ? day.name : `${day.name} · ${weekName}`) : program.name,
     ...(day?.disciplineId ? { disciplineId: day.disciplineId } : {}),
     programRef: ref,
     entries,

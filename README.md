@@ -2,7 +2,7 @@
 
 Cadence is a training tracker that runs entirely in the browser, for whatever you train: you create your own
 disciplines (Gym, Swimming, Climbing…) and exercises, write programs, start today's session pre-filled from them, log
-sets with a rest timer, and follow records, goals and progress charts. It works offline, keeps its data on the device,
+sets, and follow records, goals and progress charts. It works offline, keeps its data on the device,
 and needs no account. The app starts empty; a demo (Gym, Swimming, Track and field, any combination) gives a solid
 starting point. AI, to design programs and propose exercises, is optional and uses your own model and key.
 
@@ -21,18 +21,23 @@ starting point. AI, to design programs and propose exercises, is optional and us
   sessions and a goal per sport can be added to see the charts. Everything stays editable, and *Remove the demo* takes
   it away again, keeping what your own records use.
 - **Today**: the next session of the current program, written as a coach would ("5×5 @80%", "8×50 m @1:50",
-  "6×60 m @95% max · rest 3:00"), with one button to start it, a free session per discipline, and this week at a
-  glance.
+  "6×60 m @95% max · rest 3:00"), with one button to start it, *Choose another session* to run any session of your
+  programs instead (Leg day, Bodyweight…), a free session per discipline, and this week at a glance.
 - **Logging**: one card per exercise, one row per set with large touch targets, values pre-filled from the plan, a
-  tick per set, and a rest timer that starts on each tick (−15 s, +15 s, skip, vibration at the end). Finish with
-  the duration, an effort rating (RPE 1–10) and notes.
-- **History**: every session by month, with what was planned next to what was done, the records it set, editing and
-  deletion with undo, and CSV export.
-- **Programs**: a full editor (weeks, days and their discipline, exercises, sets, reps, distances, intensity, rest,
-  send-off interval, tempo), and optional AI design. The demo's programs are loaded from *Settings › Demo*.
-- **Progress**: a training calendar, the best value per session of any exercise (estimated 1RM, best time, best pace,
-  most reps, longest hold) with its records, weekly volume per discipline (kilograms lifted, distance covered), and
-  goals with a trend projected to their deadline.
+  tick per set. No clock runs: a rest timer starts only when you tap *Rest* on an exercise (its planned rest, or the
+  length set in Settings; −15 s, +15 s, skip, vibration at the end). Finish with the duration, an effort rating
+  (RPE 1–10) and notes.
+- **Programs**: every program you have, and two ways to write one: *a set of sessions* done in any order, again and
+  again (Leg day, Upper body, Bodyweight…), or *a week-by-week plan* that progresses to an end. A full editor
+  (sessions or weeks and days, their discipline, exercises, sets, reps, distances, intensity, rest, send-off interval,
+  tempo), and optional AI design. The demo's programs are loaded from *Settings › Demo*.
+- **Progress**: two views. *Overview*: goals, a training calendar, the best value per session of any exercise
+  (estimated 1RM, best time, best pace, most reps, longest hold) with its records, and weekly volume per discipline
+  (kilograms lifted, distance covered). *History*: every session by month, with what was planned next to what was
+  done, the records it set, editing and deletion with undo, and CSV export.
+- **Goals**: a target and a deadline, set from where you are: the form shows your current best (or your average of
+  the last four weeks) and suggests a target that stretches it within reach, which you change as you like. A goal can
+  be started from any exercise's chart. Each goal shows a trend projected to its deadline.
 - **Two modes**: *Normal* shows the essentials. *Advanced* adds effort per set, intensity targets (%1RM, RPE, pace,
   % of best effort), rest and tempo in plans, sets per muscle group, adherence to the plan, goal charts and the
   full AI questionnaire. Switching never loses data.
@@ -47,7 +52,7 @@ All values are stored in metric units (kilograms, metres, seconds); units only c
 |---|---|
 | Discipline | name, colour (one of eight palette slots) |
 | Exercise | name, discipline (optional), metric (`weight_reps`, `reps`, `time`, `distance_time`), pace unit (`100m`, `km`), muscles, stroke, fixed distance |
-| Program | name, goal, weeks → days (each with an optional discipline) → blocks, source (`manual`, `template`, `ai`) |
+| Program | name, goal, layout (`weeks`, or `sessions`: a set done in any order), weeks → days (each with an optional discipline) → blocks, source (`manual`, `template`, `ai`) |
 | Block | exercise, sets, reps, distance, duration, intensity (`kg`, `pct1rm`, `rpe`, `pace`, `pctmax`), rest, send-off interval, tempo, notes |
 | Session | date, title, discipline (optional), program day, entries → sets (reps, weight, time, distance, RPE, done), duration, RPE, notes |
 | Goal | estimated 1RM on a lift, best time or pace on an exercise, weekly kilograms or distance, or sessions per week (in one discipline or all); target and deadline |

@@ -1,7 +1,7 @@
 import { useSyncExternalStore } from 'react'
 
 /*
- * Hash routing with the query inside the hash (`#/history/abc?saved=1`). wouter's own hash hook writes the query
+ * Hash routing with the query inside the hash (`#/progress/sessions/abc?saved=1`). wouter's own hash hook writes the query
  * to `location.search`, outside the hash, where it outlives the screen that set it.
  */
 

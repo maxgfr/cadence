@@ -1,4 +1,4 @@
-import { CalendarCheck, ClipboardList, Dumbbell, History, type LucideIcon, Settings, TrendingUp } from 'lucide-react'
+import { CalendarCheck, ClipboardList, Dumbbell, type LucideIcon, Settings, TrendingUp } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { Link, useLocation } from 'wouter'
 import { cx } from '../cx.ts'
@@ -14,7 +14,6 @@ interface Destination {
 
 const DESTINATIONS: readonly Destination[] = [
   { href: '/', label: 'Today', icon: CalendarCheck },
-  { href: '/history', label: 'History', icon: History },
   { href: '/programs', label: 'Programs', icon: ClipboardList },
   { href: '/progress', label: 'Progress', icon: TrendingUp },
   { href: '/exercises', label: 'Exercises', icon: Dumbbell, sidebarOnly: true },

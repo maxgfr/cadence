@@ -39,11 +39,13 @@ export function parseBackup(text: string): Backup {
   if (typeof raw !== 'object' || raw === null || (raw as { app?: unknown }).app !== 'cadence')
     throw new BackupError('This file is not a Cadence backup.')
   const version = (raw as { version?: unknown }).version
-  if (version !== BACKUP_VERSION && version !== 1)
+  if (version !== BACKUP_VERSION && version !== 2 && version !== 1)
     throw new BackupError(
       `This backup uses format version ${String(version)}, which this version of Cadence cannot read.`,
     )
   // Version 1: fixed disciplines and built-in exercises, read into today's shape.
+  // Version 2 differs only by what it cannot hold (program layouts).
+  if (version === 2) raw = { ...(raw as object), version: BACKUP_VERSION }
   if (version === 1) {
     try {
       raw = { ...(raw as object), version: BACKUP_VERSION, ...migrateV1(raw as Record<string, unknown[]>) }

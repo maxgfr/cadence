@@ -2,7 +2,15 @@ import { describe, expect, test } from 'bun:test'
 import { instantiate, TEMPLATES } from '../demo/programs.ts'
 import { entry, IDX, LIB, must, session, set } from '../testkit.test.ts'
 import { addDays, daysBetween, startOfWeek } from './dates.ts'
-import { describeBlock, nextDay, sessionFromDay, suggestedWeight, totalDays } from './program.ts'
+import {
+  choosableDays,
+  completedDays,
+  describeBlock,
+  nextDay,
+  sessionFromDay,
+  suggestedWeight,
+  totalDays,
+} from './program.ts'
 import { Exercise, Program } from './schemas.ts'
 import { formatDistance, formatTime, formatWeight, fromDisplayWeight, parseTime } from './units.ts'
 
@@ -104,6 +112,26 @@ describe('schedule', () => {
     const done = session('2026-10-01', [], { programRef: { programId: program.id, week: last, day } })
     expect(nextDay(program, [done])).toBeUndefined()
     expect(totalDays(program)).toBe(12)
+  })
+
+  test('a set of sessions goes round from the latest one done, and never ends', () => {
+    const set = { ...program, layout: 'sessions' as const, weeks: program.weeks.slice(0, 1) }
+    const ref = (day: number) => ({ programRef: { programId: set.id, week: 0, day } })
+    expect(nextDay(set, [])).toMatchObject({ week: 0, day: 0 })
+    const legs = session('2026-10-01', [], ref(2))
+    const upper = session('2026-10-03', [], ref(0))
+    expect(nextDay(set, [upper, legs])).toMatchObject({ week: 0, day: 1 })
+    expect(nextDay(set, [legs])).toMatchObject({ week: 0, day: 0 })
+    expect(completedDays(set, [upper, legs])).toBe(2)
+    expect(choosableDays(set, [legs])).toHaveLength(3)
+    expect(sessionFromDay(set, { programId: set.id, week: 0, day: 1 }, IDX, () => 100, '2026-10-16').title).toBe(
+      must(set.weeks[0]?.days[1]).name,
+    )
+  })
+
+  test('the days to choose from are those of the current week', () => {
+    const done = session('2026-10-01', [], { programRef: { programId: program.id, week: 0, day: 2 } })
+    expect(choosableDays(program, [done]).map((r) => r.week)).toEqual([1, 1, 1])
   })
 
   test('a session from a day is pre-filled from the plan', () => {

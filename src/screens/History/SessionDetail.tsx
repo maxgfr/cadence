@@ -39,7 +39,7 @@ export function SessionDetail() {
           {formatDay(session.date, year)} · <DisciplineTag disciplineId={session.disciplineId} />
         </>
       }
-      back={{ href: '/history', label: 'History' }}
+      back={{ href: '/progress?view=history', label: 'History' }}
     >
       {saved && (
         <p className={styles.saved} role="status">
@@ -133,7 +133,7 @@ export function SessionDetail() {
           icon={<Trash2 size={18} strokeWidth={1.75} aria-hidden="true" />}
           onClick={async () => {
             await data.remove('sessions', session.id)
-            navigate('/history')
+            navigate('/progress?view=history')
             toast('Session deleted', [{ label: 'Undo', onClick: () => data.put('sessions', session) }])
           }}
         >

@@ -7,12 +7,13 @@ import { useData } from '../../app/data.tsx'
 import { type ProgramDraft, useDraft } from '../../app/drafts.tsx'
 import { useToast } from '../../app/toast.tsx'
 import { newId } from '../../core/model/ids.ts'
-import { cloneWeek, describeBlock, nextDay } from '../../core/model/program.ts'
+import { cloneWeek, describeBlock, isSessionSet, nextDay } from '../../core/model/program.ts'
 import type { Block, Day, Program } from '../../core/model/schemas.ts'
 import { Button, buttonClass } from '../../ui/components/Button.tsx'
 import { EmptyState } from '../../ui/components/EmptyState.tsx'
 import { Field } from '../../ui/components/Field.tsx'
 import { IconButton } from '../../ui/components/IconButton.tsx'
+import { Segmented } from '../../ui/components/Segmented.tsx'
 import { SelectField } from '../../ui/components/SelectField.tsx'
 import { TextArea } from '../../ui/components/TextArea.tsx'
 import { ExercisePicker } from '../../ui/ExercisePicker.tsx'
@@ -53,7 +54,7 @@ export function DraftEditor() {
 }
 
 const ORIGIN_NOTE: Record<ProgramDraft['origin'], string> = {
-  new: 'A blank program: add days and exercises, then save.',
+  new: 'A blank program: add its sessions or days and their exercises, then save.',
   template: 'A copy of the template: change anything, then save it to your programs.',
   ai: 'Written by your AI model. Read it through and change anything before saving: nothing is stored until you do.',
   adjust: 'Your AI model rewrote one week from what you actually did. Check it, then save to replace the week.',
@@ -84,6 +85,8 @@ function ProgramForm({ initial, draft, saved }: { initial: Program; draft?: Prog
   const advanced = data.settings.mode === 'advanced'
   const isActive = data.settings.activeProgramId === program.id
   const week = program.weeks[weekIndex] ?? program.weeks[0]
+  const set = isSessionSet(program)
+  const unit = set ? 'Session' : 'Day'
   const next = saved ? nextDay(program, data.sessions) : undefined
   // Exercises an AI draft introduced are not in the library until saved.
   const exName = (id: string) =>
@@ -100,7 +103,13 @@ function ProgramForm({ initial, draft, saved }: { initial: Program; draft?: Prog
     changeWeek((days) => days.map((x, i) => (i === d ? fn(x) : x)))
 
   async function save() {
-    const final = { ...program, name: program.name.trim() || 'Program', updatedAt: new Date().toISOString() }
+    const final = {
+      ...program,
+      name: program.name.trim() || 'Program',
+      // A set of sessions is the days of one week.
+      weeks: set ? program.weeks.slice(0, 1) : program.weeks,
+      updatedAt: new Date().toISOString(),
+    }
     const used = JSON.stringify(final.weeks)
     for (const d of draft?.newDisciplines ?? []) {
       if (used.includes(d.id) || draft?.newExercises.some((e) => e.disciplineId === d.id && used.includes(e.id)))
@@ -123,7 +132,11 @@ function ProgramForm({ initial, draft, saved }: { initial: Program; draft?: Prog
   return (
     <Screen
       title={program.name || 'Program'}
-      subtitle={`${program.weeks.length} ${program.weeks.length === 1 ? 'week' : 'weeks'}${isActive ? ' · current program' : ''}`}
+      subtitle={`${
+        set
+          ? `${program.weeks[0]?.days.length ?? 0} ${program.weeks[0]?.days.length === 1 ? 'session' : 'sessions'}, in any order`
+          : `${program.weeks.length} ${program.weeks.length === 1 ? 'week' : 'weeks'}`
+      }${isActive ? ' · current program' : ''}`}
       back={{ href: '/programs', label: 'Programs' }}
     >
       {draft && (
@@ -158,105 +171,130 @@ function ProgramForm({ initial, draft, saved }: { initial: Program; draft?: Prog
           maxLength={300}
           onChange={(e) => change((p) => ({ ...p, goal: e.target.value }))}
         />
+        <Segmented
+          label="Structure"
+          options={[
+            { value: 'sessions', label: 'Set of sessions' },
+            { value: 'weeks', label: 'Week by week' },
+          ]}
+          value={set ? 'sessions' : 'weeks'}
+          onChange={(v) => {
+            change(({ layout: _old, ...p }) => (v === 'sessions' ? { ...p, layout: 'sessions' } : p))
+            setWeekIndex(0)
+          }}
+        />
+        <p className={styles.muted}>
+          {set
+            ? `Sessions you do in any order, again and again: Today offers the next one round, and you can pick any other.${
+                program.weeks.length > 1
+                  ? ` Only the days of ${program.weeks[0]?.name || 'week 1'} are kept as sessions when you save.`
+                  : ''
+              }`
+            : 'Weeks of days followed in order to the end of the program, each week able to progress on the last.'}
+        </p>
       </div>
 
-      <section aria-label="Weeks">
-        <ul className={styles.weeks}>
-          {program.weeks.map((w, i) => (
-            <li key={w.id}>
+      {!set && (
+        <section aria-label="Weeks">
+          <ul className={styles.weeks}>
+            {program.weeks.map((w, i) => (
+              <li key={w.id}>
+                <button
+                  type="button"
+                  className={styles.weekChip}
+                  aria-pressed={i === weekIndex}
+                  onClick={() => setWeekIndex(i)}
+                >
+                  {w.name || `Week ${i + 1}`}
+                </button>
+              </li>
+            ))}
+            <li>
               <button
                 type="button"
-                className={styles.weekChip}
-                aria-pressed={i === weekIndex}
-                onClick={() => setWeekIndex(i)}
-              >
-                {w.name || `Week ${i + 1}`}
-              </button>
-            </li>
-          ))}
-          <li>
-            <button
-              type="button"
-              className={`${styles.weekChip} ${styles.addChip}`}
-              onClick={() => {
-                const last = program.weeks[program.weeks.length - 1]
-                change((p) => ({
-                  ...p,
-                  weeks: [
-                    ...p.weeks,
-                    last
-                      ? { ...cloneWeek(last), name: `Week ${p.weeks.length + 1}` }
-                      : { id: newId(), name: `Week ${p.weeks.length + 1}`, days: [] },
-                  ],
-                }))
-                setWeekIndex(program.weeks.length)
-              }}
-            >
-              + Week
-            </button>
-          </li>
-        </ul>
-      </section>
-
-      {week && (
-        <section aria-label={week.name || `Week ${weekIndex + 1}`} className={styles.meta}>
-          <div className={styles.weekBar}>
-            <Field
-              label="Week name"
-              value={week.name ?? ''}
-              maxLength={60}
-              onChange={(e) =>
-                change((p) => ({
-                  ...p,
-                  weeks: p.weeks.map((w, i) => (i === weekIndex ? { ...w, name: e.target.value } : w)),
-                }))
-              }
-            />
-            <div className={styles.dayActions}>
-              <Button
-                variant="plain"
-                icon={<Copy size={18} strokeWidth={1.75} aria-hidden="true" />}
+                className={`${styles.weekChip} ${styles.addChip}`}
                 onClick={() => {
-                  change((p) => {
-                    const weeks = [...p.weeks]
-                    weeks.splice(weekIndex + 1, 0, { ...cloneWeek(week), name: `${week.name ?? 'Week'} (copy)` })
-                    return { ...p, weeks }
-                  })
-                  setWeekIndex(weekIndex + 1)
+                  const last = program.weeks[program.weeks.length - 1]
+                  change((p) => ({
+                    ...p,
+                    weeks: [
+                      ...p.weeks,
+                      last
+                        ? { ...cloneWeek(last), name: `Week ${p.weeks.length + 1}` }
+                        : { id: newId(), name: `Week ${p.weeks.length + 1}`, days: [] },
+                    ],
+                  }))
+                  setWeekIndex(program.weeks.length)
                 }}
               >
-                Duplicate week
-              </Button>
-              {program.weeks.length > 1 && (
+                + Week
+              </button>
+            </li>
+          </ul>
+        </section>
+      )}
+
+      {week && (
+        <section aria-label={set ? 'Sessions' : week.name || `Week ${weekIndex + 1}`} className={styles.meta}>
+          {!set && (
+            <div className={styles.weekBar}>
+              <Field
+                label="Week name"
+                value={week.name ?? ''}
+                maxLength={60}
+                onChange={(e) =>
+                  change((p) => ({
+                    ...p,
+                    weeks: p.weeks.map((w, i) => (i === weekIndex ? { ...w, name: e.target.value } : w)),
+                  }))
+                }
+              />
+              <div className={styles.dayActions}>
                 <Button
                   variant="plain"
-                  icon={<Trash2 size={18} strokeWidth={1.75} aria-hidden="true" />}
+                  icon={<Copy size={18} strokeWidth={1.75} aria-hidden="true" />}
                   onClick={() => {
-                    change((p) => ({ ...p, weeks: p.weeks.filter((_, i) => i !== weekIndex) }))
-                    setWeekIndex(Math.max(0, weekIndex - 1))
+                    change((p) => {
+                      const weeks = [...p.weeks]
+                      weeks.splice(weekIndex + 1, 0, { ...cloneWeek(week), name: `${week.name ?? 'Week'} (copy)` })
+                      return { ...p, weeks }
+                    })
+                    setWeekIndex(weekIndex + 1)
                   }}
                 >
-                  Delete week
+                  Duplicate week
                 </Button>
-              )}
-              {saved && ai.ready && (
-                <Link
-                  href={`/programs/generate?adjust=${program.id}&week=${weekIndex}`}
-                  className={buttonClass({ variant: 'plain' })}
-                >
-                  <Sparkles size={18} strokeWidth={1.75} aria-hidden="true" />
-                  Adjust with AI
-                </Link>
-              )}
+                {program.weeks.length > 1 && (
+                  <Button
+                    variant="plain"
+                    icon={<Trash2 size={18} strokeWidth={1.75} aria-hidden="true" />}
+                    onClick={() => {
+                      change((p) => ({ ...p, weeks: p.weeks.filter((_, i) => i !== weekIndex) }))
+                      setWeekIndex(Math.max(0, weekIndex - 1))
+                    }}
+                  >
+                    Delete week
+                  </Button>
+                )}
+                {saved && ai.ready && (
+                  <Link
+                    href={`/programs/generate?adjust=${program.id}&week=${weekIndex}`}
+                    className={buttonClass({ variant: 'plain' })}
+                  >
+                    <Sparkles size={18} strokeWidth={1.75} aria-hidden="true" />
+                    Adjust with AI
+                  </Link>
+                )}
+              </div>
             </div>
-          </div>
+          )}
 
           <ol className={styles.days}>
             {week.days.map((day, d) => (
               <li key={day.id} className={styles.day}>
                 <div className={styles.dayFields}>
                   <Field
-                    label={`Day ${d + 1}`}
+                    label={`${unit} ${d + 1}`}
                     value={day.name}
                     maxLength={60}
                     onChange={(e) => changeDay(d, (x) => ({ ...x, name: e.target.value }))}
@@ -277,7 +315,7 @@ function ProgramForm({ initial, draft, saved }: { initial: Program; draft?: Prog
                   />
                   <IconButton
                     icon={Trash2}
-                    label={`Delete ${day.name || `day ${d + 1}`}`}
+                    label={`Delete ${day.name || `${unit.toLowerCase()} ${d + 1}`}`}
                     onClick={() => changeWeek((days) => days.filter((_, i) => i !== d))}
                   />
                 </div>
@@ -313,7 +351,9 @@ function ProgramForm({ initial, draft, saved }: { initial: Program; draft?: Prog
                       icon={<Play size={18} strokeWidth={2} aria-hidden="true" />}
                       onClick={() => start.fromDay(program, { programId: program.id, week: weekIndex, day: d })}
                     >
-                      {next?.week === weekIndex && next.day === d ? 'Start (next up)' : 'Start this day'}
+                      {next?.week === weekIndex && next.day === d
+                        ? 'Start (next up)'
+                        : `Start this ${unit.toLowerCase()}`}
                     </Button>
                   )}
                 </div>
@@ -329,14 +369,14 @@ function ProgramForm({ initial, draft, saved }: { initial: Program; draft?: Prog
                 ...days,
                 {
                   id: newId(),
-                  name: `Day ${days.length + 1}`,
+                  name: `${unit} ${days.length + 1}`,
                   ...(days[days.length - 1]?.disciplineId ? { disciplineId: days[days.length - 1]?.disciplineId } : {}),
                   blocks: [],
                 },
               ])
             }
           >
-            Add day
+            Add {unit.toLowerCase()}
           </Button>
         </section>
       )}

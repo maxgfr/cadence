@@ -9,7 +9,8 @@ async function accessible(page: Page, screen: string) {
       document
         .getAnimations()
         .filter((a) => a.effect?.getTiming().iterations !== Number.POSITIVE_INFINITY)
-        .map((a) => a.finished),
+        // A cancelled animation (a sheet closed mid-way) rejects: it is finished all the same.
+        .map((a) => a.finished.catch(() => undefined)),
     ),
   )
   const { violations } = await new AxeBuilder({ page }).analyze()
@@ -44,6 +45,10 @@ test('demo sport → logged session → record and chart → backup round trip',
     await page.getByLabel(`Back squat, set ${set}, kg`).fill(kg)
     await page.getByRole('button', { name: `Back squat, set ${set} done` }).click()
   }
+  // No clock runs and ticking a set starts nothing: the rest is started by hand.
+  await expect(page.getByRole('timer')).toHaveCount(0)
+  await expect(page.getByRole('region', { name: 'Rest timer' })).toHaveCount(0)
+  await page.getByRole('button', { name: /^Rest .* after Back squat$/ }).click()
   await expect(page.getByRole('region', { name: 'Rest timer' })).toBeVisible()
   await accessible(page, 'log')
   await page.getByRole('button', { name: 'Skip rest' }).click()
@@ -64,6 +69,15 @@ test('demo sport → logged session → record and chart → backup round trip',
   await expect(page.getByRole('button', { name: /Back squat.*99\.2\skg/ })).toBeVisible()
   await accessible(page, 'progress')
 
+  // A goal starts from the record, with a target suggested from it.
+  await page.getByRole('link', { name: 'Set a goal on Back squat' }).click()
+  await expect(page.getByText(/^Now 99\.2\skg, your best estimated 1RM$/)).toBeVisible()
+  await expect(page.getByLabel('Target (kg)')).not.toHaveValue('')
+  await accessible(page, 'new goal')
+  await page.getByRole('button', { name: 'Set goal' }).click()
+  await expect(page.getByText('Goal set')).toBeVisible()
+  await expect(page.getByRole('button', { name: /^Back squat: estimated 1RM/ })).toBeVisible()
+
   // Backup: export, erase, import, and the session is back.
   await page.goto('./#/settings')
   await accessible(page, 'settings')
@@ -73,12 +87,14 @@ test('demo sport → logged session → record and chart → backup round trip',
   await page.getByRole('button', { name: 'Erase all training data…' }).click()
   await page.getByRole('button', { name: 'Erase everything' }).click()
   await expect(page.getByText('All training data erased')).toBeVisible()
-  await page.goto('./#/history')
+  await page.goto('./#/progress?view=history')
   await expect(page.getByRole('heading', { name: 'No session logged yet' })).toBeVisible()
   await page.goto('./#/settings')
   await page.getByLabel('Backup file').setInputFiles(file)
   await expect(page.getByText('Backup imported: 1 sessions, 2 programs')).toBeVisible()
+  // History is a view of Progress; old links still lead there.
   await page.goto('./#/history')
+  await expect(page.getByRole('radio', { name: 'History' })).toBeChecked()
   await expect(page.getByRole('link', { name: /Full body A · Week 1/ })).toBeVisible()
 
   if (isMobile) {
@@ -131,6 +147,43 @@ test('advanced mode shows per-set effort; AI stays out of the way until set up',
   await expect(page.getByRole('link', { name: /Demo programs/ })).toHaveCount(0)
   await page.goto('./#/programs/generate')
   await expect(page.getByRole('heading', { name: 'No AI model set up' })).toBeVisible()
+})
+
+test('a set of sessions: written once, then Today runs the next one or any other', async ({ page }) => {
+  await page.goto('./')
+  await page.getByRole('checkbox', { name: /^Gym/ }).check()
+  await page.getByRole('button', { name: 'Start with the demo' }).click()
+  await expect(page.getByRole('heading', { name: 'Full body A' })).toBeVisible()
+  await page.goto('./#/programs')
+  await page.getByRole('button', { name: /A set of sessions/ }).click()
+  await page.getByLabel('Name', { exact: true }).fill('My split')
+  await page.getByRole('textbox', { name: 'Session 1', exact: true }).fill('Leg day')
+  await page.getByRole('button', { name: 'Add exercise' }).click()
+  await page.getByRole('searchbox', { name: 'Search exercises' }).fill('squat')
+  await page.getByRole('button', { name: 'Back squat' }).click()
+  await page.getByRole('button', { name: 'Done' }).click()
+  await page.getByRole('button', { name: 'Add session' }).click()
+  await page.getByRole('textbox', { name: 'Session 2', exact: true }).fill('Bodyweight')
+  await page.getByRole('button', { name: 'Add exercise' }).last().click()
+  await page.getByRole('searchbox', { name: 'Search exercises' }).fill('push')
+  await page.getByRole('button', { name: 'Push-up' }).click()
+  await page.getByRole('button', { name: 'Done' }).click()
+  await expect(page.getByRole('radio', { name: 'Week by week' })).not.toBeChecked()
+  await accessible(page, 'set of sessions')
+  await page.getByRole('button', { name: 'Save program' }).click()
+  await page.getByRole('button', { name: 'Make current' }).click()
+  await expect(page.getByText('2 sessions, in any order · current program')).toBeVisible()
+
+  await page.getByRole('link', { name: 'Today' }).click()
+  await expect(page.getByRole('heading', { name: 'Leg day' })).toBeVisible()
+  await expect(page.getByText('session 1 of 2, in any order')).toBeVisible()
+  await page.getByRole('button', { name: 'Choose another session' }).click()
+  await expect(page.getByRole('heading', { name: 'My split (current)' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Beginner full body' })).toBeVisible()
+  await accessible(page, 'choose a session')
+  await page.getByRole('button', { name: /^Bodyweight/ }).click()
+  await expect(page.getByRole('heading', { name: 'Bodyweight', level: 1 })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Push-up' })).toBeVisible()
 })
 
 test('AI proposes exercises, picked and edited before they reach the library', async ({ page }) => {

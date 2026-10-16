@@ -111,10 +111,19 @@ export type Week = z.infer<typeof Week>
 export const ProgramSource = z.enum(['manual', 'template', 'ai'])
 export type ProgramSource = z.infer<typeof ProgramSource>
 
+/**
+ * How a program is laid out: `weeks`, a plan followed week by week to its end, or `sessions`, a set of sessions
+ * (Leg day, Bodyweight…) done again and again in any order, kept as the days of its only week.
+ */
+export const ProgramLayout = z.enum(['weeks', 'sessions'])
+export type ProgramLayout = z.infer<typeof ProgramLayout>
+
 export const Program = z.object({
   id,
   name: z.string().trim().min(1).max(80),
   goal: z.string().max(300).default(''),
+  /** Absent means `weeks` (every program before version 3). */
+  layout: ProgramLayout.optional(),
   weeks: z.array(Week).min(1),
   source: ProgramSource,
   templateId: z.string().optional(),
@@ -206,7 +215,8 @@ export type Settings = z.infer<typeof Settings>
 
 export const DEFAULT_SETTINGS: Settings = Settings.parse({})
 
-export const BACKUP_VERSION = 2
+/** 3: programs can be a set of sessions (`layout`); version 2 backups read as they are. */
+export const BACKUP_VERSION = 3
 export const Backup = z.object({
   app: z.literal('cadence'),
   version: z.literal(BACKUP_VERSION),

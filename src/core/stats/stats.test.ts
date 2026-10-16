@@ -2,7 +2,15 @@ import { describe, expect, test } from 'bun:test'
 import { entry, IDX, must, SWIM, session, set, TRACK } from '../testkit.test.ts'
 import { currentE1rm, epley, exerciseSeries } from './metrics.ts'
 import { currentRecords, recordHistory, recordsOf } from './records.ts'
-import { consistency, goalProgress, linearFit, sessionAdherence, weeklyVolume, weekStreak } from './trends.ts'
+import {
+  consistency,
+  goalBaseline,
+  goalProgress,
+  linearFit,
+  sessionAdherence,
+  weeklyVolume,
+  weekStreak,
+} from './trends.ts'
 
 const squat = must(IDX.get('back-squat'))
 const sprint60 = must(IDX.get('sprint-60'))
@@ -203,5 +211,36 @@ describe('goals', () => {
     const p = goalProgress(goal, sessions, IDX, '2026-10-14', 1)
     expect(p.current).toBe(2)
     expect(p.achieved).toBe(false)
+  })
+
+  test('a new goal starts from what is logged, with a reachable target suggested', () => {
+    const lifts = [
+      session('2026-09-01', [entry('back-squat', [set({ weight: 100, reps: 1 })])]),
+      session('2026-09-29', [entry('back-squat', [set({ weight: 110, reps: 1 })])]),
+    ]
+    const squat = goalBaseline(
+      { kind: 'e1rm', exerciseId: 'back-squat', deadline: '2026-12-22' },
+      lifts,
+      IDX,
+      '2026-09-29',
+      1,
+    )
+    // Best 110 kg, 12 weeks away: +12%, up to the next 2.5 kg.
+    expect(squat).toEqual({ current: 110, basis: 'best', lowerIsBetter: false, suggested: 125 })
+    const sprint = goalBaseline(
+      { kind: 'best_time', exerciseId: 'sprint-100', deadline: '2027-09-29' },
+      [session('2026-09-20', [entry('sprint-100', [set({ time: 12.4 })])])],
+      IDX,
+      '2026-09-29',
+      1,
+    )
+    // A year away: capped at 6% faster.
+    expect(sprint?.suggested).toBeCloseTo(11.6, 5)
+    const weeks = [session('2026-09-29', []), session('2026-10-01', []), session('2026-10-07', [])]
+    const often = goalBaseline({ kind: 'frequency', deadline: '2026-12-01' }, weeks, IDX, '2026-10-14', 1)
+    expect(often).toMatchObject({ basis: 'recent_weeks', suggested: 2 })
+    expect(
+      goalBaseline({ kind: 'e1rm', exerciseId: 'deadlift', deadline: '2026-12-01' }, lifts, IDX, '2026-10-14', 1),
+    ).toBeUndefined()
   })
 })

@@ -1,6 +1,7 @@
 import { defineConfig, devices } from '@playwright/test'
 
-const port = 4173
+// E2E_PORT: another port when 4173 is taken by something else.
+const port = Number(process.env.E2E_PORT ?? 4173)
 const base = process.env.VITE_BASE ?? '/cadence/'
 
 export default defineConfig({

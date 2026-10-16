@@ -1,6 +1,6 @@
-import { TrendingUp } from 'lucide-react'
+import { Target, TrendingUp } from 'lucide-react'
 import { useMemo, useState } from 'react'
-import { Link, useSearch } from 'wouter'
+import { Link, useLocation, useSearch } from 'wouter'
 import { useData } from '../../app/data.tsx'
 import { addDays, formatDay, formatShortDay } from '../../core/model/dates.ts'
 import type { Muscle } from '../../core/model/schemas.ts'
@@ -18,6 +18,7 @@ import { Segmented } from '../../ui/components/Segmented.tsx'
 import { SelectField } from '../../ui/components/SelectField.tsx'
 import { Screen } from '../../ui/shell/Screen.tsx'
 import { formatMeasure, MEASURE_LABEL, useUnits } from '../../ui/units.ts'
+import { ExportCsvButton, HistoryList } from '../History/History.tsx'
 import { GoalsSection } from './Goals.tsx'
 import styles from './Progress.module.css'
 
@@ -35,7 +36,36 @@ const MUSCLE_LABEL: Record<Muscle, string> = {
   full_body: 'Full body',
 }
 
+type View = 'overview' | 'history'
+
+/** Progress: the charts, records and goals (Overview), and every session logged (History). */
 export function Progress() {
+  const data = useData()
+  const [, navigate] = useLocation()
+  const view: View = new URLSearchParams(useSearch()).get('view') === 'history' ? 'history' : 'overview'
+  const done = data.sessions.filter((s) => s.status === 'done').length
+  return (
+    <Screen
+      title="Progress"
+      subtitle={done > 0 ? `${done} ${done === 1 ? 'session' : 'sessions'} logged` : undefined}
+      trailing={view === 'history' && done > 0 ? <ExportCsvButton /> : undefined}
+    >
+      <Segmented
+        label="View"
+        hideLabel
+        options={[
+          { value: 'overview', label: 'Overview' },
+          { value: 'history', label: 'History' },
+        ]}
+        value={view}
+        onChange={(v) => navigate(v === 'history' ? '/progress?view=history' : '/progress', { replace: true })}
+      />
+      {view === 'history' ? <HistoryList /> : <Overview />}
+    </Screen>
+  )
+}
+
+function Overview() {
   const data = useData()
   const units = useUnits()
   const search = useSearch()
@@ -75,11 +105,10 @@ export function Progress() {
   }, [volume, data.disciplines])
   const [volumeKey, setVolumeKey] = useState('')
   const vs = volumeSeries.find((x) => x.key === volumeKey) ?? volumeSeries[0]
-  const startGoal = params.get('goal') === 'new'
 
   if (done.length === 0) {
     return (
-      <Screen title="Progress">
+      <>
         <EmptyState
           icon={TrendingUp}
           title="Nothing to chart yet"
@@ -90,8 +119,8 @@ export function Progress() {
             </Link>
           }
         />
-        <GoalsSection startOpen={startGoal} />
-      </Screen>
+        <GoalsSection />
+      </>
     )
   }
 
@@ -122,7 +151,7 @@ export function Progress() {
     .filter((r) => r.now > 0 || r.avg > 0)
 
   return (
-    <Screen title="Progress" subtitle={`${done.length} ${done.length === 1 ? 'session' : 'sessions'} logged`}>
+    <>
       <section className={styles.section} aria-labelledby="calendar-title">
         <div className={styles.sectionHead}>
           <h2 id="calendar-title" className={styles.sectionTitle}>
@@ -136,6 +165,8 @@ export function Progress() {
           <Heatmap days={heat} weekStart={data.settings.weekStart} />
         </div>
       </section>
+
+      <GoalsSection />
 
       {exercise && (
         <section className={styles.section} aria-labelledby="exercise-title">
@@ -179,6 +210,15 @@ export function Progress() {
                 record.
               </p>
             )}
+            {(exercise.metric === 'weight_reps' || exercise.metric === 'distance_time') && (
+              <Link
+                href={`/progress?goal=new&exercise=${exercise.id}`}
+                className={buttonClass({ variant: 'secondary' })}
+              >
+                <Target size={18} strokeWidth={1.75} aria-hidden="true" />
+                Set a goal on {exercise.name}
+              </Link>
+            )}
             <details className={styles.table}>
               <summary>Show values</summary>
               <table>
@@ -192,7 +232,9 @@ export function Progress() {
                   {[...series].reverse().map((p) => (
                     <tr key={p.sessionId}>
                       <td>
-                        <Link href={`/history/${p.sessionId}`}>{formatDay(p.date, new Date().getFullYear())}</Link>
+                        <Link href={`/progress/sessions/${p.sessionId}`}>
+                          {formatDay(p.date, new Date().getFullYear())}
+                        </Link>
                       </td>
                       <td>
                         {fmt(p.value)}
@@ -305,8 +347,6 @@ export function Progress() {
           )
         })}
       </ListGroup>
-
-      <GoalsSection startOpen={startGoal} />
-    </Screen>
+    </>
   )
 }
