@@ -1,16 +1,21 @@
-import { CheckCircle2, Pencil, Trash2, Trophy } from 'lucide-react'
+import { CheckCircle2, ListChecks, Pencil, Trash2, Trophy } from 'lucide-react'
+import { useState } from 'react'
 import { useLocation, useParams, useSearch } from 'wouter'
 import { useData } from '../../app/data.tsx'
 import { useToast } from '../../app/toast.tsx'
 import { formatDay } from '../../core/model/dates.ts'
 import { describeBlock } from '../../core/model/program.ts'
-import type { Exercise, SetLog } from '../../core/model/schemas.ts'
+import type { Exercise, Session, SetLog } from '../../core/model/schemas.ts'
 import { formatDistance, formatTime, formatWeight } from '../../core/model/units.ts'
 import { recordsOf } from '../../core/stats/records.ts'
 import { sessionAdherence } from '../../core/stats/trends.ts'
 import { Button } from '../../ui/components/Button.tsx'
 import { DisciplineTag } from '../../ui/components/Discipline.tsx'
+import { Field } from '../../ui/components/Field.tsx'
 import { ListGroup, ListRow } from '../../ui/components/List.tsx'
+import { SelectField } from '../../ui/components/SelectField.tsx'
+import { Sheet } from '../../ui/components/Sheet.tsx'
+import { TextArea } from '../../ui/components/TextArea.tsx'
 import { Screen } from '../../ui/shell/Screen.tsx'
 import { formatMeasure, MEASURE_LABEL, useUnits } from '../../ui/units.ts'
 import { NotFound } from '../NotFound.tsx'
@@ -24,6 +29,7 @@ export function SessionDetail() {
   const units = useUnits()
   const toast = useToast()
   const [, navigate] = useLocation()
+  const [editing, setEditing] = useState(false)
   const session = data.sessions.find((s) => s.id === id)
   if (!session) return <NotFound />
   const advanced = data.settings.mode === 'advanced'
@@ -121,6 +127,13 @@ export function SessionDetail() {
         <Button
           variant="secondary"
           icon={<Pencil size={18} strokeWidth={1.75} aria-hidden="true" />}
+          onClick={() => setEditing(true)}
+        >
+          Edit details
+        </Button>
+        <Button
+          variant="secondary"
+          icon={<ListChecks size={18} strokeWidth={1.75} aria-hidden="true" />}
           onClick={async () => {
             await data.put('sessions', { ...session, status: 'active' })
             navigate(`/log/${session.id}`)
@@ -141,7 +154,81 @@ export function SessionDetail() {
         </Button>
       </div>
       <p className={styles.plan}>{sessionSummary(session, data.index, units)}</p>
+      <Sheet open={editing} title="Edit session" onClose={() => setEditing(false)}>
+        {editing && <DetailsForm session={session} onDone={() => setEditing(false)} />}
+      </Sheet>
     </Screen>
+  )
+}
+
+function DetailsForm({ session, onDone }: { session: Session; onDone: () => void }) {
+  const data = useData()
+  const toast = useToast()
+  const [title, setTitle] = useState(session.title)
+  const [date, setDate] = useState(session.date)
+  const [discipline, setDiscipline] = useState(session.disciplineId ?? '')
+  const [duration, setDuration] = useState(session.duration !== undefined ? String(session.duration) : '')
+  const [rpe, setRpe] = useState(session.rpe !== undefined ? String(session.rpe) : '')
+  const [notes, setNotes] = useState(session.notes ?? '')
+  const [error, setError] = useState<string>()
+  return (
+    <form
+      className={styles.form}
+      onSubmit={async (e) => {
+        e.preventDefault()
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+          setError('Pick a date.')
+          return
+        }
+        const minutes = Number.parseInt(duration, 10)
+        const { disciplineId: _d, duration: _m, rpe: _r, notes: _n, ...rest } = session
+        await data.put('sessions', {
+          ...rest,
+          title: title.trim().slice(0, 80) || session.title,
+          date,
+          ...(discipline ? { disciplineId: discipline } : {}),
+          ...(Number.isFinite(minutes) && minutes > 0 ? { duration: minutes } : {}),
+          ...(rpe ? { rpe: Number(rpe) } : {}),
+          ...(notes.trim() ? { notes: notes.trim().slice(0, 1000) } : {}),
+        })
+        toast('Session updated')
+        onDone()
+      }}
+    >
+      <Field label="Name" value={title} maxLength={80} onChange={(e) => setTitle(e.target.value)} />
+      <Field
+        label="Date"
+        type="date"
+        value={date}
+        onChange={(e) => setDate(e.target.value)}
+        {...(error ? { error } : {})}
+      />
+      <SelectField
+        label="Discipline"
+        value={discipline}
+        options={[{ value: '', label: 'None' }, ...data.disciplines.map((d) => ({ value: d.id, label: d.name }))]}
+        onChange={(e) => setDiscipline(e.target.value)}
+      />
+      <Field
+        label="Duration (minutes)"
+        inputMode="numeric"
+        value={duration}
+        onChange={(e) => setDuration(e.target.value)}
+      />
+      <SelectField
+        label="Effort (RPE)"
+        value={rpe}
+        options={[
+          { value: '', label: 'Not rated' },
+          ...Array.from({ length: 10 }, (_, i) => ({ value: String(i + 1), label: String(i + 1) })),
+        ]}
+        onChange={(e) => setRpe(e.target.value)}
+      />
+      <TextArea label="Notes" rows={3} value={notes} maxLength={1000} onChange={(e) => setNotes(e.target.value)} />
+      <Button type="submit" variant="primary" size="large" full>
+        Save
+      </Button>
+    </form>
   )
 }
 

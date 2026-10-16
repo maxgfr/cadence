@@ -32,9 +32,9 @@ test('demo sport → logged session → record and chart → backup round trip',
   await page.getByRole('button', { name: 'Start with the demo' }).click()
 
   // The demo's first program is current: Today shows its next session, pre-filled.
-  await expect(page.getByRole('heading', { name: 'Full body A' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'New session' })).toBeVisible()
   await accessible(page, 'today')
-  await page.getByRole('button', { name: 'Start session' }).click()
+  await page.getByRole('button', { name: /^Full body A.*next up/ }).click()
 
   // Log two sets of squats.
   await expect(page.getByRole('heading', { name: 'Full body A · Week 1' })).toBeVisible()
@@ -106,6 +106,12 @@ test('demo sport → logged session → record and chart → backup round trip',
   await page.goto('./#/history')
   await expect(page.getByRole('radio', { name: 'History' })).toBeChecked()
   await expect(page.getByRole('link', { name: /Full body A · Week 1/ })).toBeVisible()
+  await page.getByRole('link', { name: /Full body A · Week 1/ }).click()
+  await page.getByRole('button', { name: 'Edit details' }).click()
+  await page.getByLabel('Name').fill('Heavy squat day')
+  await accessible(page, 'edit session')
+  await page.getByRole('button', { name: 'Save', exact: true }).click()
+  await expect(page.getByRole('heading', { name: 'Heavy squat day', level: 1 })).toBeVisible()
 
   if (isMobile) {
     // Phones: the tab bar, no horizontal scroll.
@@ -163,7 +169,7 @@ test('a set of sessions: written once, then Today runs the next one or any other
   await page.goto('./')
   await page.getByRole('checkbox', { name: /^Gym/ }).check()
   await page.getByRole('button', { name: 'Start with the demo' }).click()
-  await expect(page.getByRole('heading', { name: 'Full body A' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'New session' })).toBeVisible()
   await page.goto('./#/programs')
   await page.getByRole('button', { name: /A set of sessions/ }).click()
   await page.getByLabel('Name', { exact: true }).fill('My split')
@@ -185,15 +191,27 @@ test('a set of sessions: written once, then Today runs the next one or any other
   await expect(page.getByText('2 sessions, in any order · current program')).toBeVisible()
 
   await page.getByRole('link', { name: 'Today' }).click()
-  await expect(page.getByRole('heading', { name: 'Leg day' })).toBeVisible()
-  await expect(page.getByText('session 1 of 2, in any order')).toBeVisible()
-  await page.getByRole('button', { name: 'Choose another session' }).click()
+  // Every session of every program is on Today, ready to start.
+  await expect(page.getByRole('button', { name: /^Leg day.*next up/ })).toBeVisible()
   await expect(page.getByRole('heading', { name: 'My split (current)' })).toBeVisible()
   await expect(page.getByRole('heading', { name: 'Beginner full body' })).toBeVisible()
   await accessible(page, 'choose a session')
   await page.getByRole('button', { name: /^Bodyweight/ }).click()
   await expect(page.getByRole('heading', { name: 'Bodyweight', level: 1 })).toBeVisible()
   await expect(page.getByRole('heading', { name: 'Push-up' })).toBeVisible()
+
+  // Switching from a session with sets done asks what to keep.
+  await page.getByRole('button', { name: 'Push-up, set 1 done' }).click()
+  await page.getByRole('link', { name: 'Today' }).click()
+  await expect(page.getByRole('link', { name: 'Resume session' })).toBeVisible()
+  await page.getByRole('button', { name: /^Leg day/ }).click()
+  await expect(page.getByRole('dialog', { name: 'Switch session?' })).toBeVisible()
+  await accessible(page, 'switch session')
+  await page.getByRole('button', { name: 'Save it and switch' }).click()
+  await expect(page.getByRole('heading', { name: 'Leg day', level: 1 })).toBeVisible()
+  await page.goto('./#/progress?view=history')
+  await expect(page.getByRole('link', { name: /^Bodyweight/ })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'In progress' })).toHaveCount(0)
 })
 
 test('AI proposes exercises, picked and edited before they reach the library', async ({ page }) => {

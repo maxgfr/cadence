@@ -1,15 +1,18 @@
-import { Download, History as HistoryIcon, Trophy } from 'lucide-react'
-import { useMemo } from 'react'
-import { Link } from 'wouter'
+import { Download, History as HistoryIcon, Plus, Trophy } from 'lucide-react'
+import { useMemo, useState } from 'react'
+import { useStartSession } from '../../app/actions.ts'
 import { useData } from '../../app/data.tsx'
 import { formatDay, fromIsoDate } from '../../core/model/dates.ts'
 import { recordHistory } from '../../core/stats/records.ts'
 import { sessionsCsv } from '../../core/storage/backup.ts'
-import { buttonClass } from '../../ui/components/Button.tsx'
+import { Button } from '../../ui/components/Button.tsx'
 import { DisciplineDot } from '../../ui/components/Discipline.tsx'
 import { EmptyState } from '../../ui/components/EmptyState.tsx'
+import { Field } from '../../ui/components/Field.tsx'
 import { IconButton } from '../../ui/components/IconButton.tsx'
 import { ListGroup, ListRow } from '../../ui/components/List.tsx'
+import { SelectField } from '../../ui/components/SelectField.tsx'
+import { Sheet } from '../../ui/components/Sheet.tsx'
 import { download } from '../../ui/download.ts'
 import { useUnits } from '../../ui/units.ts'
 import styles from './History.module.css'
@@ -34,7 +37,7 @@ const MONTHS = [
 export function HistoryList() {
   const data = useData()
   const units = useUnits()
-  const active = data.sessions.filter((s) => s.status === 'active')
+  const [adding, setAdding] = useState(false)
   const done = useMemo(
     () =>
       data.sessions
@@ -66,28 +69,24 @@ export function HistoryList() {
 
   return (
     <>
-      {active.length > 0 && (
-        <ListGroup title="In progress">
-          {active.map((s) => (
-            <ListRow
-              key={s.id}
-              leading={<DisciplineDot disciplineId={s.disciplineId} />}
-              title={s.title}
-              subtitle={formatDay(s.date, year)}
-              href={`/log/${s.id}`}
-            />
-          ))}
-        </ListGroup>
+      {done.length > 0 && (
+        <Button
+          variant="secondary"
+          icon={<Plus size={18} strokeWidth={2} aria-hidden="true" />}
+          onClick={() => setAdding(true)}
+        >
+          Log a session
+        </Button>
       )}
-      {done.length === 0 && active.length === 0 ? (
+      {done.length === 0 ? (
         <EmptyState
           icon={HistoryIcon}
           title="No session logged yet"
-          body="Every session you finish lands here, with what was planned next to what you did."
+          body="Every session you finish lands here, with what was planned next to what you did. Log one done earlier, or start one from Today."
           action={
-            <Link href="/" className={buttonClass({ variant: 'primary' })}>
+            <Button variant="primary" onClick={() => setAdding(true)}>
               Log a session
-            </Link>
+            </Button>
           }
         />
       ) : (
@@ -116,7 +115,38 @@ export function HistoryList() {
           </ListGroup>
         ))
       )}
+      <Sheet open={adding} title="Log a session" onClose={() => setAdding(false)}>
+        {adding && <NewSessionForm />}
+      </Sheet>
     </>
+  )
+}
+
+/** A session on any day (one done earlier, or today): its sets are logged next, then it is finished as usual. */
+function NewSessionForm() {
+  const data = useData()
+  const start = useStartSession()
+  const [date, setDate] = useState(data.today)
+  const [sport, setSport] = useState('')
+  return (
+    <form
+      className={styles.form}
+      onSubmit={(e) => {
+        e.preventDefault()
+        start.free(sport || undefined, /^\d{4}-\d{2}-\d{2}$/.test(date) ? date : data.today)
+      }}
+    >
+      <Field label="Date" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+      <SelectField
+        label="Discipline"
+        value={sport}
+        options={[{ value: '', label: 'None' }, ...data.disciplines.map((d) => ({ value: d.id, label: d.name }))]}
+        onChange={(e) => setSport(e.target.value)}
+      />
+      <Button type="submit" variant="primary" size="large" full>
+        Log its sets
+      </Button>
+    </form>
   )
 }
 

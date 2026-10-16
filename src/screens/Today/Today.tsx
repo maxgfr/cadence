@@ -1,114 +1,61 @@
-import { ClipboardList, ListChecks, Play, Plus, Sparkles, Target } from 'lucide-react'
+import { ClipboardList, Play, Plus, Target } from 'lucide-react'
 import { useState } from 'react'
-import { Link } from 'wouter'
+import { Link, useLocation } from 'wouter'
 import { useStartSession } from '../../app/actions.ts'
 import { useAi } from '../../app/ai.tsx'
 import { useData } from '../../app/data.tsx'
 import { formatDay } from '../../core/model/dates.ts'
-import { completedDays, describeBlock, isSessionSet, nextDay, totalDays } from '../../core/model/program.ts'
 import { goalProgress } from '../../core/stats/trends.ts'
 import { Button, buttonClass } from '../../ui/components/Button.tsx'
-import { DisciplineDot, DisciplineTag } from '../../ui/components/Discipline.tsx'
+import { DisciplineDot } from '../../ui/components/Discipline.tsx'
 import { EmptyState } from '../../ui/components/EmptyState.tsx'
+import { Sheet } from '../../ui/components/Sheet.tsx'
 import { Screen } from '../../ui/shell/Screen.tsx'
-import { useUnits } from '../../ui/units.ts'
 import { GoalLine } from '../Progress/Goals.tsx'
-import { SessionChooser, useChoosableSessions } from './SessionChooser.tsx'
+import { SessionList, useChoosableSessions } from './SessionChooser.tsx'
 import styles from './Today.module.css'
 import { WeekStrip } from './WeekStrip.tsx'
 
 export function Today() {
   const data = useData()
   const ai = useAi()
-  const units = useUnits()
   const start = useStartSession()
-  const detail = data.settings.mode === 'advanced'
   const active = data.sessions.find((s) => s.status === 'active')
-  const program = data.programs.find((p) => p.id === data.settings.activeProgramId)
-  const next = program ? nextDay(program, data.sessions) : undefined
-  const day = program && next ? program.weeks[next.week]?.days[next.day] : undefined
-  const set = program ? isSessionSet(program) : false
   const choices = useChoosableSessions()
-  const [choosing, setChoosing] = useState(false)
+  const [, navigate] = useLocation()
+  // A session to start while another is in progress, waiting for what to do with that one.
+  const [pending, setPending] = useState<{ title: string; go: () => Promise<void> } | null>(null)
+  const doneSets = active ? active.entries.reduce((n, e) => n + e.sets.filter((s) => s.done).length, 0) : 0
+  /** Starts a session; one in progress with nothing ticked gives way, otherwise the athlete decides. */
+  const switchTo = (title: string, go: () => Promise<void>) => {
+    if (!active) return go()
+    if (doneSets === 0) return data.remove('sessions', active.id).then(go)
+    setPending({ title, go })
+    return Promise.resolve()
+  }
   const goal = data.goals
     .filter((g) => !g.achievedAt && g.deadline >= data.today)
     .sort((a, b) => a.deadline.localeCompare(b.deadline))[0]
 
   return (
     <Screen title="Today" subtitle={formatDay(data.today)}>
-      {active ? (
+      {active && (
         <section className={styles.hero} aria-labelledby="active-title">
           <h2 id="active-title" className={styles.heroTitle}>
             {active.title}
           </h2>
           <p className={styles.meta}>
             <span className={styles.live} aria-hidden="true" />
-            In progress · {active.entries.reduce((n, e) => n + e.sets.filter((s) => s.done).length, 0)} of{' '}
-            {active.entries.reduce((n, e) => n + e.sets.length, 0)} sets done
+            In progress · {doneSets} of {active.entries.reduce((n, e) => n + e.sets.length, 0)} sets done
           </p>
           <Link href={`/log/${active.id}`} className={buttonClass({ variant: 'primary', size: 'large', full: true })}>
             <Play size={20} strokeWidth={2} aria-hidden="true" />
             Resume session
           </Link>
         </section>
-      ) : program && next && day ? (
-        <section className={styles.hero} aria-labelledby="next-title">
-          <p className={styles.meta}>
-            <span>{program.name}</span>
-            <span aria-hidden="true">·</span>
-            <span>
-              {set
-                ? `session ${next.day + 1} of ${program.weeks[0]?.days.length ?? 0}, in any order`
-                : `${program.weeks[next.week]?.name ?? `Week ${next.week + 1}`} · day ${next.day + 1} of ${program.weeks[next.week]?.days.length ?? 0}`}
-            </span>
-          </p>
-          <h2 id="next-title" className={styles.heroTitle}>
-            {day.name}
-          </h2>
-          {day.disciplineId && <DisciplineTag disciplineId={day.disciplineId} />}
-          <ol className={styles.blocks}>
-            {day.blocks.map((b) => {
-              const ex = data.index.get(b.exerciseId)
-              return (
-                <li key={b.id} className={styles.block}>
-                  <span className={styles.blockName}>{ex?.name ?? 'Unknown exercise'}</span>
-                  <span className={styles.blockPlan}>{describeBlock(b, ex, units, detail)}</span>
-                </li>
-              )
-            })}
-          </ol>
-          {day.notes && <p className={styles.notes}>{day.notes}</p>}
-          <Button
-            variant="primary"
-            size="large"
-            full
-            icon={<Play size={20} strokeWidth={2} aria-hidden="true" />}
-            onClick={() => start.fromDay(program, next)}
-          >
-            Start session
-          </Button>
-          <Button variant="plain" full onClick={() => setChoosing(true)}>
-            Choose another session
-          </Button>
-          <p className={styles.progressLine}>
-            {set
-              ? `${completedDays(program, data.sessions)} ${completedDays(program, data.sessions) === 1 ? 'session' : 'sessions'} done`
-              : `${completedDays(program, data.sessions)} of ${totalDays(program)} sessions done`}{' '}
-            · <Link href={`/programs/${program.id}`}>See program</Link>
-          </p>
-        </section>
-      ) : program ? (
-        <EmptyState
-          icon={ClipboardList}
-          title={`${program.name} is complete`}
-          body="Every session of the program is logged. Pick the next one, or log sessions freely for a while."
-          action={
-            <Link href="/programs" className={buttonClass({ variant: 'primary' })}>
-              Choose a program
-            </Link>
-          }
-        />
-      ) : data.exercises.length === 0 ? (
+      )}
+
+      {data.exercises.length === 0 && !active && (
         <EmptyState
           icon={ClipboardList}
           title="Start your training log"
@@ -124,56 +71,102 @@ export function Today() {
             </div>
           }
         />
-      ) : (
-        <EmptyState
-          icon={ClipboardList}
-          title="No program yet"
-          body="Write a program and Today will show your next session, pre-filled. Or just log a session as you go."
-          action={
-            <div className={styles.actions}>
-              <Link href="/programs" className={buttonClass({ variant: 'primary' })}>
-                {data.programs.length > 0 ? 'Choose a program' : 'Write a program'}
-              </Link>
-              {ai.ready && (
-                <Link href="/programs/generate" className={buttonClass({ variant: 'secondary' })}>
-                  <Sparkles size={18} strokeWidth={1.75} aria-hidden="true" />
-                  Design one with AI
-                </Link>
-              )}
-            </div>
-          }
-        />
       )}
 
-      {!active && (
-        <section className={styles.free} aria-labelledby="free-title">
-          <h2 id="free-title" className={styles.sectionTitle}>
-            {program && next ? 'Or log something else' : 'Log a session'}
-          </h2>
-          <div className={styles.freeButtons}>
-            {!(program && next) && choices.length > 0 && (
-              <button type="button" className={styles.freeButton} onClick={() => setChoosing(true)}>
-                <ListChecks size={18} strokeWidth={1.75} aria-hidden="true" />
-                <span className={styles.freeName}>From a program</span>
-                <Plus className={styles.freePlus} size={18} strokeWidth={2} aria-hidden="true" />
-              </button>
-            )}
-            {data.disciplines.map((d) => (
-              <button key={d.id} type="button" className={styles.freeButton} onClick={() => start.free(d.id)}>
-                <DisciplineDot disciplineId={d.id} />
-                <span className={styles.freeName}>{d.name}</span>
-                <Plus className={styles.freePlus} size={18} strokeWidth={2} aria-hidden="true" />
-              </button>
-            ))}
-            <button type="button" className={styles.freeButton} onClick={() => start.free(undefined)}>
-              <span className={styles.freeName}>{data.disciplines.length > 0 ? 'Other' : 'Start a session'}</span>
+      <section className={styles.sessions} aria-labelledby="new-title">
+        <h2 id="new-title" className={styles.sectionTitle}>
+          New session
+        </h2>
+        {choices.length > 0 ? (
+          <SessionList
+            activeRef={active?.programRef}
+            onPick={(p, ref) => {
+              const r = active?.programRef
+              if (active && r && r.programId === ref.programId && r.week === ref.week && r.day === ref.day)
+                navigate(`/log/${active.id}`)
+              else switchTo(p.weeks[ref.week]?.days[ref.day]?.name ?? p.name, () => start.fromDay(p, ref))
+            }}
+          />
+        ) : (
+          data.exercises.length > 0 && (
+            <p className={styles.nudge}>
+              <ClipboardList size={16} strokeWidth={1.75} aria-hidden="true" />
+              <span>
+                The sessions of your programs appear here, ready to start. <Link href="/programs">Write one</Link>
+                {ai.ready && (
+                  <>
+                    {' '}
+                    or <Link href="/programs/generate">design one with AI</Link>
+                  </>
+                )}
+                .
+              </span>
+            </p>
+          )
+        )}
+        <h3 className={styles.subTitle}>Free session</h3>
+        <div className={styles.freeButtons}>
+          {data.disciplines.map((d) => (
+            <button
+              key={d.id}
+              type="button"
+              className={styles.freeButton}
+              onClick={() => switchTo(`${d.name} session`, () => start.free(d.id))}
+            >
+              <DisciplineDot disciplineId={d.id} />
+              <span className={styles.freeName}>{d.name}</span>
               <Plus className={styles.freePlus} size={18} strokeWidth={2} aria-hidden="true" />
             </button>
-          </div>
-        </section>
-      )}
+          ))}
+          <button
+            type="button"
+            className={styles.freeButton}
+            onClick={() => switchTo('a free session', () => start.free(undefined))}
+          >
+            <span className={styles.freeName}>{data.disciplines.length > 0 ? 'Other' : 'Start a session'}</span>
+            <Plus className={styles.freePlus} size={18} strokeWidth={2} aria-hidden="true" />
+          </button>
+        </div>
+      </section>
 
-      <SessionChooser open={choosing} onClose={() => setChoosing(false)} />
+      <Sheet open={pending !== null} title="Switch session?" onClose={() => setPending(null)}>
+        {active && pending && (
+          <div className={styles.switch}>
+            <p>
+              {active.title} is in progress with {doneSets} {doneSets === 1 ? 'set' : 'sets'} done. Keep what you did
+              before starting {pending.title}?
+            </p>
+            <Button
+              variant="primary"
+              size="large"
+              full
+              onClick={async () => {
+                const go = pending.go
+                setPending(null)
+                await data.put('sessions', { ...active, status: 'done' })
+                await go()
+              }}
+            >
+              Save it and switch
+            </Button>
+            <Button
+              variant="danger"
+              full
+              onClick={async () => {
+                const go = pending.go
+                setPending(null)
+                await data.remove('sessions', active.id)
+                await go()
+              }}
+            >
+              Discard it and switch
+            </Button>
+            <Button variant="plain" full onClick={() => setPending(null)}>
+              Keep going with {active.title}
+            </Button>
+          </div>
+        )}
+      </Sheet>
 
       <WeekStrip />
 

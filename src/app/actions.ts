@@ -18,8 +18,8 @@ export function useStartSession() {
       await data.put('sessions', s)
       navigate(`/log/${s.id}`)
     },
-    async free(disciplineId: string | undefined) {
-      const s = freeSession(disciplineId ? data.disciplineIndex.get(disciplineId) : undefined, data.today)
+    async free(disciplineId: string | undefined, date: string = data.today) {
+      const s = freeSession(disciplineId ? data.disciplineIndex.get(disciplineId) : undefined, date)
       await data.put('sessions', s)
       navigate(`/log/${s.id}`)
     },

@@ -20,9 +20,10 @@ starting point. AI, to design programs and propose exercises, is optional and us
   programs (beginner full body, 5/3/1-style strength, 1500 m swim build, 100 m sprinter block). Ten weeks of example
   sessions and a goal per sport can be added to see the charts. Everything stays editable, and *Remove the demo* takes
   it away again, keeping what your own records use.
-- **Today**: the next session of the current program, written as a coach would ("5×5 @80%", "8×50 m @1:50",
-  "6×60 m @95% max · rest 3:00"), with one button to start it, *Choose another session* to run any session of your
-  programs instead (Leg day, Bodyweight…), a free session per discipline, and this week at a glance.
+- **Today**: *Resume session* when one is in progress, and *New session*: every session of your programs (the
+  current one first, the next one marked), each pre-filled from its plan ("5×5 @80%", "8×50 m @1:50", "6×60 m @95%
+  max · rest 3:00"), and a free session per discipline. Starting another while one is in progress asks whether to
+  save or discard what was done. Then this week at a glance and the next goal.
 - **Logging**: one card per exercise, one row per set with large touch targets, values pre-filled from the plan, a
   tick per set. No clock runs: a rest timer starts only when you tap *Rest* on an exercise (its planned rest, or the
   length set in Settings; −15 s, +15 s, skip, vibration at the end). Finish with the duration, an effort rating
@@ -33,8 +34,9 @@ starting point. AI, to design programs and propose exercises, is optional and us
   tempo), and optional AI design. The demo's programs are loaded from *Settings › Demo*.
 - **Progress**: two views. *Overview*: goals, a training calendar, the best value per session of any exercise
   (estimated 1RM, best time, best pace, most reps, longest hold) with its records, and weekly volume per discipline
-  (kilograms lifted, distance covered). *History*: every session by month, with what was planned next to what was
-  done, the records it set, editing and deletion with undo, and CSV export.
+  (kilograms lifted, distance covered). *History*: every finished session by month, with what was planned next to
+  what was done and the records it set; log a session on any date, edit its details (name, date, discipline,
+  duration, effort, notes) or its sets, delete it with undo, and export all as CSV.
 - **Goals**: a target and a deadline. Pick a sport, then any of its exercises: the goal is on what that exercise is
   measured by (estimated 1RM, most reps in a set, longest set, best time or pace). Or a goal on a sport (or all
   training): sessions a week, or weekly volume in Advanced. The form shows where you are (your best, or your average

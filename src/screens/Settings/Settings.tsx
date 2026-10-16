@@ -1,14 +1,4 @@
-import {
-  Database,
-  Download,
-  Dumbbell,
-  ExternalLink,
-  Info,
-  LayoutTemplate,
-  ShieldCheck,
-  Sparkles,
-  Upload,
-} from 'lucide-react'
+import { Database, Download, ExternalLink, Info, LayoutTemplate, ShieldCheck, Sparkles, Upload } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { useAi } from '../../app/ai.tsx'
 import { BUILD } from '../../app/buildInfo.ts'
@@ -135,12 +125,6 @@ export function Settings() {
           title="AI program design"
           subtitle={ai.ready ? (ai.config.modelId ?? 'On') : 'Off · optional, uses your own key'}
           href="/settings/ai"
-        />
-        <ListRow
-          leading={<Dumbbell size={20} strokeWidth={1.75} />}
-          title="Exercises and disciplines"
-          subtitle={`${data.exercises.length} exercises · ${data.disciplines.length} disciplines`}
-          href="/exercises"
         />
         <ListRow
           leading={<LayoutTemplate size={20} strokeWidth={1.75} />}
