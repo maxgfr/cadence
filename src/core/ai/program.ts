@@ -81,6 +81,7 @@ const text = (v: string | null | undefined, max: number) => {
 
 interface Resolver {
   resolve(name: string, hint: { discipline: Discipline; metric: z.infer<typeof Metric> } | null): string
+  get(id: string): Exercise | undefined
   added: Exercise[]
 }
 
@@ -88,12 +89,16 @@ function resolver(library: readonly Exercise[]): Resolver {
   const added: Exercise[] = []
   return {
     added,
+    get: (id) => library.find((e) => e.id === id) ?? added.find((e) => e.id === id),
     resolve(name, hint) {
-      const known = findExercise([...library, ...added], name)
+      const all = [...library, ...added]
+      // Models sometimes copy a whole library line ("deadlift | Deadlift | strength" or "deadlift: Deadlift (…)").
+      const parts = name.split(/[:|]/).map((t) => t.replace(/\(.*\)/g, '').trim())
+      const known = findExercise(all, name) ?? parts.map((t) => (t ? findExercise(all, t) : undefined)).find(Boolean)
       if (known) return known.id
       const ex: Exercise = {
         id: newId(),
-        name: name.trim().slice(0, 80) || 'Exercise',
+        name: (parts.find(Boolean) ?? name).trim().slice(0, 80) || 'Exercise',
         discipline: hint?.discipline ?? 'other',
         metric: hint?.metric ?? 'reps',
       }
@@ -112,7 +117,7 @@ function toWeek(w: AiWeek, r: Resolver, notes: string[], index: number): Week | 
           exerciseId: r.resolve(blk.exercise, blk.newExercise),
           sets: clampInt(blk.sets, 1, 50),
         }
-        if (blk.sets !== out.sets) notes.push(`Sets of ${blk.exercise} brought to ${out.sets}.`)
+        if (blk.sets !== out.sets) notes.push('Sets outside 1 to 50 were brought within it.')
         const reps = pos(blk.reps)
         if (reps !== undefined) out.reps = clampInt(reps, 1, 500)
         const distance = pos(blk.distanceMeters)
@@ -121,13 +126,34 @@ function toWeek(w: AiWeek, r: Resolver, notes: string[], index: number): Week | 
         if (duration !== undefined) out.duration = duration
         const iv = pos(blk.intensity?.value)
         if (blk.intensity && iv !== undefined) {
-          const max = { kg: 1000, pct1rm: 110, rpe: 10, pace: 3600, pctmax: 100 }[blk.intensity.kind]
-          out.intensity = { kind: blk.intensity.kind, value: Math.min(iv, max) }
+          // Small models write percentages as fractions (0.8) or put an effort rating (8) under a percentage.
+          let kind = blk.intensity.kind
+          let value = iv
+          if (kind === 'pct1rm' || kind === 'pctmax') {
+            if (iv <= 1.5) {
+              value = Math.round(iv * 100)
+              notes.push('Percentages given as fractions (0.8) were read as 80%.')
+            } else if (iv <= 10) {
+              kind = 'rpe'
+              notes.push('Percentages of 10 or less were read as RPE.')
+            }
+          }
+          const max = { kg: 1000, pct1rm: 110, rpe: 10, pace: 3600, pctmax: 100 }[kind]
+          out.intensity = { kind, value: Math.min(value, max) }
         }
         const rest = pos(blk.restSeconds)
         if (rest !== undefined) out.rest = Math.round(rest)
         const interval = pos(blk.intervalSeconds)
         if (interval !== undefined) out.interval = Math.round(interval)
+        // Fit the prescription to how the exercise is measured: a hold given in "reps" is seconds, a distance event
+        // has no reps.
+        const metric = r.get(out.exerciseId)?.metric
+        if (metric === 'time' && out.duration === undefined && out.reps !== undefined) {
+          out.duration = out.reps
+          delete out.reps
+          notes.push('Timed exercises given in reps were read as seconds.')
+        }
+        if (metric === 'distance_time') delete out.reps
         const tempo = text(blk.tempo, 20)
         if (tempo) out.tempo = tempo
         const n = text(blk.notes, 300)
@@ -139,7 +165,7 @@ function toWeek(w: AiWeek, r: Resolver, notes: string[], index: number): Week | 
       return dn ? { ...day, notes: dn } : day
     })
     .filter((d) => {
-      if (d.blocks.length === 0) notes.push(`An empty day (${d.name}) was left out.`)
+      if (d.blocks.length === 0) notes.push('Days with no exercise were left out.')
       return d.blocks.length > 0
     })
   if (days.length === 0) return undefined
@@ -151,6 +177,7 @@ export function draftFromAi(ai: AiProgram, library: readonly Exercise[], now: Da
   const notes: string[] = []
   const r = resolver(library)
   const weeks = ai.weeks.map((w, i) => toWeek(w, r, notes, i)).filter((w): w is Week => w !== undefined)
+  const unique = [...new Set(notes)]
   if (weeks.length === 0) throw new Error('The model returned a program with no training days.')
   const disciplines = [
     ...new Set(
@@ -170,7 +197,7 @@ export function draftFromAi(ai: AiProgram, library: readonly Exercise[], now: Da
       updatedAt: at,
     },
     newExercises: r.added,
-    notes,
+    notes: unique,
   }
 }
 
@@ -187,7 +214,11 @@ export function draftWeekFromAi(
   const week = toWeek(ai, r, notes, index)
   if (!week) throw new Error('The model returned a week with no training days.')
   const weeks = program.weeks.map((w, i) => (i === index ? week : w))
-  return { program: { ...program, weeks, updatedAt: now.toISOString() }, newExercises: r.added, notes }
+  return {
+    program: { ...program, weeks, updatedAt: now.toISOString() },
+    newExercises: r.added,
+    notes: [...new Set(notes)],
+  }
 }
 
 // ——— Prompts ———
@@ -196,8 +227,10 @@ const SYSTEM = `You are an experienced coach for strength training, sprinting an
 realistic programs that a self-coached athlete can follow without supervision.
 
 Rules:
-- Use exercises from the library below by their id whenever one fits. Only invent an exercise when nothing in \
-the library fits; then give its name and fill newExercise.
+- Use exercises from the library below by their id whenever one fits: the exercise field is the id alone, such as \
+back-squat. Only invent an exercise when nothing in the library fits; then give its name and fill newExercise.
+- Percentages are whole numbers: 80 means 80%. RPE is from 1 to 10.
+- Leave rest days out: list training days only.
 - Units are metric: kilograms, metres, seconds.
 - Strength: give sets and reps; give intensity as pct1rm or rpe (or kg only when a load is known).
 - Sprint: give the distance per repetition (or use a fixed-distance sprint exercise), intensity as pctmax, and full \
@@ -208,10 +241,14 @@ recovery rest (2 to 8 minutes).
 - Keep each session within the time the athlete has.
 - Every week has the same number of training days, one per session the athlete can do.`
 
+/** One exercise per line: `id | name | discipline | measured by | fixed distance`. The model answers with the id. */
 function libraryText(library: readonly Exercise[]): string {
-  return library
-    .map((e) => `${e.id}: ${e.name} (${e.discipline}, ${e.metric}${e.distance ? `, ${e.distance} m` : ''})`)
-    .join('\n')
+  return [
+    'id | name | discipline | measured by | fixed distance',
+    ...library.map(
+      (e) => `${e.id} | ${e.name} | ${e.discipline} | ${e.metric} | ${e.distance ? `${e.distance} m` : '-'}`,
+    ),
+  ].join('\n')
 }
 
 export interface ScratchAnswers {

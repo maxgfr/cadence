@@ -111,7 +111,7 @@ export async function refreshCatalog(previous: Catalog, now: Date = new Date()):
   const providers = previous.providers.map((old) => {
     const p = byId.get(old.id)
     if (!p) return old
-    const models = p.models.map(toCatalogModel)
+    const models = toCatalogModels(p.id, p.models)
     return { ...old, models: models.length > 0 ? models : old.models }
   })
   return { version: CATALOG_VERSION, builtAt: now.toISOString(), providers }
@@ -120,10 +120,40 @@ export async function refreshCatalog(previous: Catalog, now: Date = new Date()):
 export interface ModelInfoLike {
   id: string
   name: string
+  sources?: { openrouter?: boolean; models_dev?: boolean }
+  /** The provider's own id, from llm-models once it publishes it (maxgfr/llm-models#3); null-ish when not served. */
+  api_id?: string
   context_length?: number
   cost?: { input: number; output: number }
   capabilities?: { structured_output?: boolean; tool_call?: boolean }
   release_date?: string
+}
+
+/**
+ * The id the provider's own API expects. `llm-models` lists models as `<provider>/<model>` and folds OpenRouter's
+ * variants (`:batch`, dotted names) into the vendor's list; only models.dev entries are the provider's own, and their
+ * native id is the part after the prefix. OpenRouter's list is its own API's ids either way.
+ */
+export function nativeModelId(providerId: string, m: ModelInfoLike): string | undefined {
+  if ('api_id' in m) return m.api_id
+  const prefix = `${providerId}/`
+  if (providerId === 'openrouter')
+    return m.sources?.models_dev && m.id.startsWith(prefix) ? m.id.slice(prefix.length) : m.id
+  if (m.sources && !m.sources.models_dev) return undefined
+  return m.id.startsWith(prefix) ? m.id.slice(prefix.length) : m.id
+}
+
+/** The provider's models as the catalog keeps them: native ids only. */
+export function toCatalogModels(providerId: string, models: readonly ModelInfoLike[]): CatalogModel[] {
+  const out: CatalogModel[] = []
+  const seen = new Set<string>()
+  for (const m of models) {
+    const id = nativeModelId(providerId, m)
+    if (id === undefined || seen.has(id)) continue
+    seen.add(id)
+    out.push(toCatalogModel({ ...m, id }))
+  }
+  return out
 }
 
 export function toCatalogModel(m: ModelInfoLike): CatalogModel {

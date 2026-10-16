@@ -4,7 +4,7 @@ import { instantiate, TEMPLATES } from '../library/templates.ts'
 import { Program } from '../model/schemas.ts'
 import { entry, IDX, LIB, must, session, set } from '../testkit.test.ts'
 import catalogJson from './catalog.json'
-import { Catalog, findProvider, sortedModels, sortedProviders } from './catalog.ts'
+import { Catalog, findProvider, nativeModelId, sortedModels, sortedProviders, toCatalogModels } from './catalog.ts'
 import { createModel, describeAiError, generateStructured } from './client.ts'
 import { adjustWeekDraft, generateProgramDraft } from './features.ts'
 import { type AiProgram, contextPrompt, draftFromAi, scratchPrompt, summarizeContext } from './program.ts'
@@ -61,7 +61,16 @@ const answer: AiProgram = {
           name: 'Gym',
           discipline: 'strength',
           notes: 'Heavy',
-          blocks: [block('Back Squat', { sets: 120, reps: 4, intensity: { kind: 'pct1rm', value: 180 } })],
+          blocks: [
+            block('Back Squat', { sets: 120, reps: 4, intensity: { kind: 'pct1rm', value: 180 } }),
+            block('bench-press', { sets: 3, reps: 5, intensity: { kind: 'pct1rm', value: 8 } }),
+            block('deadlift: Deadlift (strength, weight_reps)', {
+              sets: 3,
+              reps: 3,
+              intensity: { kind: 'pct1rm', value: 0.85 },
+            }),
+            block('plank', { sets: 3, reps: 45 }),
+          ],
         },
         { name: 'Empty', discipline: 'other', notes: null, blocks: [] },
       ],
@@ -90,7 +99,12 @@ describe('program drafts', () => {
       sets: 50,
       intensity: { kind: 'pct1rm', value: 110 },
     })
-    expect(d.notes.some((n) => n.includes('Empty'))).toBe(true)
+    expect(gym?.blocks[1]?.intensity).toEqual({ kind: 'rpe', value: 8 })
+    expect(gym?.blocks[2]).toMatchObject({ exerciseId: 'deadlift', intensity: { kind: 'pct1rm', value: 85 } })
+    expect(gym?.blocks[3]).toMatchObject({ exerciseId: 'plank', duration: 45 })
+    expect(gym?.blocks[3]?.reps).toBeUndefined()
+    expect(new Set(d.notes).size).toBe(d.notes.length)
+    expect(d.notes).toContain('Days with no exercise were left out.')
   })
 
   test('a program with no days is refused', () => {
@@ -114,7 +128,7 @@ describe('program drafts', () => {
     const d = await generateProgramDraft(model, pair, LIB)
     expect(d.program.name).toBe('Speed and strength')
     const sent = JSON.stringify(model.doGenerateCalls[0]?.prompt)
-    expect(sent).toContain('back-squat: Back squat')
+    expect(sent).toContain('back-squat | Back squat | strength')
     expect(sent).toContain('Run 11.9')
     expect(sent).toContain('left knee')
   })
@@ -183,6 +197,43 @@ describe('catalog', () => {
     const anthropic = must(findProvider(catalog, 'anthropic'))
     expect(sortedModels(anthropic)[0]?.structured).toBe(true)
     expect(findProvider(catalog, 'custom')?.client).toBe('openai-compatible')
+  })
+})
+
+describe('native model ids', () => {
+  const both = { openrouter: true, models_dev: true }
+  test('the provider prefix is removed and OpenRouter-only variants leave vendor lists', () => {
+    expect(nativeModelId('anthropic', { id: 'anthropic/claude-sonnet-5-5', name: 'S', sources: both })).toBe(
+      'claude-sonnet-5-5',
+    )
+    expect(
+      nativeModelId('anthropic', { id: 'anthropic/claude-sonnet-5.5:batch', name: 'S', sources: { openrouter: true } }),
+    ).toBeUndefined()
+    expect(
+      nativeModelId('openrouter', { id: 'openrouter/anthropic/claude-sonnet-5.5', name: 'S', sources: both }),
+    ).toBe('anthropic/claude-sonnet-5.5')
+    expect(nativeModelId('openrouter', { id: 'openrouter/auto', name: 'Auto', sources: { openrouter: true } })).toBe(
+      'openrouter/auto',
+    )
+    const models = toCatalogModels('anthropic', [
+      { id: 'anthropic/claude-haiku-5-5', name: 'H', sources: both },
+      { id: 'anthropic/claude-haiku-5.5:batch', name: 'H', sources: { openrouter: true } },
+    ])
+    expect(models.map((m) => m.id)).toEqual(['claude-haiku-5-5'])
+  })
+
+  test("llm-models' own api_id wins when it is there, absent meaning not served", () => {
+    expect(nativeModelId('anthropic', { id: 'anthropic/x', name: 'X', api_id: 'x-native' })).toBe('x-native')
+    expect(
+      nativeModelId('anthropic', { id: 'anthropic/x', name: 'X', sources: both, api_id: undefined }),
+    ).toBeUndefined()
+  })
+
+  test('the bundled catalog only lists native ids for the vendors', () => {
+    const catalog = Catalog.parse(catalogJson)
+    for (const id of ['anthropic', 'openai', 'google'])
+      for (const m of must(findProvider(catalog, id)).models)
+        expect(m.id.startsWith(`${id}/`) || m.id.includes(':')).toBe(false)
   })
 })
 

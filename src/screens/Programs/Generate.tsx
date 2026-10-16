@@ -309,9 +309,15 @@ export function Generate() {
           {busy ? 'Writing the program…' : adjusting ? 'Rewrite the week' : 'Design my program'}
         </Button>
         {busy && (
-          <Button variant="plain" full onClick={() => abort.current?.abort()}>
-            Stop
-          </Button>
+          <>
+            <p className={styles.lead} role="status">
+              A whole program takes a while to write: often under a minute, several minutes with a model running on this
+              computer.
+            </p>
+            <Button variant="plain" full onClick={() => abort.current?.abort()}>
+              Stop
+            </Button>
+          </>
         )}
       </form>
     </Screen>

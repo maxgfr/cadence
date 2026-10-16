@@ -7,7 +7,7 @@ import {
   type Catalog,
   type CatalogProvider,
   clientFor,
-  toCatalogModel,
+  toCatalogModels,
 } from '../src/core/ai/catalog.ts'
 
 const ORIGIN = 'https://maxgfr.github.io'
@@ -31,7 +31,7 @@ const kept: CatalogProvider[] = []
 for (const { p, client, api } of targets) {
   const s = support[p.id]
   if (!s?.callable) continue
-  const models = p.models.map(toCatalogModel)
+  const models = toCatalogModels(p.id, p.models)
   if (models.length === 0) continue
   const entry: CatalogProvider = { id: p.id, name: p.name, client, models }
   // The native clients know their own default address; only overrides are kept.

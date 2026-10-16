@@ -99,6 +99,7 @@ export function describeAiError(e: unknown): string {
     return 'The provider says the quota or rate limit is reached. Try again later.'
   if (/failed to fetch|network|load failed|cors/i.test(msg))
     return 'The provider could not be reached from this browser (offline, blocked, or the address is wrong).'
-  if (/404|not found|model/i.test(msg)) return `The provider does not know this model. ${msg}`
+  if (/\b404\b|model.*(not found|does not exist|unknown)|unknown model|no such model/i.test(msg))
+    return `The provider does not know this model. ${msg}`
   return msg
 }
