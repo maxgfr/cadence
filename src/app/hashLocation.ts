@@ -5,9 +5,15 @@ import { useSyncExternalStore } from 'react'
  * to `location.search`, outside the hash, where it outlives the screen that set it.
  */
 
+// The browser's back and forward (the phone's back gesture too) move between entries made with pushState: they fire
+// popstate, not always hashchange, so the screen listens to both.
 const subscribe = (cb: () => void) => {
   addEventListener('hashchange', cb)
-  return () => removeEventListener('hashchange', cb)
+  addEventListener('popstate', cb)
+  return () => {
+    removeEventListener('hashchange', cb)
+    removeEventListener('popstate', cb)
+  }
 }
 
 const hash = () => location.hash.replace(/^#?\/?/, '')

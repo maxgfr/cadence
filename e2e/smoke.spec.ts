@@ -234,6 +234,39 @@ test('a set of sessions: written once, then Today runs the next one or any other
   await expect(page.getByRole('heading', { name: 'In progress' })).toHaveCount(0)
 })
 
+test('the week todo ticks what is finished, by tabs or by going back', async ({ page }) => {
+  const todayTab = page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name: 'Today' })
+  const week = page.getByRole('region', { name: 'Beginner full body' })
+  const finish = async () => {
+    await page.getByRole('button', { name: 'Finish' }).click()
+    await page.getByRole('button', { name: 'Save session' }).click()
+    await expect(page.getByText('Session saved')).toBeVisible()
+  }
+  await page.goto('./')
+  await page.getByRole('checkbox', { name: /^Gym/ }).check()
+  await page.getByRole('button', { name: 'Start with the demo' }).click()
+
+  // Full body A, finished, then Today through the tab.
+  await page
+    .getByRole('button', { name: /^Full body A/ })
+    .first()
+    .click()
+  await finish()
+  await todayTab.click()
+  await expect(week.getByText(/1 of 3 done/)).toBeVisible()
+
+  // Full body A again, from the same row: the week's second Full body A is the one ticked. Back by the browser.
+  await page
+    .getByRole('button', { name: /^Full body A/ })
+    .nth(1)
+    .click()
+  await finish()
+  await page.goBack()
+  await expect(page.getByRole('heading', { name: 'Today', level: 1 })).toBeVisible()
+  await expect(week.getByText(/2 of 3 done/)).toBeVisible()
+  await expect(week.getByRole('button', { name: /^Full body B To do/ })).toBeVisible()
+})
+
 test('AI proposes exercises, picked and edited before they reach the library', async ({ page }) => {
   const proposal = {
     exercises: [

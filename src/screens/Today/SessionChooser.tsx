@@ -17,7 +17,7 @@ export function useChoosableSessions() {
   return [...underWay, ...others]
     .map((program) => ({
       program,
-      refs: choosableDays(program, data.sessions),
+      refs: choosableDays(program, data.sessions, startOfWeek(data.today, data.settings.weekStart)),
       // The next day only means something once a program is under way.
       next: underWay.includes(program) ? nextDay(program, data.sessions) : undefined,
     }))

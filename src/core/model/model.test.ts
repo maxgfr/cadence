@@ -5,6 +5,7 @@ import { addDays, daysBetween, startOfWeek } from './dates.ts'
 import {
   choosableDays,
   completedDays,
+  dayToStart,
   describeBlock,
   nextDay,
   programsUnderWay,
@@ -142,6 +143,19 @@ describe('schedule', () => {
     expect(t.programLeft).toBe(7)
     // Nothing yet this week: the week of the next day.
     expect(weekTodo(program, [before], '2026-10-12')?.week).toBe(1)
+  })
+
+  test('the same session twice in a week is done twice, and picking it again starts the one left', () => {
+    // Beginner full body: Full body A, Full body B, Full body A.
+    const ref = (day: number) => ({ programRef: { programId: program.id, week: 0, day } })
+    const twice = [session('2026-10-12', [], ref(0)), session('2026-10-14', [], ref(0))]
+    const t = must(weekTodo(program, twice, '2026-10-12'))
+    expect(t.days.map((d) => d.done !== undefined)).toEqual([true, false, true])
+    const once = must(weekTodo(program, twice.slice(0, 1), '2026-10-12'))
+    expect(dayToStart(once, { programId: program.id, week: 0, day: 0 }).day).toBe(2)
+    expect(dayToStart(once, { programId: program.id, week: 0, day: 1 }).day).toBe(1)
+    // The list offers the todo's week while some of it is left.
+    expect(choosableDays(program, twice.slice(0, 1), '2026-10-12').map((r) => r.week)).toEqual([0, 0, 0])
   })
 
   test('the week todo of a set: each session once, done when logged this week', () => {

@@ -5,7 +5,7 @@ import { useStartSession } from '../../app/actions.ts'
 import { useAi } from '../../app/ai.tsx'
 import { useData } from '../../app/data.tsx'
 import { formatDay, startOfWeek } from '../../core/model/dates.ts'
-import { programsUnderWay } from '../../core/model/program.ts'
+import { dayToStart, programsUnderWay } from '../../core/model/program.ts'
 import type { Program, ProgramRef } from '../../core/model/schemas.ts'
 import { goalProgress } from '../../core/stats/trends.ts'
 import { Button, buttonClass } from '../../ui/components/Button.tsx'
@@ -42,7 +42,11 @@ export function Today() {
     .slice(0, 3)
   // What each program under way asks of this week (Monday to Sunday by default).
   const todos = programsUnderWay(data.programs, data.sessions, startOfWeek(data.today, data.settings.weekStart))
-  const pick = (program: Program, ref: ProgramRef) => {
+  const pick = (program: Program, picked: ProgramRef) => {
+    const ref = dayToStart(
+      todos.find((t) => t.program.id === program.id),
+      picked,
+    )
     if (active && sameRef(active.programRef, ref)) navigate(`/log/${active.id}`)
     else switchTo(program.weeks[ref.week]?.days[ref.day]?.name ?? program.name, () => start.fromDay(program, ref))
   }

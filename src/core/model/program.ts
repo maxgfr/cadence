@@ -111,8 +111,14 @@ export function completedDays(program: Program, sessions: readonly Session[]): n
  * The days to pick from when starting a session of this program out of turn: every session of a set, or the days of
  * the current week of a plan (its last week once it is finished).
  */
-export function choosableDays(program: Program, sessions: readonly Session[]): ProgramRef[] {
-  const week = isSessionSet(program) ? 0 : (nextDay(program, sessions)?.week ?? program.weeks.length - 1)
+export function choosableDays(program: Program, sessions: readonly Session[], weekStart?: string): ProgramRef[] {
+  // A plan under way offers the week of its todo while some of it is left, so what is started ticks the todo.
+  const todo = weekStart !== undefined ? weekTodo(program, sessions, weekStart) : undefined
+  const week = isSessionSet(program)
+    ? 0
+    : todo && todo.week !== undefined && todo.left > 0
+      ? todo.week
+      : (nextDay(program, sessions)?.week ?? program.weeks.length - 1)
   return (program.weeks[week]?.days ?? [])
     .map((d, day) => ({ d, ref: { programId: program.id, week, day } }))
     .filter(({ d }) => d.blocks.length > 0)
@@ -235,11 +241,25 @@ export function weekTodo(program: Program, sessions: readonly Session[], weekSta
       ? Math.min(...thisWeek.map((s) => s.programRef?.week ?? 0))
       : nextDay(program, sessions)?.week
   if (week === undefined) return undefined
-  const days = (program.weeks[week]?.days ?? []).map((day, d) => ({
-    ref: { programId: program.id, week, day: d },
-    day,
-    done: (set ? thisWeek : mine).find((s) => s.programRef?.week === week && s.programRef.day === d),
-  }))
+  const plan = program.weeks[week]?.days ?? []
+  // Each session done ticks its own day, or, when that one is ticked already, a day of the same name still open: a
+  // week with the same session twice (Full body A, B, A) needs it done twice.
+  const pool = (set ? thisWeek : mine)
+    .filter((s) => s.programRef?.week === week)
+    .sort((a, b) => a.date.localeCompare(b.date) || (a.startedAt ?? '').localeCompare(b.startedAt ?? ''))
+  const done = new Map<number, Session>()
+  const twins: Session[] = []
+  for (const x of pool) {
+    const d = x.programRef?.day ?? -1
+    if (plan[d] && !done.has(d)) done.set(d, x)
+    else twins.push(x)
+  }
+  for (const x of twins) {
+    const name = plan[x.programRef?.day ?? -1]?.name
+    const d = plan.findIndex((day, i) => !done.has(i) && day.name === name)
+    if (d >= 0) done.set(d, x)
+  }
+  const days = plan.map((day, d) => ({ ref: { programId: program.id, week, day: d }, day, done: done.get(d) }))
   return {
     program,
     week: set ? undefined : week,
@@ -247,6 +267,17 @@ export function weekTodo(program: Program, sessions: readonly Session[], weekSta
     left: days.filter((x) => !x.done).length,
     programLeft: set ? undefined : totalDays(program) - completedDays(program, sessions),
   }
+}
+
+/**
+ * The day to log when the athlete picks `ref` from a program under way: that day, or, when it is done already this
+ * week, the first day of the same name still to do (the second Full body A of the week).
+ */
+export function dayToStart(todo: WeekTodo | undefined, ref: ProgramRef): ProgramRef {
+  if (!todo || todo.week !== ref.week) return ref
+  const picked = todo.days[ref.day]
+  if (!picked?.done) return ref
+  return todo.days.find((x) => !x.done && x.day.name === picked.day.name)?.ref ?? ref
 }
 
 /**
