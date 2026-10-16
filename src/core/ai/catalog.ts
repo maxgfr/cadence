@@ -121,7 +121,7 @@ export interface ModelInfoLike {
   id: string
   name: string
   sources?: { openrouter?: boolean; models_dev?: boolean }
-  /** The provider's own id, from llm-models once it publishes it (maxgfr/llm-models#3); null-ish when not served. */
+  /** The provider's own id (llm-models 1.8+); absent when the provider does not serve the model itself. */
   api_id?: string
   context_length?: number
   cost?: { input: number; output: number }

@@ -12,7 +12,7 @@
         "@openrouter/ai-sdk-provider": "3.1.0",
         "ai": "7.0.140",
         "idb": "8.0.4",
-        "llm-models": "1.7.0",
+        "llm-models": "1.8.0",
         "lucide-react": "1.57.0",
         "react": "19.3.0",
         "react-dom": "19.3.0",
@@ -841,7 +841,7 @@
 
     "lightningcss-win32-x64-msvc": ["lightningcss-win32-x64-msvc@1.33.0", "", { "os": "win32", "cpu": "x64" }, "sha512-OlEICDx/Xl0FqSp4bry8zFnCvGpig3Gl4gCquvYwHuqJKEC1+n9NgDniFvqHGmMv1ZkqDJrDqKKSykTDX+ehuA=="],
 
-    "llm-models": ["llm-models@1.7.0", "", { "dependencies": { "@modelcontextprotocol/sdk": "^1.30.0", "commander": "^15.0.0", "zod": "^4.4.3" }, "bin": { "llm-models": "build/index.js" } }, "sha512-847IK5/K9Nd3+x0mX7t8nQqkMpRKHrcctADGOfnziyVuG3Ce6Fbmg7HVDMpzhLOfTF/v3a+XEsimVYh+ZmZ01w=="],
+    "llm-models": ["llm-models@1.8.0", "", { "dependencies": { "@modelcontextprotocol/sdk": "^1.30.0", "commander": "^15.0.0", "zod": "^4.4.3" }, "bin": { "llm-models": "build/index.js" } }, "sha512-96NlQj+/XnUXyqJG7SF4mlnjSFIevBPoQse9eUoM9wtR6AVkEFdamqi6uAfT691mlvgn5dR/VU6lLtb5cVseKg=="],
 
     "lodash.debounce": ["lodash.debounce@4.0.8", "", {}, "sha512-FT1yDzDYEoYWhnSGnpE/4Kj1fLZkDFyqRb7fNt6FdYOSxlUWAtp42Eh6Wb0rGIv/m9Bgo7x4GhQbm5Ys4SG5ow=="],
 

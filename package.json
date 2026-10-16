@@ -11,7 +11,7 @@
     "@openrouter/ai-sdk-provider": "3.1.0",
     "ai": "7.0.140",
     "idb": "8.0.4",
-    "llm-models": "1.7.0",
+    "llm-models": "1.8.0",
     "lucide-react": "1.57.0",
     "react": "19.3.0",
     "react-dom": "19.3.0",
