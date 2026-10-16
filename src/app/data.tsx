@@ -14,7 +14,7 @@ import {
   Settings,
 } from '../core/model/schemas.ts'
 import { idbStore } from '../core/storage/idb.ts'
-import { migrateV1, needsMigration } from '../core/storage/migrate.ts'
+import { migrateGoals, migrateV1, needsGoalMigration, needsMigration } from '../core/storage/migrate.ts'
 import { type CollectionName, type Collections, memoryStore, type Store } from '../core/storage/store.ts'
 
 export interface Data {
@@ -85,8 +85,12 @@ async function load(): Promise<Loaded> {
   const settings = Settings.parse({ ...DEFAULT_SETTINGS, ...stored })
   let lists = { disciplines, exercises, programs, sessions, goals }
   // Data written by version 1 (fixed disciplines, built-in exercises) is moved to today's shape once.
-  if (needsMigration(lists)) {
-    lists = migrateV1(lists)
+  // Older data is moved to today's shape once: version 1 (fixed disciplines, built-in exercises), then goals of
+  // versions 1 to 3 (`e1rm`, `best_time`).
+  const v1 = needsMigration(lists)
+  if (v1) lists = migrateV1(lists)
+  if (v1 || needsGoalMigration(lists.goals)) {
+    lists = { ...lists, goals: migrateGoals(lists.goals) }
     await store.replaceAll({ ...lists, settings })
   }
   return { store, persistent, settings, ...lists }

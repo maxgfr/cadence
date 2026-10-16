@@ -175,10 +175,11 @@ export const Session = z.object({
 export type Session = z.infer<typeof Session>
 
 /**
- * A target: an estimated one-rep max on a lift, a best time or pace on an exercise, a weekly volume (kilograms
- * lifted or metres covered, in one discipline or all) or a number of sessions per week.
+ * A target: the best on one exercise, in what that exercise is measured by (estimated 1RM, most reps, longest set,
+ * best time or pace), or, for one discipline or all training, a weekly volume (kilograms lifted or metres covered) or
+ * a number of sessions per week.
  */
-export const GOAL_KINDS = ['e1rm', 'best_time', 'weekly_volume', 'frequency'] as const
+export const GOAL_KINDS = ['exercise', 'weekly_volume', 'frequency'] as const
 export const GoalKind = z.enum(GOAL_KINDS)
 export type GoalKind = z.infer<typeof GoalKind>
 
@@ -215,8 +216,11 @@ export type Settings = z.infer<typeof Settings>
 
 export const DEFAULT_SETTINGS: Settings = Settings.parse({})
 
-/** 3: programs can be a set of sessions (`layout`); version 2 backups read as they are. */
-export const BACKUP_VERSION = 3
+/**
+ * 3: programs can be a set of sessions (`layout`). 4: goals on an exercise are one kind, `exercise` (versions 2 and 3
+ * had `e1rm` and `best_time`, read as `exercise`).
+ */
+export const BACKUP_VERSION = 4
 export const Backup = z.object({
   app: z.literal('cadence'),
   version: z.literal(BACKUP_VERSION),

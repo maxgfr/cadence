@@ -1,6 +1,6 @@
 import type { ExerciseIndex } from '../library/exercises.ts'
 import { BACKUP_VERSION, Backup, DEFAULT_SETTINGS, Settings } from '../model/schemas.ts'
-import { migrateV1 } from './migrate.ts'
+import { migrateGoals, migrateV1 } from './migrate.ts'
 import type { Store } from './store.ts'
 
 /** Everything but secrets, as one JSON document. */
@@ -39,13 +39,13 @@ export function parseBackup(text: string): Backup {
   if (typeof raw !== 'object' || raw === null || (raw as { app?: unknown }).app !== 'cadence')
     throw new BackupError('This file is not a Cadence backup.')
   const version = (raw as { version?: unknown }).version
-  if (version !== BACKUP_VERSION && version !== 2 && version !== 1)
+  if (version !== BACKUP_VERSION && version !== 3 && version !== 2 && version !== 1)
     throw new BackupError(
       `This backup uses format version ${String(version)}, which this version of Cadence cannot read.`,
     )
   // Version 1: fixed disciplines and built-in exercises, read into today's shape.
-  // Version 2 differs only by what it cannot hold (program layouts).
-  if (version === 2) raw = { ...(raw as object), version: BACKUP_VERSION }
+  // Versions 2 and 3 differ by what they cannot hold (program layouts) and the names of exercise goals.
+  if (version === 2 || version === 3) raw = { ...(raw as object), version: BACKUP_VERSION }
   if (version === 1) {
     try {
       raw = { ...(raw as object), version: BACKUP_VERSION, ...migrateV1(raw as Record<string, unknown[]>) }
@@ -53,6 +53,8 @@ export function parseBackup(text: string): Backup {
       throw new BackupError('The backup is damaged (its version 1 records could not be read).')
     }
   }
+  const goals = (raw as { goals?: unknown }).goals
+  if (Array.isArray(goals)) raw = { ...(raw as object), goals: migrateGoals(goals) }
   const parsed = Backup.safeParse(raw)
   if (!parsed.success) {
     const issue = parsed.error.issues[0]

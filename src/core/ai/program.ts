@@ -12,9 +12,11 @@ import {
   IntensityKind,
   Metric,
   type Program,
+  type ProgramLayout,
   type Session,
   type Week,
 } from '../model/schemas.ts'
+import { type MeasureKind, measureOf } from '../stats/metrics.ts'
 import { currentRecords } from '../stats/records.ts'
 import { goalProgress, programAdherence, sessionAdherence, weeklyVolume } from '../stats/trends.ts'
 
@@ -224,18 +226,29 @@ function toWeek(w: AiWeek, r: Resolver, notes: string[], index: number): Week | 
   return { id: newId(), name: text(w.name, 60) ?? `Week ${index + 1}`, days }
 }
 
-/** Turns a model's answer into an editable program draft, matching exercises and disciplines by id or name. */
-export function draftFromAi(ai: AiProgram, library: AthleteLibrary, now: Date = new Date()): Draft {
+/**
+ * Turns a model's answer into an editable program draft, matching exercises and disciplines by id or name. A set of
+ * sessions keeps the days of the answer's first week that has any.
+ */
+export function draftFromAi(
+  ai: AiProgram,
+  library: AthleteLibrary,
+  now: Date = new Date(),
+  layout: ProgramLayout = 'weeks',
+): Draft {
   const notes: string[] = []
   const r = resolver(library)
-  const weeks = ai.weeks.map((w, i) => toWeek(w, r, notes, i)).filter((w): w is Week => w !== undefined)
-  if (weeks.length === 0) throw new Error('The model returned a program with no training days.')
+  const all = ai.weeks.map((w, i) => toWeek(w, r, notes, i)).filter((w): w is Week => w !== undefined)
+  if (all.length === 0) throw new Error('The model returned a program with no training days.')
+  const weeks = layout === 'sessions' ? all.slice(0, 1) : all
+  if (layout === 'sessions' && all.length > 1) notes.push('Only the first week was kept, as the set of sessions.')
   const at = now.toISOString()
   return {
     program: {
       id: newId(),
       name: text(ai.name, 80) ?? 'AI program',
       goal: text(ai.goal, 300) ?? '',
+      ...(layout === 'sessions' ? { layout } : {}),
       weeks,
       source: 'ai',
       createdAt: at,
@@ -306,12 +319,29 @@ function libraryText({ exercises, disciplines }: AthleteLibrary): string {
   ].join('\n')
 }
 
+/**
+ * The program's shape: a plan of `weeks` with `daysPerWeek` days, or a set of sessions repeated in any order (with
+ * `sessions` of them, or as many as the model sees fit).
+ */
+export type ProgramShape =
+  | { layout: 'weeks'; daysPerWeek: number; weeks: number }
+  | { layout: 'sessions'; sessions?: number }
+
+/** What to ask for, by shape. */
+function shapeLines(s: ProgramShape): string[] {
+  if (s.layout === 'weeks')
+    return [`Design a ${s.weeks}-week training program.`, `Training days per week: ${s.daysPerWeek}.`]
+  return [
+    `Design a set of ${s.sessions ? `${s.sessions} distinct` : 'distinct'} training sessions (${s.sessions ? '' : 'as many as the goal needs, 2 to 6; '}no weekly schedule): the athlete does them in any order and repeats them.`,
+    'Return them as one week whose days are the sessions, each named for what it trains (Leg day, Upper body, Bodyweight…). Do not progress or deload across weeks: give each session its working sets.',
+  ]
+}
+
 export interface ScratchAnswers {
   /** Sports by name: the athlete's disciplines picked, and any typed in. */
   sports: string[]
   level: 'beginner' | 'intermediate' | 'advanced'
-  daysPerWeek: number
-  weeks: number
+  shape: ProgramShape
   goal: string
   /** Advanced mode. */
   sessionMinutes?: number
@@ -329,10 +359,9 @@ export interface PromptPair {
 
 export function scratchPrompt(a: ScratchAnswers, library: AthleteLibrary, today: string): PromptPair {
   const lines = [
-    `Design a ${a.weeks}-week training program.`,
+    ...shapeLines(a.shape),
     `Sports: ${a.sports.length > 0 ? a.sports.join(', ') : "the athlete's disciplines"}.`,
     `Level: ${a.level}.`,
-    `Training days per week: ${a.daysPerWeek}.`,
     `Goal: ${a.goal.trim() || 'general fitness in these sports'}.`,
   ]
   if (a.sessionMinutes) lines.push(`Time per session: about ${a.sessionMinutes} minutes.`)
@@ -358,6 +387,15 @@ export interface ContextInput {
 }
 
 const round = (n: number) => Math.round(n * 10) / 10
+
+/** What an exercise goal's values are, for the model (metric units). */
+const GOAL_MEASURE: Record<MeasureKind, string> = {
+  e1rm: 'estimated 1RM in kg',
+  reps: 'most reps in a set',
+  hold: 'longest set in seconds',
+  best_time: 'best time in seconds',
+  pace: 'best pace in seconds per 100 m',
+}
 
 function recordText(kind: string, value: number): string {
   switch (kind) {
@@ -427,11 +465,13 @@ export function summarizeContext(c: ContextInput): string {
     out.push('Goals:')
     for (const g of goals) {
       const p = goalProgress(g, c.sessions, c.exercises, c.today, c.weekStart)
-      const what = g.exerciseId
-        ? (c.exercises.get(g.exerciseId)?.name ?? g.exerciseId)
-        : (dName(g.disciplineId) ?? 'all training')
+      const ex = g.exerciseId ? c.exercises.get(g.exerciseId) : undefined
+      const what =
+        g.kind === 'exercise'
+          ? `${ex ? GOAL_MEASURE[measureOf(ex)] : 'best'} on ${ex?.name ?? g.exerciseId}`
+          : `${g.kind === 'frequency' ? 'sessions per week' : g.volume === 'distance' ? 'metres per week' : 'kg lifted per week'} in ${dName(g.disciplineId) ?? 'all training'}`
       out.push(
-        `- ${g.kind} on ${what}: target ${g.target} by ${g.deadline}; current ${p.current !== undefined ? round(p.current) : 'none yet'}`,
+        `- ${what}: target ${g.target} by ${g.deadline}; current ${p.current !== undefined ? round(p.current) : 'none yet'}`,
       )
     }
   }
@@ -452,8 +492,7 @@ export function summarizeContext(c: ContextInput): string {
 }
 
 export interface ContextAnswers {
-  weeks: number
-  daysPerWeek: number
+  shape: ProgramShape
   focus: string
   sports: string[]
 }
@@ -462,8 +501,9 @@ export function contextPrompt(a: ContextAnswers, context: string, library: Athle
   return {
     system: `${SYSTEM}\n\n${libraryText(library)}`,
     prompt: [
-      `Design the athlete's next ${a.weeks}-week program from their own training history below.`,
-      `Sports: ${a.sports.length > 0 ? a.sports.join(', ') : 'as in their history'}. Training days per week: ${a.daysPerWeek}.`,
+      ...shapeLines(a.shape),
+      "Base it on the athlete's own training history below.",
+      `Sports: ${a.sports.length > 0 ? a.sports.join(', ') : 'as in their history'}.`,
       `Focus: ${a.focus.trim() || 'keep progressing toward their goals'}.`,
       'Base loads on their records (use pct1rm from their estimated 1RM, or kg near what they lifted), keep what they',
       'adhered to, and move their goals forward.',

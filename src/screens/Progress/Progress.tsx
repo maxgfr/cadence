@@ -210,15 +210,10 @@ function Overview() {
                 record.
               </p>
             )}
-            {(exercise.metric === 'weight_reps' || exercise.metric === 'distance_time') && (
-              <Link
-                href={`/progress?goal=new&exercise=${exercise.id}`}
-                className={buttonClass({ variant: 'secondary' })}
-              >
-                <Target size={18} strokeWidth={1.75} aria-hidden="true" />
-                Set a goal on {exercise.name}
-              </Link>
-            )}
+            <Link href={`/progress?goal=new&exercise=${exercise.id}`} className={buttonClass({ variant: 'secondary' })}>
+              <Target size={18} strokeWidth={1.75} aria-hidden="true" />
+              Set a goal on {exercise.name}
+            </Link>
             <details className={styles.table}>
               <summary>Show values</summary>
               <table>

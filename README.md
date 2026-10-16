@@ -35,9 +35,11 @@ starting point. AI, to design programs and propose exercises, is optional and us
   (estimated 1RM, best time, best pace, most reps, longest hold) with its records, and weekly volume per discipline
   (kilograms lifted, distance covered). *History*: every session by month, with what was planned next to what was
   done, the records it set, editing and deletion with undo, and CSV export.
-- **Goals**: a target and a deadline, set from where you are: the form shows your current best (or your average of
-  the last four weeks) and suggests a target that stretches it within reach, which you change as you like. A goal can
-  be started from any exercise's chart. Each goal shows a trend projected to its deadline.
+- **Goals**: a target and a deadline. Pick a sport, then any of its exercises: the goal is on what that exercise is
+  measured by (estimated 1RM, most reps in a set, longest set, best time or pace). Or a goal on a sport (or all
+  training): sessions a week, or weekly volume in Advanced. The form shows where you are (your best, or your average
+  of the last four weeks) and suggests a target that stretches it within reach, which you change as you like. A goal
+  can be started from any exercise's chart, and shows a trend projected to its deadline.
 - **Two modes**: *Normal* shows the essentials. *Advanced* adds effort per set, intensity targets (%1RM, RPE, pace,
   % of best effort), rest and tempo in plans, sets per muscle group, adherence to the plan, goal charts and the
   full AI questionnaire. Switching never loses data.
@@ -55,7 +57,7 @@ All values are stored in metric units (kilograms, metres, seconds); units only c
 | Program | name, goal, layout (`weeks`, or `sessions`: a set done in any order), weeks → days (each with an optional discipline) → blocks, source (`manual`, `template`, `ai`) |
 | Block | exercise, sets, reps, distance, duration, intensity (`kg`, `pct1rm`, `rpe`, `pace`, `pctmax`), rest, send-off interval, tempo, notes |
 | Session | date, title, discipline (optional), program day, entries → sets (reps, weight, time, distance, RPE, done), duration, RPE, notes |
-| Goal | estimated 1RM on a lift, best time or pace on an exercise, weekly kilograms or distance, or sessions per week (in one discipline or all); target and deadline |
+| Goal | an exercise's best in what it is measured by (estimated 1RM, reps, time held, best time or pace), or weekly kilograms or distance, or sessions per week (in one discipline or all); target and deadline |
 
 How the numbers are derived:
 
@@ -77,7 +79,8 @@ opens. The CSV export has one row per set.
 
 Cadence works fully without AI. With a model set up under *Settings › AI* it can:
 
-- **Design a program** from a short questionnaire (disciplines, level, days per week, weeks, goal; Advanced adds
+- **Design a program** from a short questionnaire (disciplines, level, a set of sessions with no days or weeks to
+  give, or days per week and weeks; goal; Advanced adds
   session length, equipment, target date, limitations and intensity style) for your disciplines or sports you name,
   or **from your own history** (recent
   sessions, records, goals and current program, summarised; the exact text sent is shown before sending).

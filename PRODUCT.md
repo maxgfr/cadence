@@ -31,7 +31,7 @@ Local-first and account-free: data lives on the device, exports to open JSON/CSV
 - Planning: edit a demo program, write one from scratch, or generate one with AI from a questionnaire or from the user's own history, PRs and goals. The demo is loaded and removed from Settings only.
 - Library: create exercises by hand, or have AI propose a library for chosen sports (picked from and edited before it is added).
 - Programs are a set of sessions done in any order and repeated (Leg day, Bodyweight…), or a week-by-week plan to an end (user request).
-- Goals start from what is logged: the current best or recent average, with a suggested target the user can change (user request).
+- Goals are generic (user request): on any exercise, picked by sport, in what that exercise is measured by; or sessions or volume a week for a sport. They start from what is logged (the current best or recent average) with a suggested target the user can change.
 - Review (Progress, with History as its second view): history list, progress charts (e1RM, weekly volume per discipline, pace per 100 m or per km, best times), PRs, goals with a projection to their deadline, consistency and adherence (planned vs. done).
 - Backups are manual: JSON export/import, CSV export of sessions.
 

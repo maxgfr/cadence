@@ -130,8 +130,7 @@ describe('program drafts', () => {
       {
         sports: ['Track and field'],
         level: 'intermediate',
-        daysPerWeek: 3,
-        weeks: 4,
+        shape: { layout: 'weeks', daysPerWeek: 3, weeks: 4 },
         goal: 'Run 11.9',
         limitations: 'left knee',
       },
@@ -145,6 +144,29 @@ describe('program drafts', () => {
     expect(sent).toContain('Disciplines: Gym, Swimming, Track and field')
     expect(sent).toContain('Run 11.9')
     expect(sent).toContain('left knee')
+    expect(sent).toContain('Design a 4-week training program.')
+  })
+
+  test('a set of sessions needs no days or weeks, and keeps one week of sessions', async () => {
+    const model = jsonModel({ ...answer, weeks: [...answer.weeks, ...answer.weeks] })
+    const pair = scratchPrompt(
+      { sports: ['Gym'], level: 'beginner', shape: { layout: 'sessions' }, goal: '' },
+      ATHLETE,
+      '2026-10-16',
+    )
+    expect(pair.prompt).toContain('as many as the goal needs')
+    expect(pair.prompt).not.toContain('Training days per week')
+    const d = await generateProgramDraft(model, pair, ATHLETE, undefined, 'sessions')
+    expect(d.program.layout).toBe('sessions')
+    expect(d.program.weeks).toHaveLength(1)
+    expect(d.notes).toContain('Only the first week was kept, as the set of sessions.')
+    expect(
+      scratchPrompt(
+        { sports: [], level: 'beginner', shape: { layout: 'sessions', sessions: 3 }, goal: '' },
+        ATHLETE,
+        '2026-10-16',
+      ).prompt,
+    ).toContain('a set of 3 distinct training sessions')
   })
 
   test('an answer that does not match the schema is an error, never a program', async () => {
@@ -178,7 +200,7 @@ describe('context', () => {
       goals: [
         {
           id: 'g',
-          kind: 'e1rm',
+          kind: 'exercise',
           exerciseId: 'back-squat',
           target: 140,
           deadline: '2026-12-31',
@@ -195,11 +217,12 @@ describe('context', () => {
     expect(text).toContain('2026-10-10 Full body A (Gym), session RPE 7')
     expect(text).toContain('Back squat [100kgx5@RPE8]')
     expect(text).toContain('Back squat: estimated 1RM 116.7 kg')
-    expect(text).toContain('e1rm on Back squat: target 140 by 2026-12-31')
+    expect(text).toContain('estimated 1RM in kg on Back squat: target 140 by 2026-12-31')
     expect(text).toContain('Current program: Beginner full body')
-    expect(contextPrompt({ weeks: 4, daysPerWeek: 3, focus: '', sports: ['Gym'] }, text, ATHLETE).prompt).toContain(
-      text,
-    )
+    expect(
+      contextPrompt({ shape: { layout: 'weeks', weeks: 4, daysPerWeek: 3 }, focus: '', sports: ['Gym'] }, text, ATHLETE)
+        .prompt,
+    ).toContain(text)
   })
 })
 

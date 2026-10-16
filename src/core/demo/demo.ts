@@ -141,7 +141,7 @@ function addHistory(data: DemoData, sports: ReadonlySet<DemoSport>, today: strin
   if (sports.has('gym'))
     data.goals.push({
       id: 'demo-goal-gym',
-      kind: 'e1rm',
+      kind: 'exercise',
       exerciseId: 'back-squat',
       target: 140,
       deadline,
@@ -150,7 +150,7 @@ function addHistory(data: DemoData, sports: ReadonlySet<DemoSport>, today: strin
   if (sports.has('swim'))
     data.goals.push({
       id: 'demo-goal-swim',
-      kind: 'best_time',
+      kind: 'exercise',
       exerciseId: 'swim-free',
       target: 90,
       deadline,
@@ -159,7 +159,7 @@ function addHistory(data: DemoData, sports: ReadonlySet<DemoSport>, today: strin
   if (sports.has('track'))
     data.goals.push({
       id: 'demo-goal-track',
-      kind: 'best_time',
+      kind: 'exercise',
       exerciseId: 'sprint-100',
       target: 12.4,
       deadline,

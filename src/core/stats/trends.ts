@@ -201,9 +201,9 @@ function goalSeries(
   today: string,
   weekStart: 0 | 1,
 ): { series: { date: string; value: number }[]; lower: boolean; weekly: boolean } {
-  if (goal.kind === 'e1rm' || goal.kind === 'best_time') {
+  if (goal.kind === 'exercise') {
     const ex: Exercise | undefined = goal.exerciseId ? exercises.get(goal.exerciseId) : undefined
-    if (!ex) return { series: [], lower: goal.kind === 'best_time', weekly: false }
+    if (!ex) return { series: [], lower: false, weekly: false }
     const pts: Point[] = exerciseSeries(sessions, ex)
     return { series: pts, lower: lowerIsBetter(measureOf(ex)), weekly: false }
   }
@@ -290,8 +290,9 @@ const roundTo = (v: number, step: number, up: boolean) => (up ? Math.ceil(v / st
 
 /**
  * The starting point of a goal being set, from what is logged: nothing is suggested without data. The stretch grows
- * with the time to the deadline and is capped: about 1% a week on a lift (15% at most), 0.5% a week off a time (6%),
- * 2% a week on a weekly volume (30%), one more session a week.
+ * with the time to the deadline and is capped: about 1% a week on an estimated 1RM (15% at most), 3% a week on reps
+ * or a held time (50%, one rep or five seconds at least), 0.5% a week off a time or a pace (6%), 2% a week on a weekly
+ * volume (30%), one more session a week.
  */
 export function goalBaseline(
   draft: Pick<Goal, 'kind' | 'deadline'> & Partial<Pick<Goal, 'exerciseId' | 'disciplineId' | 'volume'>>,
@@ -315,13 +316,30 @@ export function goalBaseline(
   if (!(current > 0)) return undefined
   const weeks = Math.max(1, daysBetween(today, goal.deadline) / 7)
   let suggested: number
+  const ex = goal.exerciseId ? exercises.get(goal.exerciseId) : undefined
   switch (goal.kind) {
-    case 'e1rm':
-      suggested = roundTo(current * (1 + Math.min(0.15, 0.01 * weeks)), 2.5, true)
+    case 'exercise': {
+      const grow = Math.min(0.5, 0.03 * weeks)
+      const faster = 1 - Math.min(0.06, 0.005 * weeks)
+      switch (ex ? measureOf(ex) : 'e1rm') {
+        case 'e1rm':
+          suggested = roundTo(current * (1 + Math.min(0.15, 0.01 * weeks)), 2.5, true)
+          break
+        case 'reps':
+          suggested = Math.max(current + 1, Math.round(current * (1 + grow)))
+          break
+        case 'hold':
+          suggested = Math.max(current + 5, roundTo(current * (1 + grow), 5, true))
+          break
+        case 'best_time':
+          suggested = roundTo(current * faster, 0.1, false)
+          break
+        case 'pace':
+          suggested = roundTo(current * faster, 1, false)
+          break
+      }
       break
-    case 'best_time':
-      suggested = roundTo(current * (1 - Math.min(0.06, 0.005 * weeks)), 0.1, false)
-      break
+    }
     case 'frequency':
       suggested = Math.min(7, Math.round(current) + 1)
       break

@@ -71,12 +71,22 @@ test('demo sport → logged session → record and chart → backup round trip',
 
   // A goal starts from the record, with a target suggested from it.
   await page.getByRole('link', { name: 'Set a goal on Back squat' }).click()
-  await expect(page.getByText(/^Now 99\.2\skg, your best estimated 1RM$/)).toBeVisible()
-  await expect(page.getByLabel('Target (kg)')).not.toHaveValue('')
+  await expect(page.getByText(/^Now 99\.2\skg, your best so far$/)).toBeVisible()
+  await expect(page.getByLabel('Target estimated 1RM (kg)')).not.toHaveValue('')
   await accessible(page, 'new goal')
   await page.getByRole('button', { name: 'Set goal' }).click()
   await expect(page.getByText('Goal set')).toBeVisible()
   await expect(page.getByRole('button', { name: /^Back squat: estimated 1RM/ })).toBeVisible()
+
+  // Any exercise takes a goal, picked by sport, in what it is measured by: here the reps of a set.
+  await page.getByRole('button', { name: 'Add goal' }).click()
+  const sheet = page.getByRole('dialog', { name: 'New goal' })
+  await sheet.getByLabel('Sport').selectOption({ label: 'Gym' })
+  await sheet.getByLabel('Exercise', { exact: true }).selectOption({ label: 'Pull-up' })
+  await expect(page.getByText('The goal is on the most reps in a set, as the exercise is measured.')).toBeVisible()
+  await page.getByLabel('Target reps in a set').fill('12')
+  await page.getByRole('button', { name: 'Set goal' }).click()
+  await expect(page.getByRole('button', { name: /^Pull-up: 12\sreps in a set/ })).toBeVisible()
 
   // Backup: export, erase, import, and the session is back.
   await page.goto('./#/settings')

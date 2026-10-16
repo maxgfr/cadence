@@ -14,7 +14,7 @@ import {
   toDisplayDistance,
   toDisplayWeight,
 } from '../../core/model/units.ts'
-import { measureOf, trainedExercises } from '../../core/stats/metrics.ts'
+import { type MeasureKind, measureOf, trainedExercises } from '../../core/stats/metrics.ts'
 import { type GoalProgress, goalBaseline, goalProgress } from '../../core/stats/trends.ts'
 import { LineChart } from '../../ui/charts/LineChart.tsx'
 import { Meter } from '../../ui/charts/Meter.tsx'
@@ -67,21 +67,28 @@ export function GoalLine({ goal, progress, onOpen }: { goal: Goal; progress: Goa
   )
 }
 
+/** What a goal is on: one exercise's best, or, for a sport or all training, sessions or volume per week. */
 const KINDS: readonly { value: GoalKind; label: string; advanced?: boolean }[] = [
-  { value: 'e1rm', label: 'Lift a heavier max (estimated 1RM)' },
-  { value: 'best_time', label: 'Run or swim faster' },
-  { value: 'frequency', label: 'Train more often' },
-  { value: 'weekly_volume', label: 'Reach a weekly volume', advanced: true },
+  { value: 'exercise', label: 'An exercise' },
+  { value: 'frequency', label: 'Sessions a week' },
+  { value: 'weekly_volume', label: 'Volume a week', advanced: true },
 ]
+
+/** How an exercise goal's target reads, from what the exercise is measured by. */
+const TARGET_OF: Record<MeasureKind, string> = {
+  e1rm: 'its estimated one-rep max',
+  reps: 'the most reps in a set',
+  hold: 'the longest set',
+  best_time: 'the best time over its distance',
+  pace: 'the best pace',
+}
 
 /** A goal to start from a link: `?goal=new`, with `&exercise=<id>` to set it on that exercise. */
 function presetFrom(search: string, index: ReturnType<typeof useData>['index']): Preset | undefined {
   const params = new URLSearchParams(search)
   if (params.get('goal') !== 'new') return undefined
   const ex = index.get(params.get('exercise') ?? '')
-  if (ex?.metric === 'weight_reps') return { kind: 'e1rm', exerciseId: ex.id }
-  if (ex?.metric === 'distance_time') return { kind: 'best_time', exerciseId: ex.id }
-  return {}
+  return ex ? { kind: 'exercise', exerciseId: ex.id } : {}
 }
 
 interface Preset {
@@ -124,7 +131,7 @@ export function GoalsSection() {
           icon={Target}
           level={3}
           title="No goal yet"
-          body="A target with a date: a heavier squat, a faster 100 m, three sessions a week. Cadence tracks it and projects where your trend lands."
+          body="A target with a date, on any exercise (a heavier squat, more pull-ups, a faster 100 m) or on how often you train a sport. It starts from where you are, and Cadence projects where your trend lands."
           action={
             <Button variant="primary" onClick={() => setEditing('new')}>
               Set a goal
@@ -189,31 +196,27 @@ function GoalForm({ goal, preset, onClose }: { goal: Goal | 'new'; preset: Prese
   const toast = useToast()
   const advanced = data.settings.mode === 'advanced'
   const existing = goal !== 'new' ? goal : null
+  const startExercise = data.index.get(existing?.exerciseId ?? preset?.exerciseId ?? '')
+  // The sport comes first: it narrows the exercises, and scopes sessions and volume.
+  const [sport, setSport] = useState(
+    startExercise ? (startExercise.disciplineId ?? '') : (existing?.disciplineId ?? ''),
+  )
   // Exercises with logged sessions come first: a goal starts from where you are.
   const trained = useMemo(() => trainedExercises(data.sessions, data.index), [data.sessions, data.index])
-  const byData = (metric: Exercise['metric']) => [
-    ...trained.filter((e) => e.metric === metric),
-    ...data.exercises.filter((e) => e.metric === metric && !trained.includes(e)),
-  ]
-  const lifts = byData('weight_reps')
-  const timed = byData('distance_time')
-  const [kind, setKind] = useState<GoalKind>(
-    existing?.kind ?? preset?.kind ?? (lifts.length > 0 ? 'e1rm' : 'frequency'),
-  )
-  const [exerciseId, setExerciseId] = useState(
-    existing
-      ? (existing.exerciseId ?? '')
-      : (preset?.exerciseId ?? (kind === 'best_time' ? timed : lifts)[0]?.id ?? ''),
-  )
-  const [discipline, setDiscipline] = useState(existing?.disciplineId ?? '')
+  const inSport = (e: Exercise) => !sport || e.disciplineId === sport
+  const choices = [...trained.filter(inSport), ...data.exercises.filter((e) => inSport(e) && !trained.includes(e))]
+  const [kind, setKind] = useState<GoalKind>(existing?.kind ?? preset?.kind ?? 'exercise')
+  const [exerciseId, setExerciseId] = useState(startExercise?.id ?? choices[0]?.id ?? '')
   const [volume, setVolume] = useState<'tonnage' | 'distance'>(existing?.volume ?? 'tonnage')
   // null until typed: the suggestion fills the field.
   const [typed, setTyped] = useState<string | null>(() => (existing ? displayValue(existing.target) : null))
   const [deadline, setDeadline] = useState(existing?.deadline ?? addDays(data.today, 84))
   const [error, setError] = useState<string>()
+  const exercise = kind === 'exercise' ? data.index.get(exerciseId) : undefined
+  const measure = exercise ? measureOf(exercise) : undefined
   const scope = {
-    ...((kind === 'e1rm' || kind === 'best_time') && exerciseId ? { exerciseId } : {}),
-    ...((kind === 'weekly_volume' || kind === 'frequency') && discipline ? { disciplineId: discipline } : {}),
+    ...(kind === 'exercise' && exerciseId ? { exerciseId } : {}),
+    ...(kind !== 'exercise' && sport ? { disciplineId: sport } : {}),
     ...(kind === 'weekly_volume' ? { volume } : {}),
   }
   const baseline = goalBaseline(
@@ -225,14 +228,22 @@ function GoalForm({ goal, preset, onClose }: { goal: Goal | 'new'; preset: Prese
   )
   const f = goalFormatter({ id: '', kind, target: 1, deadline, createdAt: '', ...scope }, data.index, units)
   const target = typed ?? (baseline && !existing ? displayValue(baseline.suggested) : '')
+  const perKm = exercise?.pace === 'km'
 
   /** A stored value as typed in the target field, in the user's units. */
   function displayValue(v: number): string {
-    if (kind === 'e1rm') return String(Math.round(toDisplayWeight(v, units.weightUnit) * 10) / 10)
-    if (kind === 'best_time') {
+    if (kind === 'exercise') {
       const ex = data.index.get(exerciseId)
-      const perKm = ex !== undefined && measureOf(ex) === 'pace' && ex.pace === 'km'
-      return formatTime(perKm ? v * 10 : v).replace(' s', '')
+      switch (ex ? measureOf(ex) : 'e1rm') {
+        case 'e1rm':
+          return String(Math.round(toDisplayWeight(v, units.weightUnit) * 10) / 10)
+        case 'reps':
+          return String(Math.round(v))
+        case 'pace':
+          return formatTime(ex?.pace === 'km' ? v * 10 : v, false)
+        default:
+          return formatTime(v).replace(' s', '')
+      }
     }
     if (kind === 'weekly_volume' && volume === 'distance')
       return String(Math.round(toDisplayDistance(v, units.distanceUnit)))
@@ -240,33 +251,32 @@ function GoalForm({ goal, preset, onClose }: { goal: Goal | 'new'; preset: Prese
     return String(v)
   }
 
-  const exerciseOptions = (kind === 'e1rm' ? lifts : timed).map((e) => ({ value: e.id, label: e.name }))
-  const timedEx = data.index.get(exerciseId)
   const targetLabel =
-    kind === 'e1rm'
-      ? `Target (${units.weightUnit})`
-      : kind === 'best_time'
-        ? timedEx && measureOf(timedEx) === 'pace'
-          ? timedEx.pace === 'km'
-            ? 'Target pace per km (m:ss)'
-            : 'Target pace per 100 m (m:ss)'
-          : 'Target time (seconds or m:ss)'
-        : kind === 'frequency'
-          ? 'Sessions per week'
-          : volume === 'distance'
-            ? `Distance per week (${units.distanceUnit})`
-            : `Kilograms lifted per week (${units.weightUnit})`
+    kind === 'exercise'
+      ? {
+          e1rm: `Target estimated 1RM (${units.weightUnit})`,
+          reps: 'Target reps in a set',
+          hold: 'Target time held (seconds or m:ss)',
+          best_time: 'Target time (seconds or m:ss)',
+          pace: `Target pace per ${perKm ? 'km' : '100 m'} (m:ss)`,
+        }[measure ?? 'e1rm']
+      : kind === 'frequency'
+        ? 'Sessions per week'
+        : volume === 'distance'
+          ? `Distance per week (${units.distanceUnit})`
+          : `Kilograms lifted per week (${units.weightUnit})`
 
   function parseTarget(): number | undefined {
     const t = target.trim()
-    if (kind === 'best_time') {
+    if (measure === 'hold' || measure === 'best_time' || measure === 'pace') {
       const s = parseTime(t)
-      if (s === undefined) return undefined
-      return timedEx && measureOf(timedEx) === 'pace' && timedEx.pace === 'km' ? s / 10 : s
+      if (s === undefined || s <= 0) return undefined
+      return measure === 'pace' && perKm ? s / 10 : s
     }
     const v = Number.parseFloat(t.replace(',', '.'))
     if (!Number.isFinite(v) || v <= 0) return undefined
-    if (kind === 'e1rm') return fromDisplayWeight(v, units.weightUnit)
+    if (measure === 'e1rm') return fromDisplayWeight(v, units.weightUnit)
+    if (measure === 'reps') return Math.round(v)
     if (kind === 'weekly_volume')
       return volume === 'distance' ? fromDisplayDistance(v, units.distanceUnit) : fromDisplayWeight(v, units.weightUnit)
     return v
@@ -277,6 +287,10 @@ function GoalForm({ goal, preset, onClose }: { goal: Goal | 'new'; preset: Prese
       className={styles.form}
       onSubmit={async (e) => {
         e.preventDefault()
+        if (kind === 'exercise' && !exercise) {
+          setError('Pick an exercise.')
+          return
+        }
         const value = parseTarget()
         if (value === undefined) {
           setError('Enter a target value.')
@@ -300,42 +314,52 @@ function GoalForm({ goal, preset, onClose }: { goal: Goal | 'new'; preset: Prese
       }}
     >
       <SelectField
-        label="Goal"
-        value={kind}
-        options={KINDS.filter((k) => advanced || !k.advanced || k.value === kind)}
+        label="Sport"
+        value={sport}
+        options={[{ value: '', label: 'All sports' }, ...data.disciplines.map((d) => ({ value: d.id, label: d.name }))]}
         onChange={(e) => {
-          const k = e.target.value as GoalKind
-          setKind(k)
+          const next = e.target.value
+          setSport(next)
           setTyped(null)
-          if (k === 'e1rm') setExerciseId(lifts[0]?.id ?? '')
-          if (k === 'best_time') setExerciseId(timed[0]?.id ?? '')
+          if (kind === 'exercise' && next && data.index.get(exerciseId)?.disciplineId !== next) {
+            const first =
+              trained.find((x) => x.disciplineId === next) ?? data.exercises.find((x) => x.disciplineId === next)
+            setExerciseId(first?.id ?? '')
+          }
         }}
       />
-      {(kind === 'e1rm' || kind === 'best_time') && (
-        <SelectField
-          label="Exercise"
-          value={exerciseId}
-          options={exerciseOptions}
-          onChange={(e) => {
-            setExerciseId(e.target.value)
-            setTyped(null)
-          }}
-        />
-      )}
-      {(kind === 'weekly_volume' || kind === 'frequency') && (
-        <SelectField
-          label="Discipline"
-          value={discipline}
-          options={[
-            { value: '', label: 'All training' },
-            ...data.disciplines.map((d) => ({ value: d.id, label: d.name })),
-          ]}
-          onChange={(e) => {
-            setDiscipline(e.target.value)
-            setTyped(null)
-          }}
-        />
-      )}
+      <Segmented
+        label="Goal on"
+        options={KINDS.filter((k) => advanced || !k.advanced || k.value === kind)}
+        value={kind}
+        onChange={(k) => {
+          setKind(k)
+          setTyped(null)
+          setError(undefined)
+        }}
+      />
+      {kind === 'exercise' &&
+        (choices.length > 0 ? (
+          <SelectField
+            label="Exercise"
+            value={exerciseId}
+            options={choices.map((e) => ({ value: e.id, label: e.name }))}
+            {...(measure
+              ? {
+                  hint: `The goal is on ${TARGET_OF[measure]}, as the exercise is measured.`,
+                }
+              : {})}
+            onChange={(e) => {
+              setExerciseId(e.target.value)
+              setTyped(null)
+            }}
+          />
+        ) : (
+          <p className={styles.formNote}>
+            No exercise {sport ? `in ${data.disciplineIndex.get(sport)?.name ?? 'this sport'} ` : ''}yet. Create one
+            under Exercises first.
+          </p>
+        ))}
       {kind === 'weekly_volume' && (
         <Segmented
           label="Volume of"
@@ -350,39 +374,29 @@ function GoalForm({ goal, preset, onClose }: { goal: Goal | 'new'; preset: Prese
           }}
         />
       )}
-      {(kind === 'e1rm' || kind === 'best_time') && exerciseOptions.length === 0 && (
-        <p className={styles.formNote}>
-          {kind === 'e1rm'
-            ? 'No exercise measured by load × reps yet.'
-            : 'No exercise measured by distance and time yet.'}{' '}
-          Create one under Exercises first.
-        </p>
-      )}
-      <div className={styles.baseline} role="status">
-        {baseline ? (
-          <>
-            <p>
-              <span className={styles.baselineLabel}>Now</span> {f(baseline.current)}
-              {baseline.basis === 'best'
-                ? kind === 'e1rm'
-                  ? ', your best estimated 1RM'
-                  : ', your best'
-                : ', your average over the last 4 weeks'}
-            </p>
-            {!existing && (
+      {(kind !== 'exercise' || exercise) && (
+        <div className={styles.baseline} role="status">
+          {baseline ? (
+            <>
               <p>
-                <span className={styles.baselineLabel}>Suggested</span> {f(baseline.suggested)} by{' '}
-                {formatDay(deadline > data.today ? deadline : addDays(data.today, 1), new Date().getFullYear())}: a
-                stretch that stays within reach. Change it as you like.
+                <span className={styles.baselineLabel}>Now</span> {f(baseline.current)}
+                {baseline.basis === 'best' ? ', your best so far' : ', your average over the last 4 weeks'}
               </p>
-            )}
-          </>
-        ) : (
-          <p>
-            Nothing logged for this yet, so there is no starting point: log a session first, or set a target you know.
-          </p>
-        )}
-      </div>
+              {!existing && (
+                <p>
+                  <span className={styles.baselineLabel}>Suggested</span> {f(baseline.suggested)} by{' '}
+                  {formatDay(deadline > data.today ? deadline : addDays(data.today, 1), new Date().getFullYear())}: a
+                  stretch that stays within reach. Change it as you like.
+                </p>
+              )}
+            </>
+          ) : (
+            <p>
+              Nothing logged for this yet, so there is no starting point: log a session first, or set a target you know.
+            </p>
+          )}
+        </div>
+      )}
       <Field
         label={targetLabel}
         inputMode="decimal"

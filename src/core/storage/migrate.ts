@@ -20,6 +20,21 @@ export interface Records {
   goals: Goal[]
 }
 
+/** Goal kinds before version 4, both a best on one exercise: a heavier lift and a faster effort. */
+const OLD_GOAL_KINDS: ReadonlySet<unknown> = new Set(['e1rm', 'best_time'])
+
+/** Whether any goal still has a kind from before version 4. */
+export function needsGoalMigration(goals: readonly unknown[] | undefined): boolean {
+  return (goals ?? []).some((g) => typeof g === 'object' && g !== null && OLD_GOAL_KINDS.has((g as Raw).kind))
+}
+
+/** Goals of versions 1 to 3 on one exercise (`e1rm`, `best_time`) become `exercise` goals, which mean the same. */
+export function migrateGoals<T>(goals: readonly T[]): T[] {
+  return goals.map((g) =>
+    typeof g === 'object' && g !== null && OLD_GOAL_KINDS.has((g as Raw).kind) ? { ...g, kind: 'exercise' } : g,
+  )
+}
+
 /** Whether any record still has a version 1 shape. */
 export function needsMigration(r: { [K in keyof Records]?: unknown[] }): boolean {
   const has = (list: unknown[] | undefined, key: string) =>

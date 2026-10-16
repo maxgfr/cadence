@@ -1,5 +1,5 @@
 import type { LanguageModel } from 'ai'
-import type { Program } from '../model/schemas.ts'
+import type { Program, ProgramLayout } from '../model/schemas.ts'
 import { generateStructured } from './client.ts'
 import { AiExercises, type ExercisesDraft, exercisesFromAi } from './exercises.ts'
 import {
@@ -18,9 +18,10 @@ export async function generateProgramDraft(
   pair: PromptPair,
   library: AthleteLibrary,
   signal?: AbortSignal,
+  layout: ProgramLayout = 'weeks',
 ): Promise<Draft> {
   const ai = await generateStructured(model, { ...pair, schema: AiProgram, ...(signal ? { signal } : {}) })
-  return draftFromAi(ai, library)
+  return draftFromAi(ai, library, new Date(), layout)
 }
 
 /** Rewrites one week of a program; the result is a draft of the whole program with that week replaced. */

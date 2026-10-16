@@ -9,11 +9,13 @@ import { adjustWeekDraft, generateProgramDraft } from '../../core/ai/features.ts
 import {
   adjustWeekPrompt,
   contextPrompt,
+  type ProgramShape,
   type ScratchAnswers,
   scratchPrompt,
   summarizeContext,
 } from '../../core/ai/program.ts'
 import { addDays } from '../../core/model/dates.ts'
+import type { ProgramLayout } from '../../core/model/schemas.ts'
 import { Button, buttonClass } from '../../ui/components/Button.tsx'
 import { EmptyState } from '../../ui/components/EmptyState.tsx'
 import { Field } from '../../ui/components/Field.tsx'
@@ -46,8 +48,14 @@ export function Generate() {
   const sports = sportNames(picked, other, data.disciplineIndex)
   const athlete = { exercises: data.exercises, disciplines: data.disciplines }
   const [level, setLevel] = useState<ScratchAnswers['level']>('beginner')
+  const [layout, setLayout] = useState<ProgramLayout>('sessions')
+  const [count, setCount] = useState('')
   const [days, setDays] = useState('3')
   const [weeks, setWeeks] = useState('4')
+  const shape: ProgramShape =
+    layout === 'weeks'
+      ? { layout, daysPerWeek: Number(days), weeks: Number(weeks) }
+      : { layout, ...(count ? { sessions: Number(count) } : {}) }
   const [goal, setGoal] = useState('')
   const [minutes, setMinutes] = useState('60')
   const [equipment, setEquipment] = useState('')
@@ -113,8 +121,7 @@ export function Generate() {
                 {
                   sports,
                   level,
-                  daysPerWeek: Number(days),
-                  weeks: Number(weeks),
+                  shape,
                   goal,
                   ...(advanced
                     ? {
@@ -130,8 +137,8 @@ export function Generate() {
                 athlete,
                 data.today,
               )
-            : contextPrompt({ weeks: Number(weeks), daysPerWeek: Number(days), focus: goal, sports }, context, athlete)
-        const d = await generateProgramDraft(model, pair, athlete, ctrl.signal)
+            : contextPrompt({ shape, focus: goal, sports }, context, athlete)
+        const d = await generateProgramDraft(model, pair, athlete, ctrl.signal, layout)
         setDraft({ ...d, origin: 'ai' })
       }
       navigate('/programs/draft')
@@ -199,20 +206,42 @@ export function Generate() {
                 onChange={setLevel}
               />
             )}
-            <div className={styles.pair}>
+            <Segmented
+              label="Program"
+              options={[
+                { value: 'sessions', label: 'Set of sessions' },
+                { value: 'weeks', label: 'Week by week' },
+              ]}
+              value={layout}
+              onChange={setLayout}
+            />
+            {layout === 'sessions' ? (
               <SelectField
-                label="Days a week"
-                value={days}
-                options={range(1, 7).map((n) => ({ value: String(n), label: String(n) }))}
-                onChange={(e) => setDays(e.target.value)}
+                label="Sessions"
+                value={count}
+                hint="Sessions you do in any order, again and again: no days or weeks to plan."
+                options={[
+                  { value: '', label: 'Let the model choose' },
+                  ...range(1, 7).map((n) => ({ value: String(n), label: String(n) })),
+                ]}
+                onChange={(e) => setCount(e.target.value)}
               />
-              <SelectField
-                label="Weeks"
-                value={weeks}
-                options={range(1, 12).map((n) => ({ value: String(n), label: String(n) }))}
-                onChange={(e) => setWeeks(e.target.value)}
-              />
-            </div>
+            ) : (
+              <div className={styles.pair}>
+                <SelectField
+                  label="Days a week"
+                  value={days}
+                  options={range(1, 7).map((n) => ({ value: String(n), label: String(n) }))}
+                  onChange={(e) => setDays(e.target.value)}
+                />
+                <SelectField
+                  label="Weeks"
+                  value={weeks}
+                  options={range(1, 12).map((n) => ({ value: String(n), label: String(n) }))}
+                  onChange={(e) => setWeeks(e.target.value)}
+                />
+              </div>
+            )}
             <TextArea
               label={source === 'scratch' ? 'Goal' : 'Focus'}
               placeholder={

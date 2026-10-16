@@ -4,6 +4,7 @@ import { DEFAULT_SETTINGS } from '../model/schemas.ts'
 import { entry, IDX, must, session, set } from '../testkit.test.ts'
 import { BackupError, exportBackup, importBackup, parseBackup, sessionsCsv } from './backup.ts'
 import { idbStore } from './idb.ts'
+import { needsGoalMigration } from './migrate.ts'
 import { memoryStore, type Store } from './store.ts'
 
 let n = 0
@@ -93,12 +94,28 @@ describe('parseBackup', () => {
     ).toThrow('damaged')
   })
 
+  test('goals of version 3 on a lift or a time are read as exercise goals', async () => {
+    const v3 = { ...(await exportBackup(memoryStore())), version: 3 }
+    const goal = (kind: string) => ({
+      id: kind,
+      kind,
+      exerciseId: 'back-squat',
+      target: 120,
+      deadline: '2026-12-01',
+      createdAt: 'x',
+    })
+    const b = parseBackup(JSON.stringify({ ...v3, goals: [goal('e1rm'), goal('best_time')] }))
+    expect(b.goals.map((g) => g.kind)).toEqual(['exercise', 'exercise'])
+    expect(needsGoalMigration([goal('e1rm')])).toBe(true)
+    expect(needsGoalMigration(b.goals)).toBe(false)
+  })
+
   test('a version 2 backup reads as it is, its programs laid out in weeks', async () => {
     const store = memoryStore()
     await store.put('programs', instantiate(must(TEMPLATES[0]), new Set(['gym'] as const)))
     const b = parseBackup(JSON.stringify({ ...(await exportBackup(store)), version: 2 }))
     expect(b.programs).toHaveLength(1)
-    expect(b.version).toBe(3)
+    expect(b.version).toBe(4)
     expect(b.programs.every((p) => p.layout === undefined)).toBe(true)
   })
 })
@@ -151,7 +168,7 @@ describe('version 1 backups', () => {
       ],
     }
     const b = parseBackup(JSON.stringify(v1))
-    expect(b.version).toBe(3)
+    expect(b.version).toBe(4)
     expect(b.disciplines.map((d) => d.name).sort()).toEqual(['Gym', 'Swimming', 'Track and field'])
     expect(b.exercises.find((e) => e.id === 'my-run')).toMatchObject({ disciplineId: 'demo-track', pace: 'km' })
     expect(b.exercises.find((e) => e.id === 'back-squat')?.disciplineId).toBe('demo-gym')

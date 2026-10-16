@@ -164,7 +164,7 @@ describe('goals', () => {
     ]
     const goal = {
       id: 'g',
-      kind: 'e1rm' as const,
+      kind: 'exercise' as const,
       exerciseId: 'back-squat',
       target: 120,
       deadline: '2026-10-27',
@@ -186,7 +186,7 @@ describe('goals', () => {
     ]
     const goal = {
       id: 'g',
-      kind: 'best_time' as const,
+      kind: 'exercise' as const,
       exerciseId: 'sprint-100',
       target: 12.5,
       deadline: '2026-12-01',
@@ -219,7 +219,7 @@ describe('goals', () => {
       session('2026-09-29', [entry('back-squat', [set({ weight: 110, reps: 1 })])]),
     ]
     const squat = goalBaseline(
-      { kind: 'e1rm', exerciseId: 'back-squat', deadline: '2026-12-22' },
+      { kind: 'exercise', exerciseId: 'back-squat', deadline: '2026-12-22' },
       lifts,
       IDX,
       '2026-09-29',
@@ -228,19 +228,25 @@ describe('goals', () => {
     // Best 110 kg, 12 weeks away: +12%, up to the next 2.5 kg.
     expect(squat).toEqual({ current: 110, basis: 'best', lowerIsBetter: false, suggested: 125 })
     const sprint = goalBaseline(
-      { kind: 'best_time', exerciseId: 'sprint-100', deadline: '2027-09-29' },
+      { kind: 'exercise', exerciseId: 'sprint-100', deadline: '2027-09-29' },
       [session('2026-09-20', [entry('sprint-100', [set({ time: 12.4 })])])],
       IDX,
       '2026-09-29',
       1,
     )
+    // Reps and held times grow too, by at least one rep or five seconds.
+    const pulls = [session('2026-09-29', [entry('pull-up', [set({ reps: 9 })])])]
+    expect(
+      goalBaseline({ kind: 'exercise', exerciseId: 'pull-up', deadline: '2026-11-24' }, pulls, IDX, '2026-09-29', 1)
+        ?.suggested,
+    ).toBe(11)
     // A year away: capped at 6% faster.
     expect(sprint?.suggested).toBeCloseTo(11.6, 5)
     const weeks = [session('2026-09-29', []), session('2026-10-01', []), session('2026-10-07', [])]
     const often = goalBaseline({ kind: 'frequency', deadline: '2026-12-01' }, weeks, IDX, '2026-10-14', 1)
     expect(often).toMatchObject({ basis: 'recent_weeks', suggested: 2 })
     expect(
-      goalBaseline({ kind: 'e1rm', exerciseId: 'deadlift', deadline: '2026-12-01' }, lifts, IDX, '2026-10-14', 1),
+      goalBaseline({ kind: 'exercise', exerciseId: 'deadlift', deadline: '2026-12-01' }, lifts, IDX, '2026-10-14', 1),
     ).toBeUndefined()
   })
 })
