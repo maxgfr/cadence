@@ -1,0 +1,190 @@
+/*
+ * Design tokens. Light and dark are designed separately (not inverted): dark lifts graphite surfaces
+ * above a near-black ground and uses a lighter track orange with dark ink on it.
+ * `data-theme` on <html> forces a theme; otherwise the system preference wins.
+ */
+:root {
+  color-scheme: light;
+
+  /* Type: system stack, fixed rem scale (~1.2 ratio). */
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", system-ui, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --text-caption: 0.8125rem; /* 13 */
+  --text-footnote: 0.9375rem; /* 15 */
+  --text-body: 1.0625rem; /* 17 */
+  --text-title: 1.25rem; /* 20 */
+  --text-headline: 1.5rem; /* 24 */
+  --text-large-title: 2.125rem; /* 34 */
+  --leading-tight: 1.15;
+  --leading-body: 1.45;
+
+  /* Space: 4-pt rhythm. */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+
+  /* Shape. */
+  --radius-surface: 12px;
+  --radius-control: 10px;
+  --radius-pill: 999px;
+  /* Small details inside text or charts (inline code, bar tops). */
+  --radius-small: 4px;
+  --hairline-width: 1px;
+
+  /* Layout. */
+  --content-max: 720px;
+  --sidebar-width: 260px;
+  --tabbar-height: 3.5rem;
+  /* Logging controls: thumb-sized, used mid-workout. */
+  --hit-large: 3.25rem;
+  --gutter: max(var(--space-4), env(safe-area-inset-left), env(safe-area-inset-right));
+  --kb-inset: 0px;
+
+  /* Motion. */
+  --dur: 200ms;
+  --dur-fast: 150ms;
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+
+  /* Light palette: gym lights, pool decks and open tracks are bright places. */
+  --bg: #f3f4f5;
+  --bg-sidebar: #eaecee;
+  --surface: #ffffff;
+  --surface-pressed: #eef0f2;
+  --surface-raised: #ffffff;
+  --ink: #121417;
+  --ink-2: #474c54;
+  --ink-3: #5b616a;
+  --hairline: #e2e5e8;
+  --hairline-strong: #c8ccd2;
+  /* Track orange: the colour of a tartan lane. */
+  --accent: #c43d16;
+  --accent-hover: #ab3311;
+  --on-accent: #ffffff;
+  --accent-soft: #fbeae3;
+  --accent-ink: #a5320f;
+  --focus: #c43d16;
+  --danger: #b4232a;
+  --danger-soft: #fcebec;
+  --warning: #8a4b00;
+  --warning-soft: #fff2dc;
+  --success: #12704a;
+  --success-soft: #e3f4ea;
+  --lift: 0 1px 2px rgb(18 20 23 / 0.07);
+  --scrim: rgb(18 20 23 / 0.36);
+  --selection: rgb(196 61 22 / 0.18);
+
+  /* Disciplines: identity dots and chart series, never text colour, never on the accent's hue. */
+  --d-strength: #2a78d6;
+  --d-swim: #1baf7a;
+  --d-run: #6250d6;
+  --d-other: #898781;
+
+  /* Charts. */
+  --chart-grid: #e6e8eb;
+  --chart-axis: #c3c7cd;
+  --chart-series: #2a78d6;
+  --chart-wash: rgb(42 120 214 / 0.1);
+  --heat-0: #eceef1;
+  --heat-1: #b7d3f6;
+  --heat-2: #6da7ec;
+  --heat-3: #2a78d6;
+  --heat-4: #184f95;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg: #0e0f11;
+    --bg-sidebar: #131518;
+    --surface: #181a1d;
+    --surface-pressed: #212429;
+    --surface-raised: #353a41;
+    --ink: #f1f2f4;
+    --ink-2: #b9bec6;
+    --ink-3: #9aa0a9;
+    --hairline: #272a30;
+    --hairline-strong: #383c44;
+    --accent: #ff7d52;
+    --accent-hover: #ff946f;
+    --on-accent: #1f0a03;
+    --accent-soft: #3b1f15;
+    --accent-ink: #ffa585;
+    --focus: #ff9470;
+    --danger: #ff8a85;
+    --danger-soft: #3a1c1d;
+    --warning: #ffb661;
+    --warning-soft: #33250f;
+    --success: #6bd49a;
+    --success-soft: #12301f;
+    --lift: 0 1px 0 rgb(0 0 0 / 0.4);
+    --scrim: rgb(0 0 0 / 0.58);
+    --selection: rgb(255 125 82 / 0.3);
+    --d-strength: #3987e5;
+    --d-swim: #199e70;
+    --d-run: #9085e9;
+    --d-other: #898781;
+    --chart-grid: #26292e;
+    --chart-axis: #3a3e45;
+    --chart-series: #3987e5;
+    --chart-wash: rgb(57 135 229 / 0.14);
+    --heat-0: #212429;
+    --heat-1: #184f95;
+    --heat-2: #256abf;
+    --heat-3: #3987e5;
+    --heat-4: #86b6ef;
+  }
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #0e0f11;
+  --bg-sidebar: #131518;
+  --surface: #181a1d;
+  --surface-pressed: #212429;
+  --surface-raised: #353a41;
+  --ink: #f1f2f4;
+  --ink-2: #b9bec6;
+  --ink-3: #9aa0a9;
+  --hairline: #272a30;
+  --hairline-strong: #383c44;
+  --accent: #ff7d52;
+  --accent-hover: #ff946f;
+  --on-accent: #1f0a03;
+  --accent-soft: #3b1f15;
+  --accent-ink: #ffa585;
+  --focus: #ff9470;
+  --danger: #ff8a85;
+  --danger-soft: #3a1c1d;
+  --warning: #ffb661;
+  --warning-soft: #33250f;
+  --success: #6bd49a;
+  --success-soft: #12301f;
+  --lift: 0 1px 0 rgb(0 0 0 / 0.4);
+  --scrim: rgb(0 0 0 / 0.58);
+  --selection: rgb(255 125 82 / 0.3);
+  --d-strength: #3987e5;
+  --d-swim: #199e70;
+  --d-run: #9085e9;
+  --d-other: #898781;
+  --chart-grid: #26292e;
+  --chart-axis: #3a3e45;
+  --chart-series: #3987e5;
+  --chart-wash: rgb(57 135 229 / 0.14);
+  --heat-0: #212429;
+  --heat-1: #184f95;
+  --heat-2: #256abf;
+  --heat-3: #3987e5;
+  --heat-4: #86b6ef;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dur: 120ms;
+    --dur-fast: 0ms;
+  }
+}

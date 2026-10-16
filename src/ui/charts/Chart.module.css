@@ -1,0 +1,208 @@
+.chart {
+  position: relative;
+  width: 100%;
+  min-height: 1px;
+}
+
+.svg {
+  display: block;
+  overflow: visible;
+  touch-action: pan-y;
+}
+
+.svg:focus-visible {
+  outline-offset: 4px;
+}
+
+.grid {
+  stroke: var(--chart-grid);
+  stroke-width: 1;
+}
+
+.baseline {
+  stroke: var(--chart-axis);
+  stroke-width: 1;
+}
+
+.tick {
+  fill: var(--ink-3);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+.line {
+  fill: none;
+  stroke: var(--chart-series);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.dot {
+  fill: var(--chart-series);
+  stroke: var(--surface);
+  stroke-width: 2;
+}
+
+/* A record: larger, and the accent, the one place the chart says "look here". */
+.record {
+  fill: var(--accent);
+  stroke: var(--surface);
+  stroke-width: 2;
+}
+
+.activeDot {
+  fill: var(--chart-series);
+  stroke: var(--surface);
+  stroke-width: 3;
+}
+
+.crosshair {
+  stroke: var(--chart-axis);
+  stroke-width: 1;
+}
+
+.projection {
+  stroke: var(--chart-series);
+  stroke-width: 2;
+  stroke-dasharray: 2 5;
+  stroke-linecap: round;
+  opacity: 0.7;
+}
+
+.target {
+  stroke: var(--ink-3);
+  stroke-width: 1;
+}
+
+.targetLabel {
+  fill: var(--ink-2);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.bar {
+  fill: var(--chart-series);
+  transition: opacity var(--dur-fast) var(--ease-out);
+}
+
+.barPartial {
+  fill: var(--chart-series);
+  opacity: 0.45;
+}
+
+.tooltip {
+  position: absolute;
+  z-index: 2;
+  display: grid;
+  gap: 0.125rem;
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-control);
+  background: var(--ink);
+  color: var(--bg);
+  box-shadow: var(--lift);
+  pointer-events: none;
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+
+.tooltipValue {
+  font-size: var(--text-footnote);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.tooltipLabel {
+  font-size: var(--text-caption);
+  opacity: 0.8;
+}
+
+.heatWrap {
+  display: grid;
+  gap: var(--space-2);
+  overflow-x: auto;
+}
+
+.heat {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+.heat0 {
+  fill: var(--heat-0);
+  background: var(--heat-0);
+}
+
+.heat1 {
+  fill: var(--heat-1);
+  background: var(--heat-1);
+}
+
+.heat2 {
+  fill: var(--heat-2);
+  background: var(--heat-2);
+}
+
+.heat3 {
+  fill: var(--heat-3);
+  background: var(--heat-3);
+}
+
+.heat4 {
+  fill: var(--heat-4);
+  background: var(--heat-4);
+}
+
+.legend {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 3px;
+  color: var(--ink-3);
+  font-size: var(--text-caption);
+}
+
+.legend > :first-child {
+  margin-inline-start: var(--space-2);
+}
+
+.legendCell {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+}
+
+.legendCell:first-of-type {
+  margin-inline-start: var(--space-1);
+}
+
+.legendCell:last-of-type {
+  margin-inline-end: var(--space-1);
+}
+
+.meter {
+  position: relative;
+  height: 0.5rem;
+  border-radius: var(--radius-pill);
+  background: var(--chart-wash);
+  overflow: visible;
+}
+
+.meterFill {
+  height: 100%;
+  border-radius: var(--radius-pill);
+  background: var(--chart-series);
+  transition: width var(--dur) var(--ease-out);
+}
+
+.meterProjection {
+  position: absolute;
+  top: -0.25rem;
+  width: 2px;
+  height: 1rem;
+  border-radius: 1px;
+  background: var(--ink-3);
+  transform: translateX(-1px);
+}

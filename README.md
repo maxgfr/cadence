@@ -1,0 +1,119 @@
+# Cadence
+
+Cadence is a training tracker for the gym, the pool and the track that runs entirely in the browser. Plan or pick a
+program, start today's session pre-filled from it, log sets with a rest timer, and follow records, goals and progress
+charts. It works offline, keeps its data on the device, and needs no account. AI program design is optional and uses
+your own model and key.
+
+- App: <https://maxgfr.github.io/cadence/>
+- Interface language: English.
+
+## Features
+
+- **Today**: the next session of the current program, written as a coach would ("5×5 @80%", "8×50 m @1:50",
+  "6×60 m @95% max · rest 3:00"), with one button to start it, plus free sessions for the gym, the pool or the track
+  and this week at a glance.
+- **Logging**: one card per exercise, one row per set with large touch targets, values pre-filled from the plan, a
+  tick per set, and a rest timer that starts on each tick (−15 s, +15 s, skip, vibration at the end). Finish with
+  the duration, an effort rating (RPE 1–10) and notes.
+- **History**: every session by month, with what was planned next to what was done, the records it set, editing and
+  deletion with undo, and CSV export.
+- **Programs**: four built-in programs (beginner full body, 5/3/1-style strength, 100 m sprinter block, 1500 m swim
+  build), a full editor (weeks, days, exercises, sets, reps, distances, intensity, rest, send-off interval, tempo),
+  and optional AI design.
+- **Progress**: a training calendar, the best value per session of any exercise (estimated 1RM, best time, best pace,
+  most reps, longest hold) with its records, weekly volume (kilograms lifted, metres swum, metres run), and goals with
+  a trend projected to their deadline.
+- **Exercises**: a library of main lifts and accessories, swim strokes and drills, sprint distances and plyometrics,
+  plus your own exercises.
+- **Two modes**: *Normal* shows the essentials. *Advanced* adds effort per set, intensity targets (%1RM, RPE, pace,
+  % of best effort), rest and tempo in plans, sets per muscle group, adherence to the plan, goal charts and the
+  full AI questionnaire. Switching never loses data.
+- **Units**: kilograms or pounds, metres or yards, week starting Monday or Sunday, light and dark themes.
+- **Installable and offline**: a PWA; once installed it works without a network.
+
+## Training data model
+
+All values are stored in metric units (kilograms, metres, seconds); units only change what is displayed and typed.
+
+| Entity | Fields |
+|---|---|
+| Exercise | name, discipline (`strength`, `swim`, `run`, `other`), metric (`weight_reps`, `reps`, `time`, `distance_time`), muscles, stroke, fixed distance |
+| Program | name, goal, disciplines, weeks → days → blocks, source (`manual`, `template`, `ai`) |
+| Block | exercise, sets, reps, distance, duration, intensity (`kg`, `pct1rm`, `rpe`, `pace`, `pctmax`), rest, send-off interval, tempo, notes |
+| Session | date, title, discipline, program day, entries → sets (reps, weight, time, distance, RPE, done), duration, RPE, notes |
+| Goal | estimated 1RM on a lift, best time on a distance, weekly volume or sessions per week; target and deadline |
+
+How the numbers are derived:
+
+- **Estimated 1RM**: Epley, `weight × (1 + reps / 30)`, for sets of 1 to 12 reps.
+- **Records**: a session's best on an exercise that beats every earlier session; lower is better for times and paces.
+- **Swim and run pace**: seconds per 100 m over sets of 25 m or more.
+- **Weekly volume**: weight × reps on loaded lifts, distance on swim and run sets; only ticked sets count.
+- **Adherence**: ticked sets over planned sets, per session and per program.
+- **Goal projection**: a least-squares line through the last ten values (or eight full weeks) carried to the deadline.
+- **Program progress**: the next day is the one after the furthest day completed, so a missed weekday never leaves you
+  behind.
+
+A backup is one JSON document (`app: "cadence"`, `version: 1`) validated on import; the CSV export has one row per set.
+
+## AI (optional, your own key)
+
+Cadence works fully without AI. With a model set up under *Settings › AI* it can:
+
+- **Design a program** from a short questionnaire (disciplines, level, days per week, weeks, goal; Advanced adds
+  session length, equipment, target date, limitations and intensity style), or **from your own history** (recent
+  sessions, records, goals and current program, summarised; the exact text sent is shown before sending).
+- **Adjust a week** of the current program from what you actually logged.
+
+The answer is checked against the program schema and opens as a draft in the editor; nothing is saved until you save
+it. Exercises the model names that the library lacks are added only when you save.
+
+Providers and models come from [`llm-models`](https://github.com/maxgfr/llm-models): `bun run catalog` lists every
+provider and model and keeps only the providers a web page can call directly (checked with a real CORS preflight from
+the app's origin). *Refresh models* in the settings reloads the model lists in the browser through
+`llm-models/browser`. A custom OpenAI-compatible endpoint covers Ollama, LM Studio or a proxy; local servers work from
+a browser on the same computer.
+
+## Privacy
+
+- No account, no server, no analytics. Training data lives in IndexedDB in this browser.
+- AI requests go straight from the device to the provider you chose, only when you ask for them.
+- The API key and endpoint are stored on the device, apart from training data, and never included in backups.
+- `maxgfr.github.io` is shared by every site the author publishes on GitHub Pages. If you rely on Cadence, deploy your
+  own fork on your own domain, and export a backup now and then.
+
+## Development
+
+Requirements: [Bun](https://bun.sh).
+
+```sh
+bun install
+bun run dev          # Vite dev server
+bun run build        # production build
+bun run preview      # serve the build
+```
+
+| Command | What it runs |
+|---|---|
+| `bun run typecheck` | `tsc --noEmit` |
+| `bun run lint` | Biome |
+| `bun run test` | unit tests of `src/core` (stats, schemas, templates, storage and backup round trip, AI parsing with a mock model) |
+| `bun run test:e2e` | Playwright smoke test with axe on a phone and a desktop viewport (run `bun run build` first) |
+| `bun run catalog` | rebuild the bundled AI model catalog |
+| `bun run check` | typecheck, lint, test, build |
+
+`src/core` is plain TypeScript without React or the DOM. Product context is in [PRODUCT.md](PRODUCT.md) and the
+design system in [DESIGN.md](DESIGN.md).
+
+### Releases
+
+Every push to `main` runs CI; when it is green, [semantic-release](https://semantic-release.gitbook.io) reads the
+commits since the last tag ([Conventional Commits](https://www.conventionalcommits.org): `fix:` → patch, `feat:` →
+minor, `BREAKING CHANGE:` → major), tags `vX.Y.Z`, publishes a GitHub release and deploys that version to GitHub
+Pages. *Settings › About* shows the version and commit. A weekly workflow refreshes the AI model catalog through a pull
+request.
+
+## License
+
+[MIT](LICENSE)

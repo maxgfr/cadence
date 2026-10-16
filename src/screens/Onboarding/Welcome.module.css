@@ -1,0 +1,59 @@
+.welcome {
+  display: grid;
+  min-height: 100dvh;
+  padding: calc(env(safe-area-inset-top) + var(--space-8)) var(--gutter)
+    calc(env(safe-area-inset-bottom) + var(--space-8));
+  place-items: center;
+}
+
+.inner {
+  display: grid;
+  gap: var(--space-6);
+  width: 100%;
+  max-width: 34rem;
+}
+
+.header {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.mark {
+  width: 3.5rem;
+  height: 3.5rem;
+}
+
+.mark rect {
+  fill: var(--accent);
+}
+
+.mark path {
+  fill: none;
+  stroke: var(--on-accent);
+  stroke-width: 5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.title {
+  font-size: var(--text-large-title);
+  font-weight: 700;
+  line-height: var(--leading-tight);
+  letter-spacing: -0.02em;
+}
+
+.lead {
+  color: var(--ink-2);
+  max-width: 34ch;
+}
+
+.units {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-4);
+}
+
+.note {
+  color: var(--ink-3);
+  font-size: var(--text-footnote);
+}

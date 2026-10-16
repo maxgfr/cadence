@@ -1,0 +1,222 @@
+.hero {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-5);
+  border-radius: var(--radius-surface);
+  background: var(--surface);
+  box-shadow: var(--lift);
+}
+
+.heroTitle {
+  font-size: var(--text-headline);
+  font-weight: 700;
+  line-height: var(--leading-tight);
+  letter-spacing: -0.015em;
+}
+
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0 var(--space-2);
+  color: var(--ink-3);
+  font-size: var(--text-footnote);
+  font-weight: 600;
+}
+
+.live {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: var(--radius-pill);
+  background: var(--accent);
+  animation: pulse 1.6s var(--ease-out) infinite;
+}
+
+@keyframes pulse {
+  50% {
+    opacity: 0.35;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .live {
+    animation: none;
+  }
+}
+
+/* The plan as a coach's card: exercise on the left, the prescription in tabular figures on the right. */
+.blocks {
+  display: grid;
+  margin: var(--space-1) 0;
+  padding: 0;
+  list-style: none;
+  border-top: var(--hairline-width) solid var(--hairline);
+}
+
+.block {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0 var(--space-4);
+  padding: var(--space-2) 0;
+  border-bottom: var(--hairline-width) solid var(--hairline);
+}
+
+.blockName {
+  font-weight: 600;
+}
+
+.blockPlan {
+  color: var(--ink-2);
+  font-size: var(--text-footnote);
+  font-variant-numeric: tabular-nums;
+}
+
+.notes {
+  color: var(--ink-2);
+  font-size: var(--text-footnote);
+}
+
+.progressLine {
+  color: var(--ink-3);
+  font-size: var(--text-footnote);
+  text-align: center;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-2);
+}
+
+.sectionTitle {
+  color: var(--ink);
+  font-size: var(--text-title);
+  font-weight: 700;
+}
+
+.free {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.freeButtons {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-2);
+}
+
+.freeButton {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--hit-large);
+  padding: var(--space-2) var(--space-3);
+  border: 0;
+  border-radius: var(--radius-control);
+  background: var(--surface);
+  box-shadow: var(--lift);
+  font-weight: 600;
+  text-align: start;
+  cursor: pointer;
+  transition:
+    background-color var(--dur-fast) var(--ease-out),
+    transform var(--dur-fast) var(--ease-out);
+}
+
+.freeButton:hover {
+  background: var(--surface-pressed);
+}
+
+.freeButton:active {
+  transform: scale(0.98);
+}
+
+.freePlus {
+  margin-inline-start: auto;
+  color: var(--ink-3);
+}
+
+.week {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.weekHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.weekSummary {
+  color: var(--ink-3);
+  font-size: var(--text-footnote);
+  font-weight: 600;
+}
+
+.strip {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: var(--space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.day {
+  display: grid;
+  justify-items: center;
+  gap: 0.125rem;
+  padding: var(--space-2) 0 var(--space-3);
+  border-radius: var(--radius-control);
+  background: var(--surface);
+  color: var(--ink);
+  text-decoration: none;
+}
+
+a.day:hover {
+  background: var(--surface-pressed);
+}
+
+.future {
+  background: transparent;
+  box-shadow: inset 0 0 0 1px var(--hairline);
+}
+
+.today {
+  box-shadow: inset 0 0 0 2px var(--accent);
+}
+
+.dayName {
+  color: var(--ink-3);
+  font-size: var(--text-caption);
+  font-weight: 600;
+}
+
+.dayNumber {
+  font-size: var(--text-body);
+  font-weight: 700;
+}
+
+.dayDots {
+  display: flex;
+  gap: 0.1875rem;
+  min-height: 0.625rem;
+}
+
+.goal {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.nudge {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--ink-2);
+  font-size: var(--text-footnote);
+}

@@ -1,0 +1,29 @@
+.dot {
+  display: inline-block;
+  flex: none;
+  width: 0.625rem;
+  height: 0.625rem;
+  border-radius: var(--radius-pill);
+  background: var(--d-other);
+}
+
+.dot[data-discipline="strength"] {
+  background: var(--d-strength);
+}
+
+.dot[data-discipline="swim"] {
+  background: var(--d-swim);
+}
+
+.dot[data-discipline="run"] {
+  background: var(--d-run);
+}
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--ink-2);
+  font-size: var(--text-footnote);
+  font-weight: 600;
+}

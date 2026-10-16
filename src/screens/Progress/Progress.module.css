@@ -1,0 +1,176 @@
+.section {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.sectionHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.sectionTitle {
+  font-size: var(--text-title);
+  font-weight: 700;
+}
+
+.sectionMeta {
+  color: var(--ink-3);
+  font-size: var(--text-footnote);
+  font-weight: 600;
+}
+
+.panel {
+  display: grid;
+  gap: var(--space-4);
+  padding: var(--space-4);
+  border-radius: var(--radius-surface);
+  background: var(--surface);
+  box-shadow: var(--lift);
+}
+
+.figures {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-3);
+  margin: 0;
+}
+
+.figures div {
+  display: grid;
+  gap: 0.125rem;
+}
+
+.figures dt {
+  color: var(--ink-3);
+  font-size: var(--text-caption);
+  font-weight: 600;
+}
+
+.figures dd {
+  margin: 0;
+  font-size: var(--text-title);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.hint {
+  color: var(--ink-3);
+  font-size: var(--text-footnote);
+}
+
+.table summary {
+  color: var(--accent-ink);
+  font-size: var(--text-footnote);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.table table,
+.muscles {
+  width: 100%;
+  margin-top: var(--space-2);
+  border-collapse: collapse;
+  font-size: var(--text-footnote);
+  font-variant-numeric: tabular-nums;
+}
+
+.table th,
+.table td,
+.muscles th,
+.muscles td {
+  padding: var(--space-2) var(--space-1);
+  border-bottom: var(--hairline-width) solid var(--hairline);
+  text-align: start;
+}
+
+.table thead th,
+.muscles thead th {
+  color: var(--ink-3);
+  font-size: var(--text-caption);
+  font-weight: 600;
+}
+
+.muscles td {
+  text-align: end;
+}
+
+.muscles thead th:not(:first-child) {
+  text-align: end;
+}
+
+.muscles tbody th {
+  font-weight: 500;
+}
+
+.muscles caption {
+  color: var(--ink-2);
+  font-weight: 600;
+  text-align: start;
+}
+
+.adherence {
+  color: var(--ink-2);
+}
+
+.adherence strong {
+  color: var(--ink);
+  font-size: var(--text-title);
+}
+
+.recordValue {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.goals {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.goalCard {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border-radius: var(--radius-surface);
+  background: var(--surface);
+  box-shadow: var(--lift);
+}
+
+.goal {
+  display: grid;
+  gap: var(--space-2);
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  text-align: start;
+}
+
+button.goal {
+  cursor: pointer;
+}
+
+.goalTitle {
+  font-weight: 600;
+}
+
+.goalStatus {
+  color: var(--ink-2);
+  font-size: var(--text-footnote);
+  font-variant-numeric: tabular-nums;
+}
+
+.form {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.formNote {
+  margin-top: calc(-1 * var(--space-2));
+  color: var(--ink-3);
+  font-size: var(--text-caption);
+}
