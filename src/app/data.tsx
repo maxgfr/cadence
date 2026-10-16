@@ -1,9 +1,12 @@
-import { createContext, type ReactNode, useCallback, useContext, useEffect, useMemo, useState } from 'react'
-import { type ExerciseIndex, indexExercises, library } from '../core/library/exercises.ts'
+import { createContext, type ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
+import type { DemoSport } from '../core/demo/catalog.ts'
+import { buildDemo, demoRemoval } from '../core/demo/demo.ts'
+import { type ExerciseIndex, indexExercises, sortedExercises } from '../core/library/exercises.ts'
 import { todayIso } from '../core/model/dates.ts'
 import {
   type Backup,
   DEFAULT_SETTINGS,
+  type Discipline,
   type Exercise,
   type Goal,
   type Program,
@@ -11,6 +14,7 @@ import {
   Settings,
 } from '../core/model/schemas.ts'
 import { idbStore } from '../core/storage/idb.ts'
+import { migrateV1, needsMigration } from '../core/storage/migrate.ts'
 import { type CollectionName, type Collections, memoryStore, type Store } from '../core/storage/store.ts'
 
 export interface Data {
@@ -18,9 +22,10 @@ export interface Data {
   /** False when IndexedDB was unavailable and data lives in memory only (lost on reload). */
   persistent: boolean
   settings: Settings
-  /** The user's own exercises. */
-  custom: Exercise[]
-  /** Built-ins, then the user's own. */
+  /** The user's disciplines, in the order created. */
+  disciplines: Discipline[]
+  disciplineIndex: ReadonlyMap<string, Discipline>
+  /** The user's exercises, sorted by name. */
   exercises: Exercise[]
   index: ExerciseIndex
   programs: Program[]
@@ -32,6 +37,10 @@ export interface Data {
   remove(name: CollectionName, id: string): Promise<void>
   updateSettings(patch: Partial<Settings>): Promise<void>
   replaceAll(backup: Backup): Promise<void>
+  /** Adds the demo for these sports; what already exists (edited demo records included) is left as it is. */
+  loadDemo(sports: readonly DemoSport[], withSessions: boolean): Promise<void>
+  /** Removes what the demo added, except what the user's own records still use. */
+  removeDemo(): Promise<void>
 }
 
 const DataContext = createContext<Data | null>(null)
@@ -46,18 +55,14 @@ interface Loaded {
   store: Store
   persistent: boolean
   settings: Settings
-  custom: Exercise[]
+  disciplines: Discipline[]
+  exercises: Exercise[]
   programs: Program[]
   sessions: Session[]
   goals: Goal[]
 }
 
-const KEY: Record<CollectionName, keyof Loaded> = {
-  exercises: 'custom',
-  programs: 'programs',
-  sessions: 'sessions',
-  goals: 'goals',
-}
+type ListKey = 'disciplines' | 'exercises' | 'programs' | 'sessions' | 'goals'
 
 async function open(): Promise<{ store: Store; persistent: boolean }> {
   try {
@@ -69,22 +74,22 @@ async function open(): Promise<{ store: Store; persistent: boolean }> {
 
 async function load(): Promise<Loaded> {
   const { store, persistent } = await open()
-  const [settings, custom, programs, sessions, goals] = await Promise.all([
+  const [stored, disciplines, exercises, programs, sessions, goals] = await Promise.all([
     store.getSettings(),
+    store.all('disciplines'),
     store.all('exercises'),
     store.all('programs'),
     store.all('sessions'),
     store.all('goals'),
   ])
-  return {
-    store,
-    persistent,
-    settings: Settings.parse({ ...DEFAULT_SETTINGS, ...settings }),
-    custom,
-    programs,
-    sessions,
-    goals,
+  const settings = Settings.parse({ ...DEFAULT_SETTINGS, ...stored })
+  let lists = { disciplines, exercises, programs, sessions, goals }
+  // Data written by version 1 (fixed disciplines, built-in exercises) is moved to today's shape once.
+  if (needsMigration(lists)) {
+    lists = migrateV1(lists)
+    await store.replaceAll({ ...lists, settings })
   }
+  return { store, persistent, settings, ...lists }
 }
 
 function useToday(): string {
@@ -102,7 +107,15 @@ function useToday(): string {
 }
 
 export function DataProvider({ children, fallback }: { children: ReactNode; fallback: ReactNode }) {
-  const [loaded, setLoaded] = useState<Loaded | null>(null)
+  const [state, setLoadedState] = useState<Loaded | null>(null)
+  // Actions read the latest state from here: two actions in a row (load the demo, then save settings) must not
+  // overwrite each other with the copy they were created with.
+  const current = useRef<Loaded | null>(null)
+  const setLoaded = useCallback((next: Loaded | null | ((l: Loaded | null) => Loaded | null)) => {
+    const value = typeof next === 'function' ? next(current.current) : next
+    current.current = value
+    setLoadedState(value)
+  }, [])
   const today = useToday()
 
   useEffect(() => {
@@ -113,49 +126,50 @@ export function DataProvider({ children, fallback }: { children: ReactNode; fall
     return () => {
       live = false
     }
-  }, [])
+  }, [setLoaded])
 
   const put = useCallback(
     async <C extends CollectionName>(name: C, value: Collections[C]) => {
+      const loaded = current.current
       if (!loaded) return
       await loaded.store.put(name, value)
       setLoaded((l) => {
         if (!l) return l
-        const key = KEY[name]
-        const list = l[key] as unknown as { id: string }[]
+        const list = l[name as ListKey] as unknown as { id: string }[]
         const i = list.findIndex((x) => x.id === value.id)
         const next = i < 0 ? [...list, value] : list.map((x, j) => (j === i ? value : x))
-        return { ...l, [key]: next }
+        return { ...l, [name]: next }
       })
     },
-    [loaded],
+    [setLoaded],
   )
 
   const remove = useCallback(
     async (name: CollectionName, id: string) => {
+      const loaded = current.current
       if (!loaded) return
       await loaded.store.remove(name, id)
-      setLoaded((l) => {
-        if (!l) return l
-        const key = KEY[name]
-        return { ...l, [key]: (l[key] as unknown as { id: string }[]).filter((x) => x.id !== id) }
-      })
+      setLoaded((l) =>
+        l ? { ...l, [name]: (l[name as ListKey] as unknown as { id: string }[]).filter((x) => x.id !== id) } : l,
+      )
     },
-    [loaded],
+    [setLoaded],
   )
 
   const updateSettings = useCallback(
     async (patch: Partial<Settings>) => {
+      const loaded = current.current
       if (!loaded) return
       const next = Settings.parse({ ...loaded.settings, ...patch })
       await loaded.store.putSettings(next)
       setLoaded((l) => (l ? { ...l, settings: next } : l))
     },
-    [loaded],
+    [setLoaded],
   )
 
   const replaceAll = useCallback(
     async (backup: Backup) => {
+      const loaded = current.current
       if (!loaded) return
       const settings = Settings.parse({ ...backup.settings, onboarded: true })
       await loaded.store.replaceAll({ ...backup, settings })
@@ -164,7 +178,8 @@ export function DataProvider({ children, fallback }: { children: ReactNode; fall
           ? {
               ...l,
               settings,
-              custom: backup.exercises,
+              disciplines: backup.disciplines,
+              exercises: backup.exercises,
               programs: backup.programs,
               sessions: backup.sessions,
               goals: backup.goals,
@@ -172,23 +187,67 @@ export function DataProvider({ children, fallback }: { children: ReactNode; fall
           : l,
       )
     },
-    [loaded],
+    [setLoaded],
   )
 
+  const loadDemo = useCallback(
+    async (sports: readonly DemoSport[], withSessions: boolean) => {
+      const loaded = current.current
+      if (!loaded) return
+      const demo = buildDemo({ sports, withSessions, today: todayIso() })
+      const next = { ...loaded }
+      for (const key of ['disciplines', 'exercises', 'programs', 'sessions', 'goals'] as const) {
+        const have = new Set((loaded[key] as { id: string }[]).map((x) => x.id))
+        const fresh = (demo[key] as { id: string }[]).filter((x) => !have.has(x.id))
+        for (const x of fresh) await loaded.store.put(key, x as never)
+        ;(next as Record<ListKey, unknown[]>)[key] = [...loaded[key], ...fresh]
+      }
+      // The first demo program becomes the current one when there is none.
+      const settings = Settings.parse({
+        ...loaded.settings,
+        onboarded: true,
+        ...(!loaded.settings.activeProgramId && demo.programs[0] ? { activeProgramId: demo.programs[0].id } : {}),
+      })
+      await loaded.store.putSettings(settings)
+      setLoaded({ ...next, settings })
+    },
+    [setLoaded],
+  )
+
+  const removeDemo = useCallback(async () => {
+    const loaded = current.current
+    if (!loaded) return
+    const gone = demoRemoval(loaded)
+    const next = { ...loaded }
+    for (const key of ['disciplines', 'exercises', 'programs', 'sessions', 'goals'] as const) {
+      const ids = new Set(gone[key])
+      for (const id of ids) await loaded.store.remove(key, id)
+      ;(next as Record<ListKey, unknown[]>)[key] = (loaded[key] as { id: string }[]).filter((x) => !ids.has(x.id))
+    }
+    const active = loaded.settings.activeProgramId
+    const settings =
+      active && gone.programs.includes(active) ? { ...loaded.settings, activeProgramId: undefined } : loaded.settings
+    if (settings !== loaded.settings) await loaded.store.putSettings(settings)
+    setLoaded({ ...next, settings })
+  }, [setLoaded])
+
   const value = useMemo<Data | null>(() => {
-    if (!loaded) return null
-    const exercises = library(loaded.custom)
+    if (!state) return null
+    const exercises = sortedExercises(state.exercises)
     return {
-      ...loaded,
+      ...state,
       exercises,
       index: indexExercises(exercises),
+      disciplineIndex: new Map(state.disciplines.map((d) => [d.id, d])),
       today,
       put,
       remove,
       updateSettings,
       replaceAll,
+      loadDemo,
+      removeDemo,
     }
-  }, [loaded, today, put, remove, updateSettings, replaceAll])
+  }, [state, today, put, remove, updateSettings, replaceAll, loadDemo, removeDemo])
 
   if (!value) return <>{fallback}</>
   return <DataContext.Provider value={value}>{children}</DataContext.Provider>

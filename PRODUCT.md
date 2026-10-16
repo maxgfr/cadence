@@ -12,29 +12,31 @@ Delegated, confirmed in the approved plan: the stack and conventions of the auth
 
 ## Users
 
-Any athlete who trains on their own across one or more of three disciplines: strength (gym), swimming (pool) and sprint/running (track). No assumption about level: a beginner following a template and an experienced athlete writing their own blocks use the same app. Two moments of use:
+Any athlete who trains on their own, in whatever sports they choose (the demo covers gym, swimming and track and field). No assumption about level: a beginner starting from a demo program and an experienced athlete writing their own blocks use the same app. Two moments of use:
 - at the gym, the pool or the track, on a phone, between sets, with sweaty hands, little attention and often no network;
 - at a desk (laptop or tablet), planning a program, reviewing history and progress.
 
 ## Product Purpose
 
-Cadence plans and logs training sessions and shows what the training produced. A user picks or writes a program (weeks, days, planned blocks such as "5×5 @80%", "8×50 m free @1:00", "6×60 m @95%, rest 3'"), starts today's session pre-filled from it, logs what was actually done set by set, and sees personal records, goals and progress over time. Success: the user opens the app at the gym, sees today's session, logs it without friction, and trusts the numbers they see afterwards.
+Cadence plans and logs training sessions and shows what the training produced. A user creates their disciplines and exercises (or loads a demo sport), picks or writes a program (weeks, days, planned blocks such as "5×5 @80%", "8×50 m free @1:00", "6×60 m @95%, rest 3'"), starts today's session pre-filled from it, logs what was actually done set by set, and sees personal records, goals and progress over time. Success: the user opens the app at the gym, sees today's session, logs it without friction, and trusts the numbers they see afterwards.
 
 ## Positioning
 
-Local-first and account-free: data lives on the device, exports to open JSON/CSV, nothing is sent anywhere. One log covers gym, pool and track in the same model (sets of weight×reps, time, distance) instead of three apps. Everything works without AI; AI program design is optional, uses the user's own key and model (from the `llm-models` catalog, or a local OpenAI-compatible server), and always produces an editable draft that is saved only on confirmation.
+Local-first and account-free: data lives on the device, exports to open JSON/CSV, nothing is sent anywhere. One log covers every sport the user defines in the same model (sets of weight×reps, reps, time, distance) instead of one app per sport. Everything works without AI; AI program design is optional, uses the user's own key and model (from the `llm-models` catalog, or a local OpenAI-compatible server), and always produces an editable draft that is saved only on confirmation.
 
 ## Operating Context
 
 - Ritual: open Today, start the planned session (or a free session), log sets with a rest timer, finish with session RPE and notes.
-- Planning: choose a built-in template (beginner full-body, 5/3/1-style strength, 100 m sprinter block, 1500 m swim build), edit it, write one from scratch, or generate one with AI from a questionnaire or from the user's own history, PRs and goals.
-- Review: history list, progress charts (e1RM, weekly volume, swim pace per 100 m, sprint best times), PRs, goals with a projection to their deadline, consistency and adherence (planned vs. done).
+- Starting: the app is empty. The user creates disciplines and exercises (also from the exercise picker, mid-session), or loads demo sports (Gym, Swimming, Track and field, any combination) with their exercises and programs (beginner full-body, 5/3/1-style strength, 1500 m swim build, 100 m sprinter block), optionally with example sessions; the demo can be removed again.
+- Planning: edit a demo program, write one from scratch, or generate one with AI from a questionnaire or from the user's own history, PRs and goals.
+- Review: history list, progress charts (e1RM, weekly volume per discipline, pace per 100 m or per km, best times), PRs, goals with a projection to their deadline, consistency and adherence (planned vs. done).
 - Backups are manual: JSON export/import, CSV export of sessions.
 
 ## Capabilities and Constraints
 
 - Local-first PWA: IndexedDB is the source of truth; works fully offline once installed.
 - Interface in English only.
+- Disciplines are the user's own (name and colour); none exists by default and nothing is pre-selected: exercises, program days and sessions have a discipline only when the user picks one (user request).
 - Defaults: metric (kg, m), week starts Monday; switchable to lb and yd in Settings. Stored values are always metric.
 - Effort scale: RPE 1–10, per set and per session, for every discipline.
 - Two modes, chosen at first run and switchable in Settings (user request): **Normal** shows the essentials (sets, reps, load or time or distance, session RPE, the main charts, a short AI questionnaire); **Advanced** adds per-set RPE, intensity prescriptions (%1RM, RPE, pace, % of max), rest and tempo in plans, extra stats (tonnage per muscle group, adherence) and the full AI questionnaire. The mode only hides or shows fields; the data model is the same, so switching never loses data.

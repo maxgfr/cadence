@@ -78,11 +78,15 @@
   --scrim: rgb(18 20 23 / 0.36);
   --selection: rgb(196 61 22 / 0.18);
 
-  /* Disciplines: identity dots and chart series, never text colour, never on the accent's hue. */
-  --d-strength: #2a78d6;
-  --d-swim: #1baf7a;
-  --d-run: #6250d6;
-  --d-other: #898781;
+  /* Discipline identity: the categorical palette (dataviz reference instance), always beside a label. */
+  --c-blue: #2a78d6;
+  --c-aqua: #1baf7a;
+  --c-violet: #6250d6;
+  --c-orange: #eb6834;
+  --c-magenta: #e87ba4;
+  --c-green: #008300;
+  --c-yellow: #eda100;
+  --c-red: #e34948;
 
   /* Charts. */
   --chart-grid: #e6e8eb;
@@ -124,10 +128,14 @@
     --lift: 0 1px 0 rgb(0 0 0 / 0.4);
     --scrim: rgb(0 0 0 / 0.58);
     --selection: rgb(255 125 82 / 0.3);
-    --d-strength: #3987e5;
-    --d-swim: #199e70;
-    --d-run: #9085e9;
-    --d-other: #898781;
+    --c-blue: #3987e5;
+    --c-aqua: #199e70;
+    --c-violet: #9085e9;
+    --c-orange: #d95926;
+    --c-magenta: #d55181;
+    --c-green: #008300;
+    --c-yellow: #c98500;
+    --c-red: #e66767;
     --chart-grid: #26292e;
     --chart-axis: #3a3e45;
     --chart-series: #3987e5;
@@ -167,10 +175,14 @@
   --lift: 0 1px 0 rgb(0 0 0 / 0.4);
   --scrim: rgb(0 0 0 / 0.58);
   --selection: rgb(255 125 82 / 0.3);
-  --d-strength: #3987e5;
-  --d-swim: #199e70;
-  --d-run: #9085e9;
-  --d-other: #898781;
+  --c-blue: #3987e5;
+  --c-aqua: #199e70;
+  --c-violet: #9085e9;
+  --c-orange: #d95926;
+  --c-magenta: #d55181;
+  --c-green: #008300;
+  --c-yellow: #c98500;
+  --c-red: #e66767;
   --chart-grid: #26292e;
   --chart-axis: #3a3e45;
   --chart-series: #3987e5;

@@ -34,43 +34,8 @@
   color: var(--ink-2);
 }
 
-.form {
-  display: grid;
-  gap: var(--space-4);
-}
-
-.muscles {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--space-2);
-  min-width: 0;
-  margin: 0;
-  padding: 0;
-  border: 0;
-}
-
-.muscles legend {
-  margin-bottom: var(--space-2);
-  padding: 0;
-  color: var(--ink-2);
-  font-size: var(--text-footnote);
-  font-weight: 600;
-}
-
-.muscles label {
+.actions {
   display: flex;
-  align-items: center;
+  flex-wrap: wrap;
   gap: var(--space-2);
-  min-height: 2.25rem;
-}
-
-.muscles input {
-  width: 1.125rem;
-  height: 1.125rem;
-  accent-color: var(--accent);
-}
-
-.note {
-  color: var(--ink-3);
-  font-size: var(--text-footnote);
 }

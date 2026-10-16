@@ -1,4 +1,14 @@
-import { Database, Download, Dumbbell, ExternalLink, Info, ShieldCheck, Sparkles, Upload } from 'lucide-react'
+import {
+  Database,
+  Download,
+  Dumbbell,
+  ExternalLink,
+  Info,
+  LayoutTemplate,
+  ShieldCheck,
+  Sparkles,
+  Upload,
+} from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { useAi } from '../../app/ai.tsx'
 import { BUILD } from '../../app/buildInfo.ts'
@@ -125,9 +135,15 @@ export function Settings() {
         />
         <ListRow
           leading={<Dumbbell size={20} strokeWidth={1.75} />}
-          title="Exercises"
-          subtitle={`${data.exercises.length} in the library`}
+          title="Exercises and disciplines"
+          subtitle={`${data.exercises.length} exercises · ${data.disciplines.length} disciplines`}
           href="/exercises"
+        />
+        <ListRow
+          leading={<LayoutTemplate size={20} strokeWidth={1.75} />}
+          title="Demo"
+          subtitle="Gym, Swimming, Track and field: exercises and programs to start from"
+          href="/settings/demo"
         />
       </ListGroup>
 
@@ -138,7 +154,7 @@ export function Settings() {
         <ListRow
           leading={<Download size={20} strokeWidth={1.75} />}
           title="Export backup"
-          subtitle="Programs, sessions, goals, exercises and settings, as JSON"
+          subtitle="Disciplines, exercises, programs, sessions, goals and settings, as JSON"
           onClick={async () => {
             const b = await exportBackup(data.store)
             download(`cadence-backup-${data.today}.json`, JSON.stringify(b, null, 2), 'application/json')
@@ -155,7 +171,11 @@ export function Settings() {
           title="Export sessions as CSV"
           subtitle="One row per set, for spreadsheets"
           onClick={() =>
-            download(`cadence-sessions-${data.today}.csv`, sessionsCsv(data.sessions, data.index), 'text/csv')
+            download(
+              `cadence-sessions-${data.today}.csv`,
+              sessionsCsv(data.sessions, data.index, data.disciplineIndex),
+              'text/csv',
+            )
           }
         />
         {persisted === false && (
@@ -218,9 +238,10 @@ export function Settings() {
                 onClick={async () => {
                   await data.replaceAll({
                     app: 'cadence',
-                    version: 1,
+                    version: 2,
                     exportedAt: new Date().toISOString(),
                     settings: { ...DEFAULT_SETTINGS, ...s, activeProgramId: undefined },
+                    disciplines: [],
                     exercises: [],
                     programs: [],
                     sessions: [],

@@ -18,6 +18,9 @@ under `/cadence/`, no server.
 - Data shapes live in `src/core/model/schemas.ts` (zod). A change to a stored shape needs a new `BACKUP_VERSION` and a
   migration; never change what an existing backup means.
 - Normal and Advanced modes only show or hide fields: the data model is the same, and switching never drops data.
+- Disciplines are user data: nothing in the app may assume a sport. Demo content lives in `src/core/demo` (stable
+  `demo-*` ids so it can be removed), never in defaults. Stored data of an older shape is migrated in
+  `core/storage/migrate.ts`, both on load and on backup import.
 - AI is optional and never writes data: every AI result is a draft the user edits and saves. Keys and the endpoint live
   in the `secrets` store and never appear in exports. The Anthropic browser header goes to Anthropic's own host only.
 - AI and provider SDK code is loaded lazily (AI screens only); keep it out of the main chunk.

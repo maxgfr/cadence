@@ -1,31 +1,38 @@
 # Cadence
 
-Cadence is a training tracker for the gym, the pool and the track that runs entirely in the browser. Plan or pick a
-program, start today's session pre-filled from it, log sets with a rest timer, and follow records, goals and progress
-charts. It works offline, keeps its data on the device, and needs no account. AI program design is optional and uses
-your own model and key.
+Cadence is a training tracker that runs entirely in the browser, for whatever you train: you create your own
+disciplines (Gym, Swimming, Climbing…) and exercises, write programs, start today's session pre-filled from them, log
+sets with a rest timer, and follow records, goals and progress charts. It works offline, keeps its data on the device,
+and needs no account. The app starts empty; a demo (Gym, Swimming, Track and field, any combination) gives a solid
+starting point. AI program design is optional and uses your own model and key.
 
 - App: <https://maxgfr.github.io/cadence/>
 - Interface language: English.
 
 ## Features
 
+- **Your disciplines and exercises**: create the sports you train (name and colour) and their exercises, measured by
+  load × reps, bodyweight reps, time held, or distance and time (with a fixed distance for events such as a 60 m
+  sprint, and pace per 100 m or per km). Nothing is chosen for you: an exercise, a day or a session has a discipline
+  only if you pick one. Exercises can be created from the picker, in the middle of a session.
+- **Demo**: on the welcome screen or in *Settings › Demo*, pick Gym, Swimming, Track and field, or several: each brings
+  its discipline, exercises (main lifts and accessories; strokes and drills; sprints, runs, drills and plyometrics) and
+  programs (beginner full body, 5/3/1-style strength, 1500 m swim build, 100 m sprinter block). Ten weeks of example
+  sessions and a goal per sport can be added to see the charts. Everything stays editable, and *Remove the demo* takes
+  it away again, keeping what your own records use.
 - **Today**: the next session of the current program, written as a coach would ("5×5 @80%", "8×50 m @1:50",
-  "6×60 m @95% max · rest 3:00"), with one button to start it, plus free sessions for the gym, the pool or the track
-  and this week at a glance.
+  "6×60 m @95% max · rest 3:00"), with one button to start it, a free session per discipline, and this week at a
+  glance.
 - **Logging**: one card per exercise, one row per set with large touch targets, values pre-filled from the plan, a
   tick per set, and a rest timer that starts on each tick (−15 s, +15 s, skip, vibration at the end). Finish with
   the duration, an effort rating (RPE 1–10) and notes.
 - **History**: every session by month, with what was planned next to what was done, the records it set, editing and
   deletion with undo, and CSV export.
-- **Programs**: four built-in programs (beginner full body, 5/3/1-style strength, 100 m sprinter block, 1500 m swim
-  build), a full editor (weeks, days, exercises, sets, reps, distances, intensity, rest, send-off interval, tempo),
-  and optional AI design.
+- **Programs**: a full editor (weeks, days and their discipline, exercises, sets, reps, distances, intensity, rest,
+  send-off interval, tempo), the demo's programs, and optional AI design.
 - **Progress**: a training calendar, the best value per session of any exercise (estimated 1RM, best time, best pace,
-  most reps, longest hold) with its records, weekly volume (kilograms lifted, metres swum, metres run), and goals with
-  a trend projected to their deadline.
-- **Exercises**: a library of main lifts and accessories, swim strokes and drills, sprint distances and plyometrics,
-  plus your own exercises.
+  most reps, longest hold) with its records, weekly volume per discipline (kilograms lifted, distance covered), and
+  goals with a trend projected to their deadline.
 - **Two modes**: *Normal* shows the essentials. *Advanced* adds effort per set, intensity targets (%1RM, RPE, pace,
   % of best effort), rest and tempo in plans, sets per muscle group, adherence to the plan, goal charts and the
   full AI questionnaire. Switching never loses data.
@@ -38,36 +45,41 @@ All values are stored in metric units (kilograms, metres, seconds); units only c
 
 | Entity | Fields |
 |---|---|
-| Exercise | name, discipline (`strength`, `swim`, `run`, `other`), metric (`weight_reps`, `reps`, `time`, `distance_time`), muscles, stroke, fixed distance |
-| Program | name, goal, disciplines, weeks → days → blocks, source (`manual`, `template`, `ai`) |
+| Discipline | name, colour (one of eight palette slots) |
+| Exercise | name, discipline (optional), metric (`weight_reps`, `reps`, `time`, `distance_time`), pace unit (`100m`, `km`), muscles, stroke, fixed distance |
+| Program | name, goal, weeks → days (each with an optional discipline) → blocks, source (`manual`, `template`, `ai`) |
 | Block | exercise, sets, reps, distance, duration, intensity (`kg`, `pct1rm`, `rpe`, `pace`, `pctmax`), rest, send-off interval, tempo, notes |
-| Session | date, title, discipline, program day, entries → sets (reps, weight, time, distance, RPE, done), duration, RPE, notes |
-| Goal | estimated 1RM on a lift, best time on a distance, weekly volume or sessions per week; target and deadline |
+| Session | date, title, discipline (optional), program day, entries → sets (reps, weight, time, distance, RPE, done), duration, RPE, notes |
+| Goal | estimated 1RM on a lift, best time or pace on an exercise, weekly kilograms or distance, or sessions per week (in one discipline or all); target and deadline |
 
 How the numbers are derived:
 
 - **Estimated 1RM**: Epley, `weight × (1 + reps / 30)`, for sets of 1 to 12 reps.
 - **Records**: a session's best on an exercise that beats every earlier session; lower is better for times and paces.
 - **Swim and run pace**: seconds per 100 m over sets of 25 m or more.
-- **Weekly volume**: weight × reps on loaded lifts, distance on swim and run sets; only ticked sets count.
+- **Weekly volume**: weight × reps on loaded lifts and distance on distance sets, per discipline (an exercise's own,
+  else its session's); only ticked sets count.
 - **Adherence**: ticked sets over planned sets, per session and per program.
 - **Goal projection**: a least-squares line through the last ten values (or eight full weeks) carried to the deadline.
 - **Program progress**: the next day is the one after the furthest day completed, so a missed weekday never leaves you
   behind.
 
-A backup is one JSON document (`app: "cadence"`, `version: 1`) validated on import; the CSV export has one row per set.
+A backup is one JSON document (`app: "cadence"`, `version: 2`) validated on import; version 1 backups (fixed
+disciplines, built-in exercises) are converted on import, and data stored by version 1 is converted when the app
+opens. The CSV export has one row per set.
 
 ## AI (optional, your own key)
 
 Cadence works fully without AI. With a model set up under *Settings › AI* it can:
 
 - **Design a program** from a short questionnaire (disciplines, level, days per week, weeks, goal; Advanced adds
-  session length, equipment, target date, limitations and intensity style), or **from your own history** (recent
+  session length, equipment, target date, limitations and intensity style) for your disciplines or sports you name,
+  or **from your own history** (recent
   sessions, records, goals and current program, summarised; the exact text sent is shown before sending).
 - **Adjust a week** of the current program from what you actually logged.
 
 The answer is checked against the program schema and opens as a draft in the editor; nothing is saved until you save
-it. Exercises the model names that the library lacks are added only when you save.
+it. Exercises and disciplines the model names that you do not have yet are added only when you save.
 
 Providers and models come from [`llm-models`](https://github.com/maxgfr/llm-models): `bun run catalog` lists every
 provider and model and keeps only the providers a web page can call directly (checked with a real CORS preflight from

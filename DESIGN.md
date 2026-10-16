@@ -17,9 +17,14 @@ colors:
   danger: "#b4232a"
   warning: "#8a4b00"
   success: "#12704a"
-  discipline-strength: "#2a78d6"
-  discipline-swim: "#1baf7a"
-  discipline-run: "#6250d6"
+  discipline-blue: "#2a78d6"
+  discipline-aqua: "#1baf7a"
+  discipline-violet: "#6250d6"
+  discipline-orange: "#eb6834"
+  discipline-magenta: "#e87ba4"
+  discipline-green: "#008300"
+  discipline-yellow: "#eda100"
+  discipline-red: "#e34948"
   chart-series: "#2a78d6"
   dark-ground: "#0e0f11"
   dark-surface: "#181a1d"
@@ -27,9 +32,9 @@ colors:
   dark-ink: "#f1f2f4"
   dark-accent: "#ff7d52"
   dark-on-accent: "#1f0a03"
-  dark-discipline-strength: "#3987e5"
-  dark-discipline-swim: "#199e70"
-  dark-discipline-run: "#9085e9"
+  dark-discipline-blue: "#3987e5"
+  dark-discipline-aqua: "#199e70"
+  dark-discipline-violet: "#9085e9"
 typography:
   large-title:
     fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', system-ui, sans-serif"
@@ -120,7 +125,7 @@ It is used in bright places (gym lights, pool decks, outdoor tracks) with sweaty
 
 **Key characteristics:**
 - One accent (track orange) for the primary action, the current place, a ticked set and a record point. Never decoration.
-- Three discipline hues (gym blue, swim aqua, track violet) as 10px dots, always beside a text label.
+- The user's disciplines each take one of eight palette colours, shown as 10px dots, always beside a text label; a hollow ring means "no discipline".
 - Plans and values in tabular figures, joined to their units with no-break spaces so "800 m" never splits.
 - Bottom tab bar (Today, History, Programs, Progress, Settings) under 1000px; a 260px sidebar from 1000px, which adds Exercises.
 - Logging is a focus route: no tab bar, a sticky bar with Back, the session clock and Finish.
@@ -139,7 +144,7 @@ Restrained: tinted neutrals plus one accent; light and dark are separate token s
 - **Hairline** / **Hairline Strong**: separators and field borders.
 
 ### Disciplines
-`--d-strength`, `--d-swim`, `--d-run` (validated with the dataviz palette validator: adjacent CVD ΔE ≥ 17, light and dark). Swim aqua sits below 3:1 on white, so a discipline colour never stands alone: dots always carry their label.
+`--c-blue … --c-red`: the dataviz reference palette's eight categorical slots, in its validated order, each stepped for dark mode. A new discipline takes the first colour not in use (the demo's Gym, Swimming, Track and field take blue, aqua and violet). Several slots sit below 3:1 on white and orange neighbours the accent, so a discipline colour never stands alone: dots always carry their label, and the colour is identity, never an action.
 
 ### Charts
 Single series in `--chart-series` (the strength blue), area washes at 10%, hairline grid, records marked with the accent. The training calendar uses a five-step blue ramp (`--heat-0` … `--heat-4`), reversed in dark mode so longer days stay brighter.

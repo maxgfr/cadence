@@ -98,3 +98,8 @@
   font-size: var(--text-footnote);
   font-weight: 600;
 }
+
+.sports {
+  display: grid;
+  gap: var(--space-4);
+}

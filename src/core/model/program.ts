@@ -139,7 +139,7 @@ export function sessionFromDay(
     id: newId(),
     date,
     title: day ? `${day.name} · ${weekName}` : program.name,
-    discipline: day?.discipline ?? program.disciplines[0] ?? 'other',
+    ...(day?.disciplineId ? { disciplineId: day.disciplineId } : {}),
     programRef: ref,
     entries,
     status: 'active',
@@ -148,17 +148,28 @@ export function sessionFromDay(
 }
 
 /** A session with no plan: the athlete adds exercises as they go. */
-export function freeSession(discipline: Session['discipline'], date: string, now: Date = new Date()): Session {
-  const titles = { strength: 'Gym session', swim: 'Swim session', run: 'Track session', other: 'Session' }
+export function freeSession(
+  discipline: { id: string; name: string } | undefined,
+  date: string,
+  now: Date = new Date(),
+): Session {
   return {
     id: newId(),
     date,
-    title: titles[discipline],
-    discipline,
+    title: discipline ? `${discipline.name} session` : 'Session',
+    ...(discipline ? { disciplineId: discipline.id } : {}),
     entries: [],
     status: 'active',
     startedAt: now.toISOString(),
   }
+}
+
+/** The disciplines a program trains, in the order its days first use them. */
+export function programDisciplines(program: Program): string[] {
+  const out: string[] = []
+  for (const w of program.weeks)
+    for (const d of w.days) if (d.disciplineId && !out.includes(d.disciplineId)) out.push(d.disciplineId)
+  return out
 }
 
 /** Fresh ids throughout, for a copied week or day. */

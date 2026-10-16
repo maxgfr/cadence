@@ -1,8 +1,9 @@
 import { type DBSchema, type IDBPDatabase, openDB } from 'idb'
-import type { Exercise, Goal, Program, Session, Settings } from '../model/schemas.ts'
+import type { Discipline, Exercise, Goal, Program, Session, Settings } from '../model/schemas.ts'
 import { COLLECTIONS, type Store } from './store.ts'
 
 interface CadenceDB extends DBSchema {
+  disciplines: { key: string; value: Discipline }
   exercises: { key: string; value: Exercise }
   programs: { key: string; value: Program }
   sessions: { key: string; value: Session; indexes: { date: string } }
@@ -11,17 +12,21 @@ interface CadenceDB extends DBSchema {
   secrets: { key: string; value: string }
 }
 
-const DB_VERSION = 1
+/** 2: the user's own disciplines (records of version 1 are migrated when the app loads them). */
+const DB_VERSION = 2
 
 export async function idbStore(name = 'cadence'): Promise<Store> {
   const db: IDBPDatabase<CadenceDB> = await openDB<CadenceDB>(name, DB_VERSION, {
-    upgrade(d) {
-      d.createObjectStore('exercises', { keyPath: 'id' })
-      d.createObjectStore('programs', { keyPath: 'id' })
-      d.createObjectStore('sessions', { keyPath: 'id' }).createIndex('date', 'date')
-      d.createObjectStore('goals', { keyPath: 'id' })
-      d.createObjectStore('meta')
-      d.createObjectStore('secrets')
+    upgrade(d, oldVersion) {
+      if (oldVersion < 1) {
+        d.createObjectStore('exercises', { keyPath: 'id' })
+        d.createObjectStore('programs', { keyPath: 'id' })
+        d.createObjectStore('sessions', { keyPath: 'id' }).createIndex('date', 'date')
+        d.createObjectStore('goals', { keyPath: 'id' })
+        d.createObjectStore('meta')
+        d.createObjectStore('secrets')
+      }
+      if (oldVersion < 2) d.createObjectStore('disciplines', { keyPath: 'id' })
     },
   })
   return {
@@ -33,9 +38,9 @@ export async function idbStore(name = 'cadence'): Promise<Store> {
       await db.delete(collection, id)
     },
     async replaceAll(next) {
-      const tx = db.transaction(['exercises', 'programs', 'sessions', 'goals', 'meta'], 'readwrite')
+      const tx = db.transaction(['disciplines', 'exercises', 'programs', 'sessions', 'goals', 'meta'], 'readwrite')
       for (const c of COLLECTIONS) {
-        // One store type for all four: the values were validated against their own schema by the caller.
+        // One store type for all five: the values were validated against their own schema by the caller.
         const store = tx.objectStore(c as 'goals')
         await store.clear()
         for (const v of next[c]) await store.put(v as Goal)

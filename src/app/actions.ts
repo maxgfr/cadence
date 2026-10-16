@@ -1,6 +1,6 @@
 import { useLocation } from 'wouter'
 import { freeSession, sessionFromDay } from '../core/model/program.ts'
-import type { Discipline, Program, ProgramRef } from '../core/model/schemas.ts'
+import type { Program, ProgramRef } from '../core/model/schemas.ts'
 import { currentE1rm } from '../core/stats/metrics.ts'
 import { useData } from './data.tsx'
 
@@ -18,8 +18,8 @@ export function useStartSession() {
       await data.put('sessions', s)
       navigate(`/log/${s.id}`)
     },
-    async free(discipline: Discipline) {
-      const s = freeSession(discipline, data.today)
+    async free(disciplineId: string | undefined) {
+      const s = freeSession(disciplineId ? data.disciplineIndex.get(disciplineId) : undefined, data.today)
       await data.put('sessions', s)
       navigate(`/log/${s.id}`)
     },

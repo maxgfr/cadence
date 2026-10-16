@@ -1,14 +1,15 @@
 import { newId } from '../model/ids.ts'
-import type { Block, Day, Discipline, Program, Week } from '../model/schemas.ts'
+import type { Block, Day, Program, Week } from '../model/schemas.ts'
+import { DEMO_DISCIPLINES, type DemoSport } from './catalog.ts'
 
-/** Built-in programs, usable without AI. Each instantiation gets fresh ids so it can be edited freely. */
+/** The demo's programs, one or two per sport. Days carry their sport; `instantiate` maps it to a discipline. */
 
 export interface Template {
   id: string
   name: string
   summary: string
   level: 'beginner' | 'intermediate'
-  disciplines: Discipline[]
+  sport: DemoSport
   goal: string
   build: () => Week[]
 }
@@ -21,10 +22,10 @@ const b = (exerciseId: string, sets: number, spec: BlockSpec = {}): Block => ({
   sets,
   ...spec,
 })
-const day = (name: string, discipline: Discipline, blocks: Block[], notes?: string): Day => ({
+const day = (name: string, sport: DemoSport, blocks: Block[], notes?: string): Day => ({
   id: newId(),
   name,
-  discipline,
+  disciplineId: DEMO_DISCIPLINES[sport].id,
   blocks,
   ...(notes ? { notes } : {}),
 })
@@ -38,19 +39,19 @@ function beginnerFullBody(): Week[] {
   const effort = [7, 7.5, 8, 8.5]
   return effort.map((e, i) =>
     week(`Week ${i + 1}`, [
-      day('Full body A', 'strength', [
+      day('Full body A', 'gym', [
         b('back-squat', 3, { reps: 5, intensity: rpe(e), rest: 180 }),
         b('bench-press', 3, { reps: 5, intensity: rpe(e), rest: 180 }),
         b('barbell-row', 3, { reps: 8, intensity: rpe(e), rest: 120 }),
         b('plank', 3, { duration: 30 + i * 10, rest: 60 }),
       ]),
-      day('Full body B', 'strength', [
+      day('Full body B', 'gym', [
         b('deadlift', 2, { reps: 5, intensity: rpe(e), rest: 180 }),
         b('overhead-press', 3, { reps: 5, intensity: rpe(e), rest: 150 }),
         b('lat-pulldown', 3, { reps: 10, intensity: rpe(e), rest: 90 }),
         b('walking-lunge', 3, { reps: 10, rest: 90 }),
       ]),
-      day('Full body A', 'strength', [
+      day('Full body A', 'gym', [
         b('back-squat', 3, { reps: 5, intensity: rpe(e), rest: 180 }),
         b('bench-press', 3, { reps: 5, intensity: rpe(e), rest: 180 }),
         b('dumbbell-row', 3, { reps: 10, intensity: rpe(e), rest: 90 }),
@@ -107,22 +108,22 @@ function fiveThreeOne(): Week[] {
     )
   return waves.map((w) =>
     week(w.name, [
-      day('Press', 'strength', [
+      day('Press', 'gym', [
         ...main('overhead-press', w),
         b('overhead-press', 5, { reps: 10, intensity: pct(45), rest: 90 }),
         b('pull-up', 5, { reps: 8, rest: 90 }),
       ]),
-      day('Deadlift', 'strength', [
+      day('Deadlift', 'gym', [
         ...main('deadlift', w),
         b('deadlift', 5, { reps: 10, intensity: pct(45), rest: 90 }),
         b('hanging-leg-raise', 4, { reps: 12, rest: 60 }),
       ]),
-      day('Bench', 'strength', [
+      day('Bench', 'gym', [
         ...main('bench-press', w),
         b('bench-press', 5, { reps: 10, intensity: pct(45), rest: 90 }),
         b('dumbbell-row', 5, { reps: 10, rest: 90 }),
       ]),
-      day('Squat', 'strength', [
+      day('Squat', 'gym', [
         ...main('back-squat', w),
         b('back-squat', 5, { reps: 10, intensity: pct(45), rest: 90 }),
         b('leg-curl', 4, { reps: 12, rest: 60 }),
@@ -138,30 +139,30 @@ function sprinter100(): Week[] {
     const n = (base: number) => Math.max(1, Math.round(base * k))
     const test = i === 3
     return week(test ? `Week ${i + 1} · Test` : `Week ${i + 1}`, [
-      day('Acceleration', 'run', [
+      day('Acceleration', 'track', [
         b('a-skip', 4, { distance: 20, rest: 60 }),
         b('block-start', n(4), { intensity: pctmax(100), rest: 120 }),
         b('sprint-30', n(4), { intensity: pctmax(95), rest: 180 }),
         b('box-jump', 4, { reps: 3, rest: 90 }),
       ]),
-      day('Strength', 'strength', [
+      day('Strength', 'gym', [
         b('back-squat', 4, { reps: 4, intensity: pct(80), rest: 180 }),
         b('hip-thrust', 3, { reps: 6, intensity: pct(75), rest: 120 }),
         b('nordic-curl', 3, { reps: 5, rest: 120 }),
         b('calf-raise', 3, { reps: 12, rest: 60 }),
       ]),
-      day('Max velocity', 'run', [
+      day('Max velocity', 'track', [
         b('a-skip', 4, { distance: 20, rest: 60 }),
         b('flying-30', n(3), { intensity: pctmax(98), rest: 240 }),
         b('sprint-60', n(2), { intensity: pctmax(95), rest: 300 }),
         b('bounding', 3, { distance: 30, rest: 120 }),
       ]),
       test
-        ? day('Time trial', 'run', [
+        ? day('Time trial', 'track', [
             b('sprint-60', 2, { intensity: pctmax(90), rest: 300, notes: 'Build-ups' }),
             b('sprint-100', 1, { intensity: pctmax(100), notes: 'Timed 100 m from blocks' }),
           ])
-        : day('Speed endurance', 'run', [
+        : day('Speed endurance', 'track', [
             b('sprint-200', n(2), { intensity: pctmax(90), rest: 480 }),
             b('sprint-100', n(2), { intensity: pctmax(92), rest: 360 }),
           ]),
@@ -209,7 +210,7 @@ export const TEMPLATES: readonly Template[] = [
     name: 'Beginner full body',
     summary: '3 days a week, 4 weeks. Squat, hinge, press and pull every session, effort rising week to week.',
     level: 'beginner',
-    disciplines: ['strength'],
+    sport: 'gym',
     goal: 'Learn the main lifts and build general strength.',
     build: beginnerFullBody,
   },
@@ -218,7 +219,7 @@ export const TEMPLATES: readonly Template[] = [
     name: '5/3/1-style strength',
     summary: '4 days a week, one 4-week wave on a 90% training max, with 5×10 supplemental work.',
     level: 'intermediate',
-    disciplines: ['strength'],
+    sport: 'gym',
     goal: 'Raise the one-rep max on squat, bench, deadlift and press.',
     build: fiveThreeOne,
   },
@@ -227,7 +228,7 @@ export const TEMPLATES: readonly Template[] = [
     name: '100 m sprinter block',
     summary: '4 days a week, 4 weeks: acceleration, max velocity, speed endurance and gym, ending with a 100 m test.',
     level: 'intermediate',
-    disciplines: ['run', 'strength'],
+    sport: 'track',
     goal: 'Run a faster 100 m.',
     build: sprinter100,
   },
@@ -236,21 +237,26 @@ export const TEMPLATES: readonly Template[] = [
     name: '1500 m swim build',
     summary: '3 pool days a week, 4 weeks of rising aerobic and threshold volume, ending with a 1500 m time trial.',
     level: 'beginner',
-    disciplines: ['swim'],
+    sport: 'swim',
     goal: 'Swim 1500 m continuously, then faster.',
     build: swim1500,
   },
 ]
 
-/** A new program from a template, ready to edit or save. */
-export function instantiate(template: Template, now: Date = new Date()): Program {
+/** The demo copy of a template. Days of a sport not loaded join the template's own sport. */
+export function instantiate(template: Template, sports: ReadonlySet<DemoSport>, now: Date = new Date()): Program {
   const at = now.toISOString()
+  const own = DEMO_DISCIPLINES[template.sport].id
+  const loaded = new Set([...sports].map((s) => DEMO_DISCIPLINES[s].id))
+  const weeks = template.build().map((w) => ({
+    ...w,
+    days: w.days.map((d) => (d.disciplineId && !loaded.has(d.disciplineId) ? { ...d, disciplineId: own } : d)),
+  }))
   return {
-    id: newId(),
+    id: `demo-program-${template.id}`,
     name: template.name,
     goal: template.goal,
-    disciplines: [...template.disciplines],
-    weeks: template.build(),
+    weeks,
     source: 'template',
     templateId: template.id,
     createdAt: at,

@@ -1,10 +1,12 @@
 import type { ExerciseIndex } from '../library/exercises.ts'
 import { BACKUP_VERSION, Backup, DEFAULT_SETTINGS, Settings } from '../model/schemas.ts'
+import { migrateV1 } from './migrate.ts'
 import type { Store } from './store.ts'
 
 /** Everything but secrets, as one JSON document. */
 export async function exportBackup(store: Store, now: Date = new Date()): Promise<Backup> {
-  const [exercises, programs, sessions, goals, settings] = await Promise.all([
+  const [disciplines, exercises, programs, sessions, goals, settings] = await Promise.all([
+    store.all('disciplines'),
     store.all('exercises'),
     store.all('programs'),
     store.all('sessions'),
@@ -16,6 +18,7 @@ export async function exportBackup(store: Store, now: Date = new Date()): Promis
     version: BACKUP_VERSION,
     exportedAt: now.toISOString(),
     settings: settings ?? DEFAULT_SETTINGS,
+    disciplines,
     exercises,
     programs,
     sessions,
@@ -35,10 +38,19 @@ export function parseBackup(text: string): Backup {
   }
   if (typeof raw !== 'object' || raw === null || (raw as { app?: unknown }).app !== 'cadence')
     throw new BackupError('This file is not a Cadence backup.')
-  if ((raw as { version?: unknown }).version !== BACKUP_VERSION)
+  const version = (raw as { version?: unknown }).version
+  if (version !== BACKUP_VERSION && version !== 1)
     throw new BackupError(
-      `This backup uses format version ${String((raw as { version?: unknown }).version)}, which this version of Cadence cannot read.`,
+      `This backup uses format version ${String(version)}, which this version of Cadence cannot read.`,
     )
+  // Version 1: fixed disciplines and built-in exercises, read into today's shape.
+  if (version === 1) {
+    try {
+      raw = { ...(raw as object), version: BACKUP_VERSION, ...migrateV1(raw as Record<string, unknown[]>) }
+    } catch {
+      throw new BackupError('The backup is damaged (its version 1 records could not be read).')
+    }
+  }
   const parsed = Backup.safeParse(raw)
   if (!parsed.success) {
     const issue = parsed.error.issues[0]
@@ -59,7 +71,11 @@ const csvCell = (v: string | number | undefined) => {
 }
 
 /** One row per logged set, metric units, for spreadsheets. */
-export function sessionsCsv(sessions: Backup['sessions'], exercises: ExerciseIndex): string {
+export function sessionsCsv(
+  sessions: Backup['sessions'],
+  exercises: ExerciseIndex,
+  disciplines: ReadonlyMap<string, { name: string }> = new Map(),
+): string {
   const header = [
     'date',
     'session',
@@ -84,7 +100,7 @@ export function sessionsCsv(sessions: Backup['sessions'], exercises: ExerciseInd
           [
             s.date,
             s.title,
-            s.discipline,
+            s.disciplineId ? (disciplines.get(s.disciplineId)?.name ?? '') : '',
             exercises.get(e.exerciseId)?.name ?? e.exerciseId,
             i + 1,
             set.reps,

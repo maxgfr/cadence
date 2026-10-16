@@ -1,9 +1,11 @@
 import { useState } from 'react'
 import { useData } from '../../app/data.tsx'
+import type { DemoSport } from '../../core/demo/catalog.ts'
 import type { Mode, Settings } from '../../core/model/schemas.ts'
 import { Button } from '../../ui/components/Button.tsx'
 import { RadioCards } from '../../ui/components/RadioCards.tsx'
 import { Segmented } from '../../ui/components/Segmented.tsx'
+import { DemoPicker } from '../../ui/DemoPicker.tsx'
 import styles from './Welcome.module.css'
 
 export const MODE_OPTIONS: readonly { value: Mode; title: string; body: string }[] = [
@@ -21,7 +23,9 @@ export const MODE_OPTIONS: readonly { value: Mode; title: string; body: string }
 
 /** First run: the two choices that change every screen, then straight to Today. */
 export function Welcome() {
-  const { settings, updateSettings } = useData()
+  const { settings, updateSettings, loadDemo } = useData()
+  const [sports, setSports] = useState<DemoSport[]>([])
+  const [withSessions, setWithSessions] = useState(false)
   const [mode, setMode] = useState<Mode>(settings.mode)
   const [weightUnit, setWeightUnit] = useState<Settings['weightUnit']>(settings.weightUnit)
   const [distanceUnit, setDistanceUnit] = useState<Settings['distanceUnit']>(settings.distanceUnit)
@@ -37,7 +41,7 @@ export function Welcome() {
           </svg>
           <h1 className={styles.title}>Cadence</h1>
           <p className={styles.lead}>
-            Plan and log gym, swim and track sessions, and see what your training does. Everything stays on this device.
+            Plan and log your training, whatever the sport, and see what it does. Everything stays on this device.
           </p>
         </header>
         <RadioCards label="How much detail do you want?" options={MODE_OPTIONS} value={mode} onChange={setMode} />
@@ -62,6 +66,7 @@ export function Welcome() {
           />
         </div>
         <p className={styles.note}>Both can be changed any time in Settings. Switching mode never loses data.</p>
+        <DemoPicker sports={sports} onSports={setSports} withSessions={withSessions} onWithSessions={setWithSessions} />
         <Button
           variant="primary"
           size="large"
@@ -69,10 +74,11 @@ export function Welcome() {
           loading={busy}
           onClick={async () => {
             setBusy(true)
+            if (sports.length > 0) await loadDemo(sports, withSessions)
             await updateSettings({ mode, weightUnit, distanceUnit, onboarded: true })
           }}
         >
-          Start training
+          {sports.length > 0 ? 'Start with the demo' : 'Start empty'}
         </Button>
       </div>
     </main>

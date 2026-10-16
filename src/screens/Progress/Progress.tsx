@@ -21,8 +21,6 @@ import { formatMeasure, MEASURE_LABEL, useUnits } from '../../ui/units.ts'
 import { GoalsSection } from './Goals.tsx'
 import styles from './Progress.module.css'
 
-type VolumeKind = 'strength' | 'swim' | 'run'
-
 const MUSCLE_LABEL: Record<Muscle, string> = {
   quads: 'Quads',
   hamstrings: 'Hamstrings',
@@ -55,11 +53,28 @@ export function Progress() {
     () => weeklyVolume(data.sessions, data.index, data.today, data.settings.weekStart, 12),
     [data.sessions, data.index, data.today, data.settings.weekStart],
   )
-  const kinds: VolumeKind[] = (['strength', 'swim', 'run'] as const).filter((k) =>
-    volume.some((w) => (k === 'strength' ? w.tonnage : k === 'swim' ? w.swimMeters : w.runMeters) > 0),
-  )
-  const [volumeKind, setVolumeKind] = useState<VolumeKind>('strength')
-  const vk = kinds.includes(volumeKind) ? volumeKind : (kinds[0] ?? 'strength')
+  // One series per discipline and measure that has data: kilograms lifted, distance covered.
+  const volumeSeries = useMemo(() => {
+    const out: {
+      key: string
+      label: string
+      measure: 'tonnage' | 'distance'
+      value: (w: (typeof volume)[number]) => number
+    }[] = []
+    const scopes = [...data.disciplines.map((d) => ({ id: d.id, name: d.name })), { id: '', name: 'No discipline' }]
+    for (const sc of scopes) {
+      const t = (w: (typeof volume)[number]) => w.byDiscipline[sc.id]?.tonnage ?? 0
+      const m = (w: (typeof volume)[number]) => w.byDiscipline[sc.id]?.meters ?? 0
+      const hasT = volume.some((w) => t(w) > 0)
+      const hasM = volume.some((w) => m(w) > 0)
+      if (hasT) out.push({ key: `${sc.id}|t`, label: hasM ? `${sc.name}, kg` : sc.name, measure: 'tonnage', value: t })
+      if (hasM)
+        out.push({ key: `${sc.id}|m`, label: hasT ? `${sc.name}, distance` : sc.name, measure: 'distance', value: m })
+    }
+    return out
+  }, [volume, data.disciplines])
+  const [volumeKey, setVolumeKey] = useState('')
+  const vs = volumeSeries.find((x) => x.key === volumeKey) ?? volumeSeries[0]
   const startGoal = params.get('goal') === 'new'
 
   if (done.length === 0) {
@@ -192,38 +207,44 @@ export function Progress() {
         </section>
       )}
 
-      {kinds.length > 0 && (
+      {vs && (
         <section className={styles.section} aria-labelledby="volume-title">
           <h2 id="volume-title" className={styles.sectionTitle}>
             Weekly volume
           </h2>
           <div className={styles.panel}>
-            {kinds.length > 1 && (
+            {volumeSeries.length > 1 && volumeSeries.length <= 3 && (
               <Segmented
                 label="Volume of"
                 hideLabel
-                options={kinds.map((k) => ({
-                  value: k,
-                  label: k === 'strength' ? 'Gym' : k === 'swim' ? 'Swim' : 'Track',
-                }))}
-                value={vk}
-                onChange={setVolumeKind}
+                options={volumeSeries.map((x) => ({ value: x.key, label: x.label }))}
+                value={vs.key}
+                onChange={setVolumeKey}
+              />
+            )}
+            {volumeSeries.length > 3 && (
+              <SelectField
+                label="Volume of"
+                hideLabel
+                value={vs.key}
+                options={volumeSeries.map((x) => ({ value: x.key, label: x.label }))}
+                onChange={(e) => setVolumeKey(e.target.value)}
               />
             )}
             <BarChart
-              label={`Weekly ${vk === 'strength' ? 'tonnage' : vk === 'swim' ? 'swim distance' : 'run distance'}, last 12 weeks`}
+              label={`Weekly ${vs.measure === 'tonnage' ? 'kilograms lifted' : 'distance'}, ${vs.label}, last 12 weeks`}
               bars={volume.map((w, i) => ({
                 key: w.week,
                 label: formatShortDay(w.week),
-                value: vk === 'strength' ? w.tonnage : vk === 'swim' ? w.swimMeters : w.runMeters,
+                value: vs.value(w),
                 partial: i === volume.length - 1,
               }))}
               format={(v) =>
-                vk === 'strength' ? formatTonnage(v, units.weightUnit) : formatDistance(v, units.distanceUnit)
+                vs.measure === 'tonnage' ? formatTonnage(v, units.weightUnit) : formatDistance(v, units.distanceUnit)
               }
             />
             <p className={styles.hint}>
-              {vk === 'strength'
+              {vs.measure === 'tonnage'
                 ? 'Weight × reps of every ticked set on loaded lifts.'
                 : 'Distance of every ticked set.'}{' '}
               The last bar is this week so far.

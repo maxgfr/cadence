@@ -1,8 +1,8 @@
 import { describe, expect, test } from 'bun:test'
 import { MockLanguageModelV4 } from 'ai/test'
-import { instantiate, TEMPLATES } from '../library/templates.ts'
+import { instantiate, TEMPLATES } from '../demo/programs.ts'
 import { Program } from '../model/schemas.ts'
-import { entry, IDX, LIB, must, session, set } from '../testkit.test.ts'
+import { ATHLETE, DISCIPLINES, entry, IDX, must, session, set } from '../testkit.test.ts'
 import catalogJson from './catalog.json'
 import { Catalog, findProvider, nativeModelId, sortedModels, sortedProviders, toCatalogModels } from './catalog.ts'
 import { createModel, describeAiError, generateStructured } from './client.ts'
@@ -43,23 +43,26 @@ const block = (exercise: string, p: Partial<AiProgram['weeks'][number]['days'][n
 const answer: AiProgram = {
   name: 'Speed and strength',
   goal: 'Faster 100 m',
-  disciplines: ['run', 'strength'],
   weeks: [
     {
       name: 'Week 1',
       days: [
         {
           name: 'Track',
-          discipline: 'run',
+          discipline: 'Track and field',
           notes: null,
           blocks: [
             block('sprint-60', { sets: 4, intensity: { kind: 'pctmax', value: 95 }, restSeconds: 240 }),
-            block('Sled push', { sets: 4, durationSeconds: 15, newExercise: { discipline: 'run', metric: 'time' } }),
+            block('Sled push', {
+              sets: 4,
+              durationSeconds: 15,
+              newExercise: { discipline: 'Strongman', metric: 'time' },
+            }),
           ],
         },
         {
           name: 'Gym',
-          discipline: 'strength',
+          discipline: 'gym',
           notes: 'Heavy',
           blocks: [
             block('Back Squat', { sets: 120, reps: 4, intensity: { kind: 'pct1rm', value: 180 } }),
@@ -72,7 +75,7 @@ const answer: AiProgram = {
             block('plank', { sets: 3, reps: 45, tempo: '-' }),
           ],
         },
-        { name: 'Empty', discipline: 'other', notes: null, blocks: [] },
+        { name: 'Empty', discipline: null, notes: null, blocks: [] },
       ],
     },
   ],
@@ -80,7 +83,7 @@ const answer: AiProgram = {
 
 describe('program drafts', () => {
   test('a model answer becomes a valid draft: library matched by id or name, new exercises created, values bounded', () => {
-    const d = draftFromAi(answer, LIB)
+    const d = draftFromAi(answer, ATHLETE)
     expect(Program.safeParse(d.program).success).toBe(true)
     expect(d.program.source).toBe('ai')
     const [track, gym] = d.program.weeks[0]?.days ?? []
@@ -92,7 +95,15 @@ describe('program drafts', () => {
       intensity: { kind: 'pctmax', value: 95 },
     })
     expect(d.newExercises).toHaveLength(1)
-    expect(d.newExercises[0]).toMatchObject({ name: 'Sled push', discipline: 'run', metric: 'time' })
+    expect(d.newDisciplines).toHaveLength(1)
+    expect(d.newDisciplines[0]).toMatchObject({ name: 'Strongman', color: 'orange' })
+    expect(d.newExercises[0]).toMatchObject({
+      name: 'Sled push',
+      disciplineId: d.newDisciplines[0]?.id,
+      metric: 'time',
+    })
+    expect(track?.disciplineId).toBe('demo-track')
+    expect(gym?.disciplineId).toBe('demo-gym')
     expect(track?.blocks[1]?.exerciseId).toBe(must(d.newExercises[0]).id)
     expect(gym?.blocks[0]).toMatchObject({
       exerciseId: 'back-squat',
@@ -109,27 +120,28 @@ describe('program drafts', () => {
   })
 
   test('a program with no days is refused', () => {
-    expect(() => draftFromAi({ ...answer, weeks: [{ name: 'W', days: [] }] }, LIB)).toThrow('no training days')
+    expect(() => draftFromAi({ ...answer, weeks: [{ name: 'W', days: [] }] }, ATHLETE)).toThrow('no training days')
   })
 
   test('generation through a model returns a draft and sends the library and answers', async () => {
     const model = jsonModel(answer)
     const pair = scratchPrompt(
       {
-        disciplines: ['run'],
+        sports: ['Track and field'],
         level: 'intermediate',
         daysPerWeek: 3,
         weeks: 4,
         goal: 'Run 11.9',
         limitations: 'left knee',
       },
-      LIB,
+      ATHLETE,
       '2026-10-16',
     )
-    const d = await generateProgramDraft(model, pair, LIB)
+    const d = await generateProgramDraft(model, pair, ATHLETE)
     expect(d.program.name).toBe('Speed and strength')
     const sent = JSON.stringify(model.doGenerateCalls[0]?.prompt)
-    expect(sent).toContain('back-squat | Back squat | strength')
+    expect(sent).toContain('back-squat | Back squat | Gym')
+    expect(sent).toContain('Disciplines: Gym, Swimming, Track and field')
     expect(sent).toContain('Run 11.9')
     expect(sent).toContain('left knee')
   })
@@ -141,8 +153,8 @@ describe('program drafts', () => {
   })
 
   test('adjusting a week replaces only that week', async () => {
-    const program = instantiate(must(TEMPLATES[0]))
-    const d = await adjustWeekDraft(jsonModel(answer.weeks[0]), { system: '', prompt: '' }, program, 1, LIB)
+    const program = instantiate(must(TEMPLATES[0]), new Set(['gym'] as const))
+    const d = await adjustWeekDraft(jsonModel(answer.weeks[0]), { system: '', prompt: '' }, program, 1, ATHLETE)
     expect(d.program.id).toBe(program.id)
     expect(d.program.weeks[0]).toEqual(must(program.weeks[0]))
     expect(d.program.weeks[1]?.days.map((x) => x.name)).toEqual(['Track', 'Gym'])
@@ -152,7 +164,7 @@ describe('program drafts', () => {
 
 describe('context', () => {
   test('the summary carries sessions, records, goals and the current program', () => {
-    const program = instantiate(must(TEMPLATES[0]))
+    const program = instantiate(must(TEMPLATES[0]), new Set(['gym'] as const))
     const sessions = [
       session('2026-10-10', [entry('back-squat', [set({ weight: 100, reps: 5, rpe: 8 })])], {
         title: 'Full body A',
@@ -175,17 +187,18 @@ describe('context', () => {
       programs: [program],
       activeProgramId: program.id,
       exercises: IDX,
+      disciplines: DISCIPLINES,
       today: '2026-10-16',
       weekStart: 1,
     })
-    expect(text).toContain('2026-10-10 Full body A, session RPE 7')
+    expect(text).toContain('2026-10-10 Full body A (Gym), session RPE 7')
     expect(text).toContain('Back squat [100kgx5@RPE8]')
     expect(text).toContain('Back squat: estimated 1RM 116.7 kg')
     expect(text).toContain('e1rm on Back squat: target 140 by 2026-12-31')
     expect(text).toContain('Current program: Beginner full body')
-    expect(
-      contextPrompt({ weeks: 4, daysPerWeek: 3, focus: '', disciplines: ['strength'] }, text, LIB).prompt,
-    ).toContain(text)
+    expect(contextPrompt({ weeks: 4, daysPerWeek: 3, focus: '', sports: ['Gym'] }, text, ATHLETE).prompt).toContain(
+      text,
+    )
   })
 })
 

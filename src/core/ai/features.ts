@@ -1,13 +1,21 @@
 import type { LanguageModel } from 'ai'
-import type { Exercise, Program } from '../model/schemas.ts'
+import type { Program } from '../model/schemas.ts'
 import { generateStructured } from './client.ts'
-import { AiProgram, AiWeek, type Draft, draftFromAi, draftWeekFromAi, type PromptPair } from './program.ts'
+import {
+  AiProgram,
+  AiWeek,
+  type AthleteLibrary,
+  type Draft,
+  draftFromAi,
+  draftWeekFromAi,
+  type PromptPair,
+} from './program.ts'
 
 /** Generates a whole program; the result is a draft the user edits and saves (nothing is stored here). */
 export async function generateProgramDraft(
   model: LanguageModel,
   pair: PromptPair,
-  library: readonly Exercise[],
+  library: AthleteLibrary,
   signal?: AbortSignal,
 ): Promise<Draft> {
   const ai = await generateStructured(model, { ...pair, schema: AiProgram, ...(signal ? { signal } : {}) })
@@ -20,7 +28,7 @@ export async function adjustWeekDraft(
   pair: PromptPair,
   program: Program,
   index: number,
-  library: readonly Exercise[],
+  library: AthleteLibrary,
   signal?: AbortSignal,
 ): Promise<Draft> {
   const ai = await generateStructured(model, { ...pair, schema: AiWeek, ...(signal ? { signal } : {}) })

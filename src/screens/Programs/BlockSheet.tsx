@@ -139,7 +139,7 @@ function BlockForm({ block, onSave, onDelete }: { block: Block; onSave: (b: Bloc
           />
         )}
       </div>
-      {ex?.discipline === 'swim' && (
+      {ex?.metric === 'distance_time' && (
         <Field
           label="Send-off interval (m:ss)"
           hint="Start each repetition on this clock, rest included."
@@ -198,7 +198,7 @@ function BlockForm({ block, onSave, onDelete }: { block: Block; onSave: (b: Bloc
       </Button>
       <ExercisePicker
         open={picking}
-        {...(ex ? { discipline: ex.discipline } : {})}
+        disciplineId={ex?.disciplineId}
         title="Change exercise"
         onClose={() => setPicking(false)}
         onPick={(e) => {

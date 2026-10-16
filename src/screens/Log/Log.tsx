@@ -100,7 +100,7 @@ export function Log() {
           {session.title}
         </h1>
         <p className={styles.sub}>
-          <DisciplineTag discipline={session.discipline} />
+          <DisciplineTag disciplineId={session.disciplineId} />
           <span aria-hidden="true">·</span>
           <span>
             {setDone} of {setTotal} sets
@@ -153,7 +153,7 @@ export function Log() {
 
       <ExercisePicker
         open={picking}
-        discipline={session.discipline}
+        disciplineId={session.disciplineId}
         onClose={() => setPicking(false)}
         onPick={(ex) => {
           setPicking(false)

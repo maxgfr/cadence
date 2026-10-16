@@ -21,28 +21,16 @@ async function accessible(page: Page, screen: string) {
   ).toEqual([])
 }
 
-test('template → logged session → record and chart → backup round trip', async ({ page, isMobile }) => {
+test('demo sport → logged session → record and chart → backup round trip', async ({ page, isMobile }) => {
   await page.goto('./')
 
-  // First run: mode and units.
+  // First run: mode, units, and a demo sport to start from.
   await expect(page.getByRole('heading', { name: 'Cadence' })).toBeVisible()
   await accessible(page, 'welcome')
-  await page.getByRole('button', { name: 'Start training' }).click()
+  await page.getByRole('checkbox', { name: /^Gym/ }).check()
+  await page.getByRole('button', { name: 'Start with the demo' }).click()
 
-  // Today without a program teaches the next step.
-  await expect(page.getByRole('heading', { name: 'No program yet' })).toBeVisible()
-  await accessible(page, 'today (empty)')
-  await page.getByRole('link', { name: 'Choose a program' }).click()
-
-  // A template opens as a draft; saving makes it the current program.
-  await page.getByRole('button', { name: /Beginner full body/ }).click()
-  await expect(page.getByText('A copy of the template')).toBeVisible()
-  await accessible(page, 'program draft')
-  await page.getByRole('button', { name: 'Save program' }).click()
-  await expect(page.getByText('saved and set as current')).toBeVisible()
-
-  // Today shows the next session, pre-filled from the plan.
-  await page.goto('./#/')
+  // The demo's first program is current: Today shows its next session, pre-filled.
   await expect(page.getByRole('heading', { name: 'Full body A' })).toBeVisible()
   await accessible(page, 'today')
   await page.getByRole('button', { name: 'Start session' }).click()
@@ -89,7 +77,7 @@ test('template → logged session → record and chart → backup round trip', a
   await expect(page.getByRole('heading', { name: 'No session logged yet' })).toBeVisible()
   await page.goto('./#/settings')
   await page.getByLabel('Backup file').setInputFiles(file)
-  await expect(page.getByText('Backup imported: 1 sessions, 1 programs')).toBeVisible()
+  await expect(page.getByText('Backup imported: 1 sessions, 2 programs')).toBeVisible()
   await page.goto('./#/history')
   await expect(page.getByRole('link', { name: /Full body A · Week 1/ })).toBeVisible()
 
@@ -103,11 +91,36 @@ test('template → logged session → record and chart → backup round trip', a
   }
 })
 
+test('starting empty: create a discipline and an exercise from the picker, mid-session', async ({ page }) => {
+  await page.goto('./')
+  await page.getByRole('button', { name: 'Start empty' }).click()
+  await expect(page.getByRole('heading', { name: 'Start your training log' })).toBeVisible()
+  await page.getByRole('button', { name: 'Start a session' }).click()
+  await page.getByRole('button', { name: 'Add exercise' }).click()
+  await page.getByRole('searchbox', { name: 'Search exercises' }).fill('Campus board')
+  await page.getByRole('button', { name: 'Create “Campus board”' }).click()
+  await expect(page.getByLabel('Name')).toHaveValue('Campus board')
+  // No discipline is chosen for you.
+  await expect(page.getByLabel('Discipline')).toHaveValue('')
+  await page.getByLabel('Discipline').selectOption({ label: 'New discipline…' })
+  await page.getByLabel('New discipline').fill('Climbing')
+  await page.getByLabel('Measured by').selectOption({ label: 'Reps (bodyweight)' })
+  await accessible(page, 'new exercise')
+  await page.getByRole('button', { name: 'Add exercise' }).last().click()
+  // Picked straight into the session.
+  await expect(page.getByRole('heading', { name: 'Campus board' })).toBeVisible()
+  await page.goto('./#/exercises')
+  await expect(page.getByRole('button', { name: /Climbing/ })).toBeVisible()
+  await expect(page.getByRole('button', { name: /Campus board/ })).toBeVisible()
+  await accessible(page, 'exercises')
+})
+
 test('advanced mode shows per-set effort; AI stays out of the way until set up', async ({ page }) => {
   await page.goto('./')
   await page.getByText('Advanced', { exact: true }).click()
-  await page.getByRole('button', { name: 'Start training' }).click()
-  await page.getByRole('button', { name: /Gym/ }).click()
+  await page.getByRole('checkbox', { name: /^Gym/ }).check()
+  await page.getByRole('button', { name: 'Start with the demo' }).click()
+  await page.getByRole('button', { name: /^Gym/ }).click()
   await page.getByRole('button', { name: 'Add exercise' }).click()
   await page.getByRole('searchbox', { name: 'Search exercises' }).fill('bench')
   await page.getByRole('button', { name: 'Bench press' }).click()
@@ -120,7 +133,7 @@ test('advanced mode shows per-set effort; AI stays out of the way until set up',
 
 test('once loaded, the app opens offline', async ({ page, context }) => {
   await page.goto('./')
-  await page.getByRole('button', { name: 'Start training' }).click()
+  await page.getByRole('button', { name: 'Start empty' }).click()
   await expect(page.getByRole('heading', { name: 'Today' })).toBeVisible()
   // The service worker precaches the shell on first visit.
   await page.evaluate(async () => {

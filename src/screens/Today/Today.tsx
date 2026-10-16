@@ -5,18 +5,15 @@ import { useAi } from '../../app/ai.tsx'
 import { useData } from '../../app/data.tsx'
 import { formatDay } from '../../core/model/dates.ts'
 import { completedDays, describeBlock, nextDay, totalDays } from '../../core/model/program.ts'
-import type { Discipline } from '../../core/model/schemas.ts'
 import { goalProgress } from '../../core/stats/trends.ts'
 import { Button, buttonClass } from '../../ui/components/Button.tsx'
-import { DISCIPLINE_LABEL, DisciplineDot, DisciplineTag } from '../../ui/components/Discipline.tsx'
+import { DisciplineDot, DisciplineTag } from '../../ui/components/Discipline.tsx'
 import { EmptyState } from '../../ui/components/EmptyState.tsx'
 import { Screen } from '../../ui/shell/Screen.tsx'
 import { useUnits } from '../../ui/units.ts'
 import { GoalLine } from '../Progress/Goals.tsx'
 import styles from './Today.module.css'
 import { WeekStrip } from './WeekStrip.tsx'
-
-const FREE: readonly Discipline[] = ['strength', 'swim', 'run']
 
 export function Today() {
   const data = useData()
@@ -62,7 +59,7 @@ export function Today() {
           <h2 id="next-title" className={styles.heroTitle}>
             {day.name}
           </h2>
-          {day.discipline && <DisciplineTag discipline={day.discipline} />}
+          {day.disciplineId && <DisciplineTag disciplineId={day.disciplineId} />}
           <ol className={styles.blocks}>
             {day.blocks.map((b) => {
               const ex = data.index.get(b.exerciseId)
@@ -100,15 +97,31 @@ export function Today() {
             </Link>
           }
         />
+      ) : data.exercises.length === 0 ? (
+        <EmptyState
+          icon={ClipboardList}
+          title="Start your training log"
+          body="Create the disciplines and exercises you train, or start from a demo sport: Gym, Swimming, Track and field, with their programs."
+          action={
+            <div className={styles.actions}>
+              <Link href="/settings/demo" className={buttonClass({ variant: 'primary' })}>
+                Load a demo sport
+              </Link>
+              <Link href="/exercises" className={buttonClass({ variant: 'secondary' })}>
+                Create exercises
+              </Link>
+            </div>
+          }
+        />
       ) : (
         <EmptyState
           icon={ClipboardList}
           title="No program yet"
-          body="Pick a ready-made program and Today will show your next session, pre-filled. Or just log a session as you go."
+          body="Write a program and Today will show your next session, pre-filled. Or just log a session as you go."
           action={
             <div className={styles.actions}>
-              <Link href="/programs/templates" className={buttonClass({ variant: 'primary' })}>
-                Choose a program
+              <Link href="/programs" className={buttonClass({ variant: 'primary' })}>
+                {data.programs.length > 0 ? 'Choose a program' : 'Write a program'}
               </Link>
               {ai.ready && (
                 <Link href="/programs/generate" className={buttonClass({ variant: 'secondary' })}>
@@ -127,13 +140,17 @@ export function Today() {
             {program && next ? 'Or log something else' : 'Log a session'}
           </h2>
           <div className={styles.freeButtons}>
-            {FREE.map((d) => (
-              <button key={d} type="button" className={styles.freeButton} onClick={() => start.free(d)}>
-                <DisciplineDot discipline={d} />
-                <span>{DISCIPLINE_LABEL[d]}</span>
+            {data.disciplines.map((d) => (
+              <button key={d.id} type="button" className={styles.freeButton} onClick={() => start.free(d.id)}>
+                <DisciplineDot disciplineId={d.id} />
+                <span className={styles.freeName}>{d.name}</span>
                 <Plus className={styles.freePlus} size={18} strokeWidth={2} aria-hidden="true" />
               </button>
             ))}
+            <button type="button" className={styles.freeButton} onClick={() => start.free(undefined)}>
+              <span className={styles.freeName}>{data.disciplines.length > 0 ? 'Other' : 'Start a session'}</span>
+              <Plus className={styles.freePlus} size={18} strokeWidth={2} aria-hidden="true" />
+            </button>
           </div>
         </section>
       )}

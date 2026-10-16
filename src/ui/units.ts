@@ -21,7 +21,7 @@ export function formatMeasure(kind: MeasureKind, value: number, units: UnitPrefs
     case 'best_time':
       return formatTime(value)
     case 'pace':
-      if (exercise?.discipline === 'run') return `${formatTime(value * 10, false)}${NBSP}/km`
+      if (exercise?.pace === 'km') return `${formatTime(value * 10, false)}${NBSP}/km`
       return formatPace100(value, units.distanceUnit)
   }
 }

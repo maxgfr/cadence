@@ -1,10 +1,11 @@
 import { createContext, type ReactNode, useContext, useMemo, useState } from 'react'
-import type { Exercise, Program } from '../core/model/schemas.ts'
+import type { Discipline, Exercise, Program } from '../core/model/schemas.ts'
 
 /** A program not saved yet: from a template, from AI, or new. It lives only until saved or discarded. */
 export interface ProgramDraft {
   program: Program
   newExercises: Exercise[]
+  newDisciplines: Discipline[]
   notes: string[]
   origin: 'new' | 'template' | 'ai' | 'adjust'
 }

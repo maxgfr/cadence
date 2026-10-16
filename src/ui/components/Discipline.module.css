@@ -4,19 +4,43 @@
   width: 0.625rem;
   height: 0.625rem;
   border-radius: var(--radius-pill);
-  background: var(--d-other);
+  box-shadow: inset 0 0 0 1.5px var(--ink-3);
 }
 
-.dot[data-discipline="strength"] {
-  background: var(--d-strength);
+.dot[data-color] {
+  box-shadow: none;
 }
 
-.dot[data-discipline="swim"] {
-  background: var(--d-swim);
+.dot[data-color="blue"] {
+  background: var(--c-blue);
 }
 
-.dot[data-discipline="run"] {
-  background: var(--d-run);
+.dot[data-color="aqua"] {
+  background: var(--c-aqua);
+}
+
+.dot[data-color="violet"] {
+  background: var(--c-violet);
+}
+
+.dot[data-color="orange"] {
+  background: var(--c-orange);
+}
+
+.dot[data-color="magenta"] {
+  background: var(--c-magenta);
+}
+
+.dot[data-color="green"] {
+  background: var(--c-green);
+}
+
+.dot[data-color="yellow"] {
+  background: var(--c-yellow);
+}
+
+.dot[data-color="red"] {
+  background: var(--c-red);
 }
 
 .tag {

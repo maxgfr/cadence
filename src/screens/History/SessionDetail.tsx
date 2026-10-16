@@ -36,7 +36,7 @@ export function SessionDetail() {
       title={session.title}
       subtitle={
         <>
-          {formatDay(session.date, year)} · <DisciplineTag discipline={session.discipline} />
+          {formatDay(session.date, year)} · <DisciplineTag disciplineId={session.disciplineId} />
         </>
       }
       back={{ href: '/history', label: 'History' }}

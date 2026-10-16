@@ -74,7 +74,11 @@ export function History() {
             icon={Download}
             label="Export sessions as CSV"
             onClick={() =>
-              download(`cadence-sessions-${data.today}.csv`, sessionsCsv(data.sessions, data.index), 'text/csv')
+              download(
+                `cadence-sessions-${data.today}.csv`,
+                sessionsCsv(data.sessions, data.index, data.disciplineIndex),
+                'text/csv',
+              )
             }
           />
         ) : undefined
@@ -85,7 +89,7 @@ export function History() {
           {active.map((s) => (
             <ListRow
               key={s.id}
-              leading={<DisciplineDot discipline={s.discipline} />}
+              leading={<DisciplineDot disciplineId={s.disciplineId} />}
               title={s.title}
               subtitle={formatDay(s.date, year)}
               href={`/log/${s.id}`}
@@ -112,7 +116,7 @@ export function History() {
               return (
                 <ListRow
                   key={s.id}
-                  leading={<DisciplineDot discipline={s.discipline} />}
+                  leading={<DisciplineDot disciplineId={s.disciplineId} />}
                   title={s.title}
                   subtitle={`${formatDay(s.date, year)} · ${sessionSummary(s, data.index, units)}`}
                   trailing={

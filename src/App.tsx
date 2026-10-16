@@ -15,8 +15,8 @@ import { NotFound } from './screens/NotFound.tsx'
 import { Welcome } from './screens/Onboarding/Welcome.tsx'
 import { DraftEditor, ProgramEditor } from './screens/Programs/ProgramEditor.tsx'
 import { Programs } from './screens/Programs/Programs.tsx'
-import { Templates } from './screens/Programs/Templates.tsx'
 import { Progress } from './screens/Progress/Progress.tsx'
+import { Demo } from './screens/Settings/Demo.tsx'
 import { Settings } from './screens/Settings/Settings.tsx'
 import { Today } from './screens/Today/Today.tsx'
 import { Shell } from './ui/shell/Shell.tsx'
@@ -39,7 +39,6 @@ function Routes() {
             <Route path="/history" component={History} />
             <Route path="/history/:id" component={SessionDetail} />
             <Route path="/programs" component={Programs} />
-            <Route path="/programs/templates" component={Templates} />
             <Route path="/programs/generate" component={Generate} />
             <Route path="/programs/draft" component={DraftEditor} />
             <Route path="/programs/:id" component={ProgramEditor} />
@@ -47,6 +46,7 @@ function Routes() {
             <Route path="/exercises" component={Exercises} />
             <Route path="/settings" component={Settings} />
             <Route path="/settings/ai" component={AiSettings} />
+            <Route path="/settings/demo" component={Demo} />
             <Route component={NotFound} />
           </Switch>
         </Suspense>

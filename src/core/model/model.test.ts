@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test'
-import { instantiate, TEMPLATES } from '../library/templates.ts'
+import { instantiate, TEMPLATES } from '../demo/programs.ts'
 import { entry, IDX, LIB, must, session, set } from '../testkit.test.ts'
 import { addDays, daysBetween, startOfWeek } from './dates.ts'
 import { describeBlock, nextDay, sessionFromDay, suggestedWeight, totalDays } from './program.ts'
@@ -10,27 +10,43 @@ const metric = { weightUnit: 'kg', distanceUnit: 'm' } as const
 /** Formatted values join numbers and units with no-break spaces; compare them as plain text. */
 const plain = (s: string) => s.replaceAll('\u00a0', ' ')
 
-describe('library and templates', () => {
-  test('every built-in exercise is valid and ids are unique', () => {
+const ALL = new Set(['gym', 'swim', 'track'] as const)
+
+describe('demo library and programs', () => {
+  test('every demo exercise is valid and ids are unique', () => {
     for (const e of LIB) expect(Exercise.safeParse(e).success).toBe(true)
     expect(new Set(LIB.map((e) => e.id)).size).toBe(LIB.length)
   })
 
   test('every template builds a valid program that only uses library exercises', () => {
     for (const t of TEMPLATES) {
-      const p = instantiate(t, new Date('2026-10-16T08:00:00Z'))
+      const p = instantiate(t, ALL, new Date('2026-10-16T08:00:00Z'))
       expect(Program.safeParse(p).success).toBe(true)
       for (const w of p.weeks)
         for (const d of w.days) for (const b of d.blocks) expect(IDX.has(b.exerciseId)).toBe(true)
     }
   })
 
-  test('two instantiations never share ids', () => {
+  test('a demo program keeps a stable id; its weeks, days and blocks get fresh ones', () => {
     const t = must(TEMPLATES[0])
-    const a = instantiate(t)
-    const b = instantiate(t)
-    expect(a.id).not.toBe(b.id)
+    const a = instantiate(t, ALL)
+    const b = instantiate(t, ALL)
+    expect(a.id).toBe('demo-program-beginner-full-body')
     expect(a.weeks[0]?.days[0]?.blocks[0]?.id).not.toBe(b.weeks[0]?.days[0]?.blocks[0]?.id)
+  })
+})
+
+describe('library helpers', () => {
+  test('numbers sort in order, and a discipline has a usual measure', async () => {
+    const { sortedExercises, usualMetric } = await import('../library/exercises.ts')
+    const names = sortedExercises([
+      { id: 'a', name: '100 m sprint', metric: 'distance_time' },
+      { id: 'b', name: '30 m sprint', metric: 'distance_time' },
+      { id: 'c', name: 'A-skips', metric: 'distance_time' },
+    ]).map((e) => e.name)
+    expect(names).toEqual(['30 m sprint', '100 m sprint', 'A-skips'])
+    expect(usualMetric(LIB, 'demo-swim')).toBe('distance_time')
+    expect(usualMetric(LIB, undefined)).toBeUndefined()
   })
 })
 
@@ -72,7 +88,7 @@ describe('describeBlock', () => {
 })
 
 describe('schedule', () => {
-  const program = instantiate(must(TEMPLATES[0]))
+  const program = instantiate(must(TEMPLATES[0]), ALL)
 
   test('the next day follows the furthest day done, across weeks', () => {
     expect(nextDay(program, [])).toMatchObject({ week: 0, day: 0 })

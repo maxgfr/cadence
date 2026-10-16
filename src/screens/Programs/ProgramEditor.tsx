@@ -8,9 +8,8 @@ import { type ProgramDraft, useDraft } from '../../app/drafts.tsx'
 import { useToast } from '../../app/toast.tsx'
 import { newId } from '../../core/model/ids.ts'
 import { cloneWeek, describeBlock, nextDay } from '../../core/model/program.ts'
-import { type Block, type Day, DISCIPLINES, type Discipline, type Program } from '../../core/model/schemas.ts'
+import type { Block, Day, Program } from '../../core/model/schemas.ts'
 import { Button, buttonClass } from '../../ui/components/Button.tsx'
-import { DISCIPLINE_LABEL } from '../../ui/components/Discipline.tsx'
 import { EmptyState } from '../../ui/components/EmptyState.tsx'
 import { Field } from '../../ui/components/Field.tsx'
 import { IconButton } from '../../ui/components/IconButton.tsx'
@@ -42,8 +41,8 @@ export function DraftEditor() {
           title="Nothing to edit"
           body="Drafts are kept until you save or leave them; this one is gone."
           action={
-            <Link href="/programs/templates" className={buttonClass({ variant: 'primary' })}>
-              Choose a template
+            <Link href="/programs" className={buttonClass({ variant: 'primary' })}>
+              Go to Programs
             </Link>
           }
         />
@@ -92,13 +91,7 @@ function ProgramForm({ initial, draft, saved }: { initial: Program; draft?: Prog
   const exOf = (id: string) => data.index.get(id) ?? draft?.newExercises.find((e) => e.id === id)
 
   const change = (fn: (p: Program) => Program) => {
-    setProgram((p) => {
-      const n = fn(p)
-      const disciplines = [
-        ...new Set(n.weeks.flatMap((w) => w.days.map((d) => d.discipline ?? 'other'))),
-      ] as Discipline[]
-      return { ...n, disciplines: disciplines.length > 0 ? disciplines : n.disciplines }
-    })
+    setProgram(fn)
     setDirty(true)
   }
   const changeWeek = (fn: (days: Day[]) => Day[]) =>
@@ -108,6 +101,11 @@ function ProgramForm({ initial, draft, saved }: { initial: Program; draft?: Prog
 
   async function save() {
     const final = { ...program, name: program.name.trim() || 'Program', updatedAt: new Date().toISOString() }
+    const used = JSON.stringify(final.weeks)
+    for (const d of draft?.newDisciplines ?? []) {
+      if (used.includes(d.id) || draft?.newExercises.some((e) => e.disciplineId === d.id && used.includes(e.id)))
+        await data.put('disciplines', d)
+    }
     for (const ex of draft?.newExercises ?? []) {
       if (JSON.stringify(final.weeks).includes(ex.id)) await data.put('exercises', ex)
     }
@@ -265,9 +263,17 @@ function ProgramForm({ initial, draft, saved }: { initial: Program; draft?: Prog
                   />
                   <SelectField
                     label="Discipline"
-                    value={day.discipline ?? 'other'}
-                    options={DISCIPLINES.map((x) => ({ value: x, label: DISCIPLINE_LABEL[x] }))}
-                    onChange={(e) => changeDay(d, (x) => ({ ...x, discipline: e.target.value as Discipline }))}
+                    value={day.disciplineId ?? ''}
+                    options={[
+                      { value: '', label: 'None' },
+                      ...data.disciplines.map((x) => ({ value: x.id, label: x.name })),
+                      ...(draft?.newDisciplines ?? []).map((x) => ({ value: x.id, label: `${x.name} (new)` })),
+                    ]}
+                    onChange={(e) =>
+                      changeDay(d, ({ disciplineId: _old, ...x }) =>
+                        e.target.value ? { ...x, disciplineId: e.target.value } : x,
+                      )
+                    }
                   />
                   <IconButton
                     icon={Trash2}
@@ -324,7 +330,7 @@ function ProgramForm({ initial, draft, saved }: { initial: Program; draft?: Prog
                 {
                   id: newId(),
                   name: `Day ${days.length + 1}`,
-                  discipline: program.disciplines[0] ?? 'strength',
+                  ...(days[days.length - 1]?.disciplineId ? { disciplineId: days[days.length - 1]?.disciplineId } : {}),
                   blocks: [],
                 },
               ])
@@ -402,7 +408,7 @@ function ProgramForm({ initial, draft, saved }: { initial: Program; draft?: Prog
       />
       <ExercisePicker
         open={adding !== null}
-        {...(adding !== null && week?.days[adding]?.discipline ? { discipline: week.days[adding]?.discipline } : {})}
+        disciplineId={adding !== null ? week?.days[adding]?.disciplineId : undefined}
         onClose={() => setAdding(null)}
         onPick={(ex) => {
           if (adding === null) return
@@ -412,7 +418,7 @@ function ProgramForm({ initial, draft, saved }: { initial: Program; draft?: Prog
             sets: 3,
             ...(ex.metric === 'weight_reps' || ex.metric === 'reps' ? { reps: 8 } : {}),
             ...(ex.metric === 'distance_time' && ex.distance === undefined
-              ? { distance: ex.discipline === 'swim' ? 100 : 200 }
+              ? { distance: ex.pace === 'km' ? 1000 : 100 }
               : {}),
             ...(ex.metric === 'time' ? { duration: 30 } : {}),
           }

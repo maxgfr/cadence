@@ -1,6 +1,6 @@
 import type { ExerciseIndex } from '../library/exercises.ts'
 import { addDays, daysBetween, startOfWeek } from '../model/dates.ts'
-import type { Discipline, Exercise, Goal, Muscle, Session } from '../model/schemas.ts'
+import type { Exercise, Goal, Muscle, Session } from '../model/schemas.ts'
 import { completed, doneSets, exerciseSeries, lowerIsBetter, measureOf, type Point } from './metrics.ts'
 
 export interface WeekVolume {
@@ -10,11 +10,30 @@ export interface WeekVolume {
   minutes: number
   /** Kilograms moved on loaded lifts (weight × reps). */
   tonnage: number
-  swimMeters: number
-  runMeters: number
-  /** Hard sets per muscle group (each done set of a loaded or bodyweight exercise counts for every muscle it lists). */
+  /** Metres covered on distance exercises. */
+  meters: number
+  /** Hard sets per muscle group (each done set of an exercise counts for every muscle it lists). */
   setsByMuscle: Partial<Record<Muscle, number>>
-  bySession: Partial<Record<Discipline, number>>
+  /** The same figures per discipline id; sessions and sets without a discipline are under `''`. */
+  byDiscipline: Record<string, DisciplineWeek>
+}
+
+export interface DisciplineWeek {
+  sessions: number
+  tonnage: number
+  meters: number
+}
+
+const NONE = ''
+
+function share(w: WeekVolume, disciplineId: string | undefined): DisciplineWeek {
+  const key = disciplineId ?? NONE
+  let d = w.byDiscipline[key]
+  if (!d) {
+    d = { sessions: 0, tonnage: 0, meters: 0 }
+    w.byDiscipline[key] = d
+  }
+  return d
 }
 
 const emptyWeek = (week: string): WeekVolume => ({
@@ -22,10 +41,9 @@ const emptyWeek = (week: string): WeekVolume => ({
   sessions: 0,
   minutes: 0,
   tonnage: 0,
-  swimMeters: 0,
-  runMeters: 0,
+  meters: 0,
   setsByMuscle: {},
-  bySession: {},
+  byDiscipline: {},
 })
 
 /** Volume per week for the `weeks` weeks ending with the week of `today`, oldest first, empty weeks included. */
@@ -49,20 +67,23 @@ export function weeklyVolume(
     if (!w) continue
     w.sessions++
     w.minutes += s.duration ?? 0
-    w.bySession[s.discipline] = (w.bySession[s.discipline] ?? 0) + 1
+    share(w, s.disciplineId).sessions++
     for (const e of s.entries) {
       const ex = exercises.get(e.exerciseId)
       if (!ex) continue
+      // An exercise counts where it belongs; one without a discipline counts with its session.
+      const d = share(w, ex.disciplineId ?? s.disciplineId)
       for (const set of doneSets(e)) {
-        if (ex.metric === 'weight_reps' && set.weight !== undefined && set.reps !== undefined)
+        if (ex.metric === 'weight_reps' && set.weight !== undefined && set.reps !== undefined) {
           w.tonnage += set.weight * set.reps
-        if (ex.metric === 'distance_time') {
-          const d = set.distance ?? ex.distance ?? 0
-          if (ex.discipline === 'swim') w.swimMeters += d
-          else if (ex.discipline === 'run') w.runMeters += d
+          d.tonnage += set.weight * set.reps
         }
-        if (ex.discipline === 'strength')
-          for (const m of ex.muscles ?? []) w.setsByMuscle[m] = (w.setsByMuscle[m] ?? 0) + 1
+        if (ex.metric === 'distance_time') {
+          const m = set.distance ?? ex.distance ?? 0
+          w.meters += m
+          d.meters += m
+        }
+        for (const m of ex.muscles ?? []) w.setsByMuscle[m] = (w.setsByMuscle[m] ?? 0) + 1
       }
     }
   }
@@ -190,10 +211,10 @@ function goalSeries(
   const weeks = Math.max(4, Math.ceil(daysBetween(since, today) / 7) + 1)
   const vol = weeklyVolume(sessions, exercises, today, weekStart, Math.min(weeks, 52))
   const value = (w: WeekVolume) => {
-    if (goal.kind === 'frequency') return goal.discipline ? (w.bySession[goal.discipline] ?? 0) : w.sessions
-    if (goal.discipline === 'swim') return w.swimMeters
-    if (goal.discipline === 'run') return w.runMeters
-    return w.tonnage
+    const scope = goal.disciplineId ? w.byDiscipline[goal.disciplineId] : undefined
+    if (goal.kind === 'frequency') return goal.disciplineId ? (scope?.sessions ?? 0) : w.sessions
+    if (goal.volume === 'distance') return goal.disciplineId ? (scope?.meters ?? 0) : w.meters
+    return goal.disciplineId ? (scope?.tonnage ?? 0) : w.tonnage
   }
   // The running week is incomplete: it only counts once it beats the last full one.
   const series = vol.map((w) => ({ date: w.week, value: value(w) }))

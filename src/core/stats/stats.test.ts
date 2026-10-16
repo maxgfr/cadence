@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test'
-import { entry, IDX, must, session, set } from '../testkit.test.ts'
+import { entry, IDX, must, SWIM, session, set, TRACK } from '../testkit.test.ts'
 import { currentE1rm, epley, exerciseSeries } from './metrics.ts'
 import { currentRecords, recordHistory, recordsOf } from './records.ts'
 import { consistency, goalProgress, linearFit, sessionAdherence, weeklyVolume, weekStreak } from './trends.ts'
@@ -72,18 +72,19 @@ describe('weekly volume', () => {
         '2026-10-14',
         [entry('swim-free', [set({ distance: 400, time: 400 }), set({ distance: 100, time: 90 })])],
         {
-          discipline: 'swim',
+          disciplineId: SWIM,
         },
       ),
-      session('2026-10-18', [entry('sprint-100', [set({ time: 12.5 })])], { discipline: 'run' }),
+      session('2026-10-18', [entry('sprint-100', [set({ time: 12.5 })])], { disciplineId: TRACK }),
       session('2026-10-05', [entry('deadlift', [set({ weight: 140, reps: 3 })])]),
     ]
     const v = weeklyVolume(sessions, IDX, '2026-10-16', 1, 2)
     expect(v.map((w) => w.week)).toEqual(['2026-10-05', '2026-10-12'])
     expect(v[0]?.tonnage).toBe(420)
     expect(v[1]?.tonnage).toBe(1000)
-    expect(v[1]?.swimMeters).toBe(500)
-    expect(v[1]?.runMeters).toBe(100)
+    expect(v[1]?.meters).toBe(600)
+    expect(v[1]?.byDiscipline[SWIM]).toEqual({ sessions: 1, tonnage: 0, meters: 500 })
+    expect(v[1]?.byDiscipline[TRACK]).toEqual({ sessions: 1, tonnage: 0, meters: 100 })
     expect(v[1]?.setsByMuscle.quads).toBe(2)
     expect(v[1]?.sessions).toBe(3)
   })

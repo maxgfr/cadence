@@ -14,9 +14,8 @@ import {
   summarizeContext,
 } from '../../core/ai/program.ts'
 import { addDays } from '../../core/model/dates.ts'
-import type { Discipline } from '../../core/model/schemas.ts'
 import { Button, buttonClass } from '../../ui/components/Button.tsx'
-import { DISCIPLINE_LABEL, DisciplineDot } from '../../ui/components/Discipline.tsx'
+import { DisciplineDot } from '../../ui/components/Discipline.tsx'
 import { EmptyState } from '../../ui/components/EmptyState.tsx'
 import { Field } from '../../ui/components/Field.tsx'
 import { Segmented } from '../../ui/components/Segmented.tsx'
@@ -29,22 +28,44 @@ type Source = 'scratch' | 'context'
 
 const range = (a: number, b: number) => Array.from({ length: b - a + 1 }, (_, i) => a + i)
 
-function DisciplinePicker({ value, onChange }: { value: Discipline[]; onChange: (v: Discipline[]) => void }) {
+function SportsPicker({
+  value,
+  onChange,
+  other,
+  onOther,
+}: {
+  value: string[]
+  onChange: (v: string[]) => void
+  other: string
+  onOther: (v: string) => void
+}) {
+  const { disciplines } = useData()
   return (
-    <fieldset className={styles.chips}>
-      <legend className={styles.legend}>Disciplines</legend>
-      {(['strength', 'swim', 'run'] as const).map((d) => (
-        <label key={d} className={styles.chip}>
-          <input
-            type="checkbox"
-            checked={value.includes(d)}
-            onChange={(e) => onChange(e.target.checked ? [...value, d] : value.filter((x) => x !== d))}
-          />
-          <DisciplineDot discipline={d} />
-          {DISCIPLINE_LABEL[d]}
-        </label>
-      ))}
-    </fieldset>
+    <div className={styles.sports}>
+      {disciplines.length > 0 && (
+        <fieldset className={styles.chips}>
+          <legend className={styles.legend}>Your disciplines</legend>
+          {disciplines.map((d) => (
+            <label key={d.id} className={styles.chip}>
+              <input
+                type="checkbox"
+                checked={value.includes(d.id)}
+                onChange={(e) => onChange(e.target.checked ? [...value, d.id] : value.filter((x) => x !== d.id))}
+              />
+              <DisciplineDot disciplineId={d.id} />
+              {d.name}
+            </label>
+          ))}
+        </fieldset>
+      )}
+      <Field
+        label={disciplines.length > 0 ? 'Other sports (optional)' : 'Sports'}
+        placeholder="Climbing, cycling…"
+        hint="A sport you do not have yet becomes a new discipline when you save the program."
+        value={other}
+        onChange={(e) => onOther(e.target.value)}
+      />
+    </div>
   )
 }
 
@@ -61,7 +82,16 @@ export function Generate() {
   const hasHistory = data.sessions.some((s) => s.status === 'done')
 
   const [source, setSource] = useState<Source>(hasHistory ? 'context' : 'scratch')
-  const [disciplines, setDisciplines] = useState<Discipline[]>(['strength'])
+  const [picked, setPicked] = useState<string[]>([])
+  const [other, setOther] = useState('')
+  const sports = [
+    ...picked.map((id) => data.disciplineIndex.get(id)?.name).filter((n): n is string => n !== undefined),
+    ...other
+      .split(',')
+      .map((t) => t.trim())
+      .filter(Boolean),
+  ]
+  const athlete = { exercises: data.exercises, disciplines: data.disciplines }
   const [level, setLevel] = useState<ScratchAnswers['level']>('beginner')
   const [days, setDays] = useState('3')
   const [weeks, setWeeks] = useState('4')
@@ -84,10 +114,11 @@ export function Generate() {
         programs: data.programs,
         ...(data.settings.activeProgramId ? { activeProgramId: data.settings.activeProgramId } : {}),
         exercises: data.index,
+        disciplines: data.disciplines,
         today: data.today,
         weekStart: data.settings.weekStart,
       }),
-    [data.sessions, data.goals, data.programs, data.settings, data.index, data.today],
+    [data.sessions, data.goals, data.programs, data.settings, data.index, data.disciplines, data.today],
   )
 
   if (!ai.ready) {
@@ -109,8 +140,8 @@ export function Generate() {
 
   async function run() {
     setError(undefined)
-    if (!adjusting && disciplines.length === 0) {
-      setError('Pick at least one discipline.')
+    if (!adjusting && source === 'scratch' && sports.length === 0) {
+      setError('Pick or type at least one sport.')
       return
     }
     setBusy(true)
@@ -119,15 +150,15 @@ export function Generate() {
     try {
       const model = await ai.model()
       if (adjusting) {
-        const pair = adjustWeekPrompt(adjusting, adjustWeek, context, data.exercises, data.index)
-        const d = await adjustWeekDraft(model, pair, adjusting, adjustWeek, data.exercises, ctrl.signal)
+        const pair = adjustWeekPrompt(adjusting, adjustWeek, context, athlete, data.index)
+        const d = await adjustWeekDraft(model, pair, adjusting, adjustWeek, athlete, ctrl.signal)
         setDraft({ ...d, origin: 'adjust' })
       } else {
         const pair =
           source === 'scratch'
             ? scratchPrompt(
                 {
-                  disciplines,
+                  sports,
                   level,
                   daysPerWeek: Number(days),
                   weeks: Number(weeks),
@@ -143,15 +174,11 @@ export function Generate() {
                       }
                     : {}),
                 },
-                data.exercises,
+                athlete,
                 data.today,
               )
-            : contextPrompt(
-                { weeks: Number(weeks), daysPerWeek: Number(days), focus: goal, disciplines },
-                context,
-                data.exercises,
-              )
-        const d = await generateProgramDraft(model, pair, data.exercises, ctrl.signal)
+            : contextPrompt({ weeks: Number(weeks), daysPerWeek: Number(days), focus: goal, sports }, context, athlete)
+        const d = await generateProgramDraft(model, pair, athlete, ctrl.signal)
         setDraft({ ...d, origin: 'ai' })
       }
       navigate('/programs/draft')
@@ -200,7 +227,7 @@ export function Generate() {
             {source === 'context' && !hasHistory && (
               <p className={styles.warn}>No session is logged yet, so there is little history to plan from.</p>
             )}
-            <DisciplinePicker value={disciplines} onChange={setDisciplines} />
+            <SportsPicker value={picked} onChange={setPicked} other={other} onOther={setOther} />
             {source === 'scratch' && (
               <Segmented
                 label="Level"

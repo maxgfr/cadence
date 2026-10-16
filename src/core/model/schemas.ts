@@ -5,9 +5,10 @@ import { z } from 'zod'
  * Dates are local calendar days as `YYYY-MM-DD`.
  */
 
-export const DISCIPLINES = ['strength', 'swim', 'run', 'other'] as const
-export const Discipline = z.enum(DISCIPLINES)
-export type Discipline = z.infer<typeof Discipline>
+/** Identity colours a discipline can take (categorical palette slots, see DESIGN.md). */
+export const DISCIPLINE_COLORS = ['blue', 'aqua', 'violet', 'orange', 'magenta', 'green', 'yellow', 'red'] as const
+export const DisciplineColor = z.enum(DISCIPLINE_COLORS)
+export type DisciplineColor = z.infer<typeof DisciplineColor>
 
 /** How an exercise is measured: load × reps, bodyweight reps, a duration, or a distance in a time. */
 export const METRICS = ['weight_reps', 'reps', 'time', 'distance_time'] as const
@@ -35,15 +36,28 @@ export const Muscle = z.enum(MUSCLES)
 export type Muscle = z.infer<typeof Muscle>
 
 const id = z.string().min(1)
+
+/** A sport or kind of training the user defines (Gym, Swimming, Climbing…). None exists until they create one. */
+export const Discipline = z.object({
+  id,
+  name: z.string().trim().min(1).max(40),
+  color: DisciplineColor,
+})
+export type Discipline = z.infer<typeof Discipline>
 const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'expected YYYY-MM-DD')
 const positive = z.number().finite().positive()
 const nonNegative = z.number().finite().nonnegative()
 
+/** How a pace reads for an open-distance exercise: per 100 m (swimming) or per km (running). */
+export const PaceUnit = z.enum(['100m', 'km'])
+export type PaceUnit = z.infer<typeof PaceUnit>
+
 export const Exercise = z.object({
   id,
   name: z.string().trim().min(1).max(80),
-  discipline: Discipline,
+  disciplineId: z.string().optional(),
   metric: Metric,
+  pace: PaceUnit.optional(),
   muscles: z.array(Muscle).optional(),
   stroke: Stroke.optional(),
   /** Fixed distance in metres for distance events (60 m sprint, 50 m free): logged sets then only need a time. */
@@ -85,7 +99,7 @@ export type Block = z.infer<typeof Block>
 export const Day = z.object({
   id,
   name: z.string().trim().min(1).max(60),
-  discipline: Discipline.optional(),
+  disciplineId: z.string().optional(),
   blocks: z.array(Block),
   notes: z.string().max(500).optional(),
 })
@@ -101,7 +115,6 @@ export const Program = z.object({
   id,
   name: z.string().trim().min(1).max(80),
   goal: z.string().max(300).default(''),
-  disciplines: z.array(Discipline).min(1),
   weeks: z.array(Week).min(1),
   source: ProgramSource,
   templateId: z.string().optional(),
@@ -140,7 +153,7 @@ export const Session = z.object({
   id,
   date: isoDate,
   title: z.string().max(80),
-  discipline: Discipline,
+  disciplineId: z.string().optional(),
   programRef: ProgramRef.optional(),
   entries: z.array(Entry),
   status: z.enum(['active', 'done']),
@@ -153,8 +166,8 @@ export const Session = z.object({
 export type Session = z.infer<typeof Session>
 
 /**
- * A target: an estimated one-rep max on a lift, a best time over a distance on an exercise, a weekly volume
- * (kg lifted for strength, metres for swim and run) or a number of sessions per week.
+ * A target: an estimated one-rep max on a lift, a best time or pace on an exercise, a weekly volume (kilograms
+ * lifted or metres covered, in one discipline or all) or a number of sessions per week.
  */
 export const GOAL_KINDS = ['e1rm', 'best_time', 'weekly_volume', 'frequency'] as const
 export const GoalKind = z.enum(GOAL_KINDS)
@@ -164,7 +177,9 @@ export const Goal = z.object({
   id,
   kind: GoalKind,
   exerciseId: z.string().optional(),
-  discipline: Discipline.optional(),
+  disciplineId: z.string().optional(),
+  /** Weekly volume only: kilograms lifted (weight × reps) or metres covered. */
+  volume: z.enum(['tonnage', 'distance']).optional(),
   target: positive,
   deadline: isoDate,
   createdAt: z.string(),
@@ -191,12 +206,13 @@ export type Settings = z.infer<typeof Settings>
 
 export const DEFAULT_SETTINGS: Settings = Settings.parse({})
 
-export const BACKUP_VERSION = 1
+export const BACKUP_VERSION = 2
 export const Backup = z.object({
   app: z.literal('cadence'),
   version: z.literal(BACKUP_VERSION),
   exportedAt: z.string(),
   settings: Settings,
+  disciplines: z.array(Discipline),
   exercises: z.array(Exercise),
   programs: z.array(Program),
   sessions: z.array(Session),

@@ -37,7 +37,7 @@ export function WeekStrip() {
               <span className={styles.dayNumber}>{fromIsoDate(d).getDate()}</span>
               <span className={styles.dayDots}>
                 {day.slice(0, 3).map((s) => (
-                  <DisciplineDot key={s.id} discipline={s.discipline} />
+                  <DisciplineDot key={s.id} disciplineId={s.disciplineId} />
                 ))}
               </span>
             </>

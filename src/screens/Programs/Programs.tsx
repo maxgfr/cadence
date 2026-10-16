@@ -4,11 +4,10 @@ import { useAi } from '../../app/ai.tsx'
 import { useData } from '../../app/data.tsx'
 import { useDraft } from '../../app/drafts.tsx'
 import { newId } from '../../core/model/ids.ts'
-import { completedDays, totalDays } from '../../core/model/program.ts'
+import { completedDays, programDisciplines, totalDays } from '../../core/model/program.ts'
 import type { Program } from '../../core/model/schemas.ts'
 import { programAdherence } from '../../core/stats/trends.ts'
 import { Meter } from '../../ui/charts/Meter.tsx'
-import { DISCIPLINE_LABEL } from '../../ui/components/Discipline.tsx'
 import { ListGroup, ListRow } from '../../ui/components/List.tsx'
 import { Screen } from '../../ui/shell/Screen.tsx'
 import styles from './Programs.module.css'
@@ -19,9 +18,16 @@ const SOURCE: Record<Program['source'], string> = {
   ai: 'AI draft, edited by you',
 }
 
-export function programLine(p: Program): string {
+export function programLine(p: Program, name: (id: string) => string | undefined): string {
   const days = Math.max(...p.weeks.map((w) => w.days.length))
-  return `${p.weeks.length} ${p.weeks.length === 1 ? 'week' : 'weeks'} · ${days} days a week · ${p.disciplines.map((d) => DISCIPLINE_LABEL[d]).join(', ')}`
+  const disciplines = programDisciplines(p)
+    .map(name)
+    .filter((n): n is string => n !== undefined)
+  return [
+    `${p.weeks.length} ${p.weeks.length === 1 ? 'week' : 'weeks'}`,
+    `${days} ${days === 1 ? 'day' : 'days'} a week`,
+    ...(disciplines.length > 0 ? [disciplines.join(', ')] : []),
+  ].join(' · ')
 }
 
 export function blankProgram(): Program {
@@ -30,10 +36,7 @@ export function blankProgram(): Program {
     id: newId(),
     name: 'New program',
     goal: '',
-    disciplines: ['strength'],
-    weeks: [
-      { id: newId(), name: 'Week 1', days: [{ id: newId(), name: 'Day 1', discipline: 'strength', blocks: [] }] },
-    ],
+    weeks: [{ id: newId(), name: 'Week 1', days: [{ id: newId(), name: 'Day 1', blocks: [] }] }],
     source: 'manual',
     createdAt: at,
     updatedAt: at,
@@ -48,6 +51,7 @@ export function Programs() {
   const active = data.programs.find((p) => p.id === data.settings.activeProgramId)
   const others = data.programs.filter((p) => p.id !== active?.id).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
   const adherence = active ? programAdherence(data.sessions, active.id) : undefined
+  const dname = (id: string) => data.disciplineIndex.get(id)?.name
 
   return (
     <Screen title="Programs">
@@ -55,7 +59,7 @@ export function Programs() {
         <Link href={`/programs/${active.id}`} className={styles.current}>
           <span className={styles.currentName}>{active.name}</span>
           <span className={styles.currentLine}>
-            <span className={styles.currentLabel}>Current program</span> · {programLine(active)}
+            <span className={styles.currentLabel}>Current program</span> · {programLine(active, dname)}
           </span>
           <Meter
             fraction={completedDays(active, data.sessions) / Math.max(1, totalDays(active))}
@@ -71,12 +75,6 @@ export function Programs() {
       )}
 
       <ListGroup title="New program">
-        <ListRow
-          leading={<LayoutTemplate size={20} strokeWidth={1.75} />}
-          title="Start from a template"
-          subtitle="Full body, 5/3/1-style strength, 100 m sprint, 1500 m swim"
-          href="/programs/templates"
-        />
         {ai.ready ? (
           <ListRow
             leading={<Sparkles size={20} strokeWidth={1.75} />}
@@ -97,10 +95,16 @@ export function Programs() {
           title="Write your own"
           subtitle="Weeks, days and exercises, all editable"
           onClick={() => {
-            setDraft({ program: blankProgram(), newExercises: [], notes: [], origin: 'new' })
+            setDraft({ program: blankProgram(), newExercises: [], newDisciplines: [], notes: [], origin: 'new' })
             navigate('/programs/draft')
           }}
           chevron
+        />
+        <ListRow
+          leading={<LayoutTemplate size={20} strokeWidth={1.75} />}
+          title="Demo programs"
+          subtitle="Full body, 5/3/1-style strength, 100 m sprint, 1500 m swim, with their exercises"
+          href="/settings/demo"
         />
       </ListGroup>
 
@@ -111,7 +115,7 @@ export function Programs() {
               key={p.id}
               leading={<ClipboardList size={20} strokeWidth={1.75} />}
               title={p.name}
-              subtitle={`${programLine(p)} · ${SOURCE[p.source]}`}
+              subtitle={`${programLine(p, dname)} · ${SOURCE[p.source]}`}
               href={`/programs/${p.id}`}
             />
           ))}
