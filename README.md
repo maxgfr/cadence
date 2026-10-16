@@ -73,7 +73,10 @@ Providers and models come from [`llm-models`](https://github.com/maxgfr/llm-mode
 provider and model and keeps only the providers a web page can call directly (checked with a real CORS preflight from
 the app's origin). *Refresh models* in the settings reloads the model lists in the browser through
 `llm-models/browser`. A custom OpenAI-compatible endpoint covers Ollama, LM Studio or a proxy; local servers work from
-a browser on the same computer.
+a browser on the same computer. Ollama only answers pages it trusts: start it with
+`OLLAMA_ORIGINS=https://maxgfr.github.io ollama serve` to use it from the deployed app, then enter
+`http://localhost:11434/v1` and the model's name (for example `qwen2.5:7b`). Small local models may need a retry or
+two to return a complete program.
 
 ## Privacy
 
