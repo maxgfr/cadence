@@ -4,7 +4,7 @@ Cadence is a training tracker that runs entirely in the browser, for whatever yo
 disciplines (Gym, Swimming, Climbing…) and exercises, write programs, start today's session pre-filled from them, log
 sets with a rest timer, and follow records, goals and progress charts. It works offline, keeps its data on the device,
 and needs no account. The app starts empty; a demo (Gym, Swimming, Track and field, any combination) gives a solid
-starting point. AI program design is optional and uses your own model and key.
+starting point. AI, to design programs and propose exercises, is optional and uses your own model and key.
 
 - App: <https://maxgfr.github.io/cadence/>
 - Interface language: English.
@@ -14,7 +14,7 @@ starting point. AI program design is optional and uses your own model and key.
 - **Your disciplines and exercises**: create the sports you train (name and colour) and their exercises, measured by
   load × reps, bodyweight reps, time held, or distance and time (with a fixed distance for events such as a 60 m
   sprint, and pace per 100 m or per km). Nothing is chosen for you: an exercise, a day or a session has a discipline
-  only if you pick one. Exercises can be created from the picker, in the middle of a session.
+  only if you pick one. Exercises can be created from the picker, in the middle of a session, or proposed by AI.
 - **Demo**: on the welcome screen or in *Settings › Demo*, pick Gym, Swimming, Track and field, or several: each brings
   its discipline, exercises (main lifts and accessories; strokes and drills; sprints, runs, drills and plyometrics) and
   programs (beginner full body, 5/3/1-style strength, 1500 m swim build, 100 m sprinter block). Ten weeks of example
@@ -29,7 +29,7 @@ starting point. AI program design is optional and uses your own model and key.
 - **History**: every session by month, with what was planned next to what was done, the records it set, editing and
   deletion with undo, and CSV export.
 - **Programs**: a full editor (weeks, days and their discipline, exercises, sets, reps, distances, intensity, rest,
-  send-off interval, tempo), the demo's programs, and optional AI design.
+  send-off interval, tempo), and optional AI design. The demo's programs are loaded from *Settings › Demo*.
 - **Progress**: a training calendar, the best value per session of any exercise (estimated 1RM, best time, best pace,
   most reps, longest hold) with its records, weekly volume per discipline (kilograms lifted, distance covered), and
   goals with a trend projected to their deadline.
@@ -77,8 +77,11 @@ Cadence works fully without AI. With a model set up under *Settings › AI* it c
   or **from your own history** (recent
   sessions, records, goals and current program, summarised; the exact text sent is shown before sending).
 - **Adjust a week** of the current program from what you actually logged.
+- **Propose exercises** for your disciplines or sports you name (level, essentials or a complete library, equipment),
+  each with its discipline, how it is measured, a fixed distance or a pace unit, and the muscles worked. Exercises you
+  already have are left out; you untick and edit the list before adding it to your library.
 
-The answer is checked against the program schema and opens as a draft in the editor; nothing is saved until you save
+Programs are checked against the program schema and open as a draft in the editor; nothing is saved until you save
 it. Exercises and disciplines the model names that you do not have yet are added only when you save.
 
 Providers and models come from [`llm-models`](https://github.com/maxgfr/llm-models): `bun run catalog` lists every

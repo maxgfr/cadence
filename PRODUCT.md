@@ -28,7 +28,8 @@ Local-first and account-free: data lives on the device, exports to open JSON/CSV
 
 - Ritual: open Today, start the planned session (or a free session), log sets with a rest timer, finish with session RPE and notes.
 - Starting: the app is empty. The user creates disciplines and exercises (also from the exercise picker, mid-session), or loads demo sports (Gym, Swimming, Track and field, any combination) with their exercises and programs (beginner full-body, 5/3/1-style strength, 1500 m swim build, 100 m sprinter block), optionally with example sessions; the demo can be removed again.
-- Planning: edit a demo program, write one from scratch, or generate one with AI from a questionnaire or from the user's own history, PRs and goals.
+- Planning: edit a demo program, write one from scratch, or generate one with AI from a questionnaire or from the user's own history, PRs and goals. The demo is loaded and removed from Settings only.
+- Library: create exercises by hand, or have AI propose a library for chosen sports (picked from and edited before it is added).
 - Review: history list, progress charts (e1RM, weekly volume per discipline, pace per 100 m or per km, best times), PRs, goals with a projection to their deadline, consistency and adherence (planned vs. done).
 - Backups are manual: JSON export/import, CSV export of sessions.
 

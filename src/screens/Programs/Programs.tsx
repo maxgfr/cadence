@@ -1,4 +1,4 @@
-import { ClipboardList, LayoutTemplate, PencilLine, Sparkles } from 'lucide-react'
+import { ClipboardList, PencilLine, Sparkles } from 'lucide-react'
 import { Link, useLocation } from 'wouter'
 import { useAi } from '../../app/ai.tsx'
 import { useData } from '../../app/data.tsx'
@@ -99,12 +99,6 @@ export function Programs() {
             navigate('/programs/draft')
           }}
           chevron
-        />
-        <ListRow
-          leading={<LayoutTemplate size={20} strokeWidth={1.75} />}
-          title="Demo programs"
-          subtitle="Full body, 5/3/1-style strength, 100 m sprint, 1500 m swim, with their exercises"
-          href="/settings/demo"
         />
       </ListGroup>
 

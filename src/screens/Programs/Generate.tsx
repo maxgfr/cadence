@@ -15,59 +15,18 @@ import {
 } from '../../core/ai/program.ts'
 import { addDays } from '../../core/model/dates.ts'
 import { Button, buttonClass } from '../../ui/components/Button.tsx'
-import { DisciplineDot } from '../../ui/components/Discipline.tsx'
 import { EmptyState } from '../../ui/components/EmptyState.tsx'
 import { Field } from '../../ui/components/Field.tsx'
 import { Segmented } from '../../ui/components/Segmented.tsx'
 import { SelectField } from '../../ui/components/SelectField.tsx'
 import { TextArea } from '../../ui/components/TextArea.tsx'
+import { SportsPicker, sportNames } from '../../ui/SportsPicker.tsx'
 import { Screen } from '../../ui/shell/Screen.tsx'
 import styles from './Generate.module.css'
 
 type Source = 'scratch' | 'context'
 
 const range = (a: number, b: number) => Array.from({ length: b - a + 1 }, (_, i) => a + i)
-
-function SportsPicker({
-  value,
-  onChange,
-  other,
-  onOther,
-}: {
-  value: string[]
-  onChange: (v: string[]) => void
-  other: string
-  onOther: (v: string) => void
-}) {
-  const { disciplines } = useData()
-  return (
-    <div className={styles.sports}>
-      {disciplines.length > 0 && (
-        <fieldset className={styles.chips}>
-          <legend className={styles.legend}>Your disciplines</legend>
-          {disciplines.map((d) => (
-            <label key={d.id} className={styles.chip}>
-              <input
-                type="checkbox"
-                checked={value.includes(d.id)}
-                onChange={(e) => onChange(e.target.checked ? [...value, d.id] : value.filter((x) => x !== d.id))}
-              />
-              <DisciplineDot disciplineId={d.id} />
-              {d.name}
-            </label>
-          ))}
-        </fieldset>
-      )}
-      <Field
-        label={disciplines.length > 0 ? 'Other sports (optional)' : 'Sports'}
-        placeholder="Climbing, cycling…"
-        hint="A sport you do not have yet becomes a new discipline when you save the program."
-        value={other}
-        onChange={(e) => onOther(e.target.value)}
-      />
-    </div>
-  )
-}
 
 export function Generate() {
   const data = useData()
@@ -84,13 +43,7 @@ export function Generate() {
   const [source, setSource] = useState<Source>(hasHistory ? 'context' : 'scratch')
   const [picked, setPicked] = useState<string[]>([])
   const [other, setOther] = useState('')
-  const sports = [
-    ...picked.map((id) => data.disciplineIndex.get(id)?.name).filter((n): n is string => n !== undefined),
-    ...other
-      .split(',')
-      .map((t) => t.trim())
-      .filter(Boolean),
-  ]
+  const sports = sportNames(picked, other, data.disciplineIndex)
   const athlete = { exercises: data.exercises, disciplines: data.disciplines }
   const [level, setLevel] = useState<ScratchAnswers['level']>('beginner')
   const [days, setDays] = useState('3')
@@ -227,7 +180,13 @@ export function Generate() {
             {source === 'context' && !hasHistory && (
               <p className={styles.warn}>No session is logged yet, so there is little history to plan from.</p>
             )}
-            <SportsPicker value={picked} onChange={setPicked} other={other} onOther={setOther} />
+            <SportsPicker
+              value={picked}
+              onChange={setPicked}
+              other={other}
+              onOther={setOther}
+              hint="A sport you do not have yet becomes a new discipline when you save the program."
+            />
             {source === 'scratch' && (
               <Segmented
                 label="Level"

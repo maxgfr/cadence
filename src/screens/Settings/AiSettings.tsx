@@ -72,9 +72,9 @@ export function AiSettings() {
     >
       <div className={styles.privacy}>
         <p>
-          <strong>Your model, your key.</strong> AI designs programs and adjusts weeks; it never saves anything itself,
-          every result is a draft you edit. Requests go straight from this device to the provider you choose, with the
-          training summary shown before you send it.
+          <strong>Your model, your key.</strong> AI designs programs, adjusts weeks and proposes exercises; it never
+          saves anything itself, every result is a draft you edit. Requests go straight from this device to the provider
+          you choose, with the training summary shown before you send it.
         </p>
         <p>The key stays in this browser. It is never exported in backups and never sent anywhere but that provider.</p>
       </div>

@@ -23,6 +23,9 @@ import { Shell } from './ui/shell/Shell.tsx'
 
 // The AI screens carry the provider SDKs: loaded only when opened.
 const Generate = lazyChunk(() => import('./screens/Programs/Generate.tsx').then((m) => m.Generate))
+const GenerateExercises = lazyChunk(() =>
+  import('./screens/Exercises/GenerateExercises.tsx').then((m) => m.GenerateExercises),
+)
 const AiSettings = lazyChunk(() => import('./screens/Settings/AiSettings.tsx').then((m) => m.AiSettings))
 
 function Routes() {
@@ -44,6 +47,7 @@ function Routes() {
             <Route path="/programs/:id" component={ProgramEditor} />
             <Route path="/progress" component={Progress} />
             <Route path="/exercises" component={Exercises} />
+            <Route path="/exercises/generate" component={GenerateExercises} />
             <Route path="/settings" component={Settings} />
             <Route path="/settings/ai" component={AiSettings} />
             <Route path="/settings/demo" component={Demo} />

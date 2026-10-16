@@ -97,31 +97,46 @@ export interface AthleteLibrary {
   disciplines: readonly Discipline[]
 }
 
-function resolver({ exercises: library, disciplines }: AthleteLibrary): Resolver {
-  const added: Exercise[] = []
-  const addedDisciplines: Discipline[] = []
-  const discipline = (name: string | null | undefined): string | undefined => {
-    const n = name?.trim()
-    if (!n) return undefined
-    const key = normalizeName(n)
-    const all = [...disciplines, ...addedDisciplines]
-    const known = all.find((d) => normalizeName(d.name) === key || d.id === n)
-    if (known) return known.id
-    const taken = new Set(all.map((d) => d.color))
-    const d: Discipline = {
-      id: newId(),
-      name: n.slice(0, 40),
-      color:
-        DISCIPLINE_COLORS.find((c) => !taken.has(c)) ??
-        DISCIPLINE_COLORS[all.length % DISCIPLINE_COLORS.length] ??
-        'blue',
-    }
-    addedDisciplines.push(d)
-    return d.id
-  }
+/**
+ * Finds a discipline by name or id, or creates it (with the first free colour) when the athlete does not have it yet.
+ * What is created is collected in `added`.
+ */
+export function disciplineResolver(disciplines: readonly Discipline[]): {
+  resolve(name: string | null | undefined): string | undefined
+  added: Discipline[]
+} {
+  const added: Discipline[] = []
   return {
     added,
-    addedDisciplines,
+    resolve(name) {
+      const n = name?.trim()
+      if (!n) return undefined
+      const key = normalizeName(n)
+      const all = [...disciplines, ...added]
+      const known = all.find((d) => normalizeName(d.name) === key || d.id === n)
+      if (known) return known.id
+      const taken = new Set(all.map((d) => d.color))
+      const d: Discipline = {
+        id: newId(),
+        name: n.slice(0, 40),
+        color:
+          DISCIPLINE_COLORS.find((c) => !taken.has(c)) ??
+          DISCIPLINE_COLORS[all.length % DISCIPLINE_COLORS.length] ??
+          'blue',
+      }
+      added.push(d)
+      return d.id
+    },
+  }
+}
+
+function resolver({ exercises: library, disciplines }: AthleteLibrary): Resolver {
+  const added: Exercise[] = []
+  const ds = disciplineResolver(disciplines)
+  const discipline = ds.resolve
+  return {
+    added,
+    addedDisciplines: ds.added,
     discipline,
     get: (id) => library.find((e) => e.id === id) ?? added.find((e) => e.id === id),
     resolve(name, hint) {
