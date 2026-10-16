@@ -127,7 +127,7 @@ It is used in bright places (gym lights, pool decks, outdoor tracks) with sweaty
 - One accent (track orange) for the primary action, the current place, a ticked set and a record point. Never decoration.
 - The user's disciplines each take one of eight palette colours, shown as 10px dots, always beside a text label; a hollow ring means "no discipline".
 - Plans and values in tabular figures, joined to their units with no-break spaces so "800 m" never splits.
-- Bottom tab bar (Today, Programs, Progress, Settings) under 1000px; a 260px sidebar from 1000px, which adds Exercises. History is the second view of Progress (Overview | History).
+- Bottom tab bar (Today, Programs, Progress, Exercises, Settings) under 1000px; a 260px sidebar from 1000px. History is the second view of Progress (Overview | History).
 - Logging is a focus route: no tab bar, a sticky bar with Back, the count of sets done and Finish. No clock runs on screen.
 
 ## Colors
@@ -176,7 +176,7 @@ Danger, warning and success each pair a strong tone with a soft ground, used in 
 
 ## Layout
 
-4px rhythm. Screens are one column capped at 720px with a gutter of max(16px, safe-area insets). Under 1000px a fixed bottom tab bar of four items (hidden on the logging screen); from 1000px a sidebar. Sections are separated by 32px; a heading sits 12px above its content. The logging screen keeps 7rem free at the bottom for the rest bar.
+4px rhythm. Screens are one column capped at 720px with a gutter of max(16px, safe-area insets). Under 1000px a fixed bottom tab bar of five items (hidden on the logging screen); from 1000px a sidebar. Sections are separated by 32px; a heading sits 12px above its content. The logging screen keeps 7rem free at the bottom for the rest bar.
 
 ## Elevation & Depth
 

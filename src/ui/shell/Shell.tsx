@@ -16,7 +16,7 @@ const DESTINATIONS: readonly Destination[] = [
   { href: '/', label: 'Today', icon: CalendarCheck },
   { href: '/programs', label: 'Programs', icon: ClipboardList },
   { href: '/progress', label: 'Progress', icon: TrendingUp },
-  { href: '/exercises', label: 'Exercises', icon: Dumbbell, sidebarOnly: true },
+  { href: '/exercises', label: 'Exercises', icon: Dumbbell },
   { href: '/settings', label: 'Settings', icon: Settings },
 ]
 

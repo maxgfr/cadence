@@ -47,7 +47,6 @@ export function Exercises() {
     <Screen
       title="Exercises"
       subtitle={`${data.exercises.length} ${data.exercises.length === 1 ? 'exercise' : 'exercises'} · ${data.disciplines.length} ${data.disciplines.length === 1 ? 'discipline' : 'disciplines'}`}
-      back={{ href: '/settings', label: 'Settings' }}
     >
       <div className={styles.actions}>
         <Button
