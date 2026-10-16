@@ -117,3 +117,22 @@ test('advanced mode shows per-set effort; AI stays out of the way until set up',
   await page.goto('./#/programs/generate')
   await expect(page.getByRole('heading', { name: 'No AI model set up' })).toBeVisible()
 })
+
+test('once loaded, the app opens offline', async ({ page, context }) => {
+  await page.goto('./')
+  await page.getByRole('button', { name: 'Start training' }).click()
+  await expect(page.getByRole('heading', { name: 'Today' })).toBeVisible()
+  // The service worker precaches the shell on first visit.
+  await page.evaluate(async () => {
+    const reg = await navigator.serviceWorker.ready
+    if (!navigator.serviceWorker.controller)
+      await new Promise((r) => navigator.serviceWorker.addEventListener('controllerchange', r, { once: true }))
+    return reg.active?.state
+  })
+  await context.setOffline(true)
+  await page.reload()
+  await expect(page.getByRole('heading', { name: 'Today' })).toBeVisible()
+  await page.goto('./#/progress')
+  await expect(page.getByRole('heading', { name: 'Progress' })).toBeVisible()
+  await context.setOffline(false)
+})

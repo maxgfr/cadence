@@ -102,7 +102,7 @@ bun run preview      # serve the build
 | `bun run typecheck` | `tsc --noEmit` |
 | `bun run lint` | Biome |
 | `bun run test` | unit tests of `src/core` (stats, schemas, templates, storage and backup round trip, AI parsing with a mock model) |
-| `bun run test:e2e` | Playwright smoke test with axe on a phone and a desktop viewport (run `bun run build` first) |
+| `bun run test:e2e` | Playwright smoke tests with axe on a phone and a desktop viewport, including offline use (run `bun run build` first) |
 | `bun run catalog` | rebuild the bundled AI model catalog |
 | `bun run check` | typecheck, lint, test, build |
 
