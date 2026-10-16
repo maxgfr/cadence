@@ -69,7 +69,7 @@ const answer: AiProgram = {
               reps: 3,
               intensity: { kind: 'pct1rm', value: 0.85 },
             }),
-            block('plank', { sets: 3, reps: 45 }),
+            block('plank', { sets: 3, reps: 45, tempo: '-' }),
           ],
         },
         { name: 'Empty', discipline: 'other', notes: null, blocks: [] },
@@ -103,6 +103,7 @@ describe('program drafts', () => {
     expect(gym?.blocks[2]).toMatchObject({ exerciseId: 'deadlift', intensity: { kind: 'pct1rm', value: 85 } })
     expect(gym?.blocks[3]).toMatchObject({ exerciseId: 'plank', duration: 45 })
     expect(gym?.blocks[3]?.reps).toBeUndefined()
+    expect(gym?.blocks[3]?.tempo).toBeUndefined()
     expect(new Set(d.notes).size).toBe(d.notes.length)
     expect(d.notes).toContain('Days with no exercise were left out.')
   })

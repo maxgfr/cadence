@@ -155,7 +155,8 @@ function toWeek(w: AiWeek, r: Resolver, notes: string[], index: number): Week | 
         }
         if (metric === 'distance_time') delete out.reps
         const tempo = text(blk.tempo, 20)
-        if (tempo) out.tempo = tempo
+        // A tempo is digits ("3-1-1-0"); "-" or "n/a" means none.
+        if (tempo && /\d/.test(tempo)) out.tempo = tempo
         const n = text(blk.notes, 300)
         if (n) out.notes = n
         return out
