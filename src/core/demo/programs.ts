@@ -1,5 +1,5 @@
 import { newId } from '../model/ids.ts'
-import type { Block, Day, Program, Week } from '../model/schemas.ts'
+import type { Block, Day, Program, ProgramLayout, Week } from '../model/schemas.ts'
 import { DEMO_DISCIPLINES, type DemoSport } from './catalog.ts'
 
 /** The demo's programs, one or two per sport. Days carry their sport; `instantiate` maps it to a discipline. */
@@ -11,6 +11,8 @@ export interface Template {
   level: 'beginner' | 'intermediate'
   sport: DemoSport
   goal: string
+  /** `sessions`: a set of sessions done in any order, kept as the days of one week. */
+  layout?: ProgramLayout
   build: () => Week[]
 }
 
@@ -204,6 +206,34 @@ function swim1500(): Week[] {
   })
 }
 
+function pushPullLegs(): Week[] {
+  return [
+    week('Sessions', [
+      day('Push', 'gym', [
+        b('bench-press', 4, { reps: 6, intensity: rpe(7.5), rest: 150 }),
+        b('overhead-press', 3, { reps: 8, intensity: rpe(7.5), rest: 120 }),
+        b('dip', 3, { reps: 10, rest: 90 }),
+        b('lateral-raise', 3, { reps: 12, rest: 60 }),
+        b('triceps-extension', 3, { reps: 12, rest: 60 }),
+      ]),
+      day('Pull', 'gym', [
+        b('barbell-row', 4, { reps: 6, intensity: rpe(7.5), rest: 150 }),
+        b('pull-up', 3, { reps: 8, rest: 120 }),
+        b('lat-pulldown', 3, { reps: 10, intensity: rpe(7.5), rest: 90 }),
+        b('face-pull', 3, { reps: 15, rest: 60 }),
+        b('biceps-curl', 3, { reps: 12, rest: 60 }),
+      ]),
+      day('Legs', 'gym', [
+        b('back-squat', 4, { reps: 6, intensity: rpe(7.5), rest: 180 }),
+        b('romanian-deadlift', 3, { reps: 8, intensity: rpe(7.5), rest: 150 }),
+        b('bulgarian-split-squat', 3, { reps: 10, rest: 90 }),
+        b('calf-raise', 3, { reps: 15, rest: 60 }),
+        b('plank', 3, { duration: 45, rest: 60 }),
+      ]),
+    ]),
+  ]
+}
+
 export const TEMPLATES: readonly Template[] = [
   {
     id: 'beginner-full-body',
@@ -222,6 +252,16 @@ export const TEMPLATES: readonly Template[] = [
     sport: 'gym',
     goal: 'Raise the one-rep max on squat, bench, deadlift and press.',
     build: fiveThreeOne,
+  },
+  {
+    id: 'push-pull-legs',
+    name: 'Push, pull, legs',
+    summary: 'Three sessions with no weeks: done in any order, as often as you train.',
+    level: 'intermediate',
+    sport: 'gym',
+    goal: 'Train every muscle group across three sessions.',
+    layout: 'sessions',
+    build: pushPullLegs,
   },
   {
     id: 'sprinter-100',
@@ -256,6 +296,7 @@ export function instantiate(template: Template, sports: ReadonlySet<DemoSport>, 
     id: `demo-program-${template.id}`,
     name: template.name,
     goal: template.goal,
+    ...(template.layout ? { layout: template.layout } : {}),
     weeks,
     source: 'template',
     templateId: template.id,

@@ -73,7 +73,6 @@ export function Generate() {
         sessions: data.sessions,
         goals: data.goals,
         programs: data.programs,
-        ...(data.settings.activeProgramId ? { activeProgramId: data.settings.activeProgramId } : {}),
         exercises: data.index,
         disciplines: data.disciplines,
         today: data.today,

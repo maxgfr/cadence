@@ -2,7 +2,8 @@ import { Target, TrendingUp } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { Link, useLocation, useSearch } from 'wouter'
 import { useData } from '../../app/data.tsx'
-import { addDays, formatDay, formatShortDay } from '../../core/model/dates.ts'
+import { addDays, formatDay, formatShortDay, startOfWeek } from '../../core/model/dates.ts'
+import { programsUnderWay } from '../../core/model/program.ts'
 import type { Muscle } from '../../core/model/schemas.ts'
 import { formatDistance, formatTonnage } from '../../core/model/units.ts'
 import { exerciseSeries, lowerIsBetter, measureOf, trainedExercises } from '../../core/stats/metrics.ts'
@@ -138,8 +139,9 @@ function Overview() {
       : undefined
   const heat = consistency(data.sessions, data.today, data.settings.weekStart, 16)
   const streak = weekStreak(data.sessions, data.today, data.settings.weekStart)
-  const activeProgram = data.programs.find((p) => p.id === data.settings.activeProgramId)
-  const adherence = activeProgram ? programAdherence(data.sessions, activeProgram.id) : undefined
+  const adherence = programsUnderWay(data.programs, data.sessions, startOfWeek(data.today, data.settings.weekStart))
+    .map(({ program }) => ({ program, value: programAdherence(data.sessions, program.id) }))
+    .filter((a): a is { program: typeof a.program; value: number } => a.value !== undefined)
   const thisWeek = volume[volume.length - 1]
   const prior = volume.slice(-5, -1)
   const muscles = (Object.keys(MUSCLE_LABEL) as Muscle[])
@@ -290,17 +292,17 @@ function Overview() {
         </section>
       )}
 
-      {advanced && (muscles.length > 0 || adherence !== undefined) && (
+      {advanced && (muscles.length > 0 || adherence.length > 0) && (
         <section className={styles.section} aria-labelledby="load-title">
           <h2 id="load-title" className={styles.sectionTitle}>
             Training load
           </h2>
           <div className={styles.panel}>
-            {adherence !== undefined && activeProgram && (
-              <p className={styles.adherence}>
-                <strong>{Math.round(adherence * 100)}%</strong> of planned sets done in {activeProgram.name}
+            {adherence.map((a) => (
+              <p key={a.program.id} className={styles.adherence}>
+                <strong>{Math.round(a.value * 100)}%</strong> of planned sets done in {a.program.name}
               </p>
-            )}
+            ))}
             {muscles.length > 0 && (
               <table className={styles.muscles}>
                 <caption>Hard sets per muscle group</caption>

@@ -7,9 +7,11 @@ import {
   completedDays,
   describeBlock,
   nextDay,
+  programsUnderWay,
   sessionFromDay,
   suggestedWeight,
   totalDays,
+  weekTodo,
 } from './program.ts'
 import { Exercise, Program } from './schemas.ts'
 import { formatDistance, formatTime, formatWeight, fromDisplayWeight, parseTime } from './units.ts'
@@ -127,6 +129,38 @@ describe('schedule', () => {
     expect(sessionFromDay(set, { programId: set.id, week: 0, day: 1 }, IDX, () => 100, '2026-10-16').title).toBe(
       must(set.weeks[0]?.days[1]).name,
     )
+  })
+
+  test('the week todo of a plan: the program week under way, and what is left of it and of the plan', () => {
+    const ref = (week: number, day: number) => ({ programRef: { programId: program.id, week, day } })
+    const before = session('2026-10-08', [], ref(0, 2))
+    const monday = session('2026-10-12', [], ref(1, 1))
+    const t = must(weekTodo(program, [before, monday], '2026-10-12'))
+    expect(t.week).toBe(1)
+    expect(t.days.map((d) => d.done !== undefined)).toEqual([false, true, false])
+    expect(t.left).toBe(2)
+    expect(t.programLeft).toBe(7)
+    // Nothing yet this week: the week of the next day.
+    expect(weekTodo(program, [before], '2026-10-12')?.week).toBe(1)
+  })
+
+  test('the week todo of a set: each session once, done when logged this week', () => {
+    const set = { ...program, layout: 'sessions' as const, weeks: program.weeks.slice(0, 1) }
+    const ref = (day: number) => ({ programRef: { programId: set.id, week: 0, day } })
+    const t = must(weekTodo(set, [session('2026-10-05', [], ref(0)), session('2026-10-13', [], ref(1))], '2026-10-12'))
+    expect(t.days.map((d) => d.done !== undefined)).toEqual([false, true, false])
+    expect(t.programLeft).toBeUndefined()
+  })
+
+  test('programs under way: those trained, the latest first', () => {
+    const other = { ...program, id: 'other' }
+    const untouched = { ...program, id: 'untouched' }
+    const s1 = session('2026-10-05', [], { programRef: { programId: program.id, week: 0, day: 0 } })
+    const s2 = session('2026-10-13', [], { programRef: { programId: 'other', week: 0, day: 0 } })
+    expect(programsUnderWay([program, other, untouched], [s1, s2], '2026-10-12').map((t) => t.program.id)).toEqual([
+      'other',
+      program.id,
+    ])
   })
 
   test('the days to choose from are those of the current week', () => {

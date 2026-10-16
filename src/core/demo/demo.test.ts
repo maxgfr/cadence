@@ -30,7 +30,8 @@ describe('demo', () => {
   test('all three sports: every program is valid and keeps its own disciplines; sessions and goals on request', () => {
     const d = buildDemo({ sports: ['gym', 'swim', 'track'], withSessions: true, today, now })
     expect(d.disciplines).toHaveLength(3)
-    expect(d.programs).toHaveLength(4)
+    expect(d.programs).toHaveLength(5)
+    expect(d.programs.find((p) => p.templateId === 'push-pull-legs')?.layout).toBe('sessions')
     for (const p of d.programs) expect(Program.safeParse(p).success).toBe(true)
     const strengthDay = d.programs.find((p) => p.templateId === 'sprinter-100')?.weeks[0]?.days[1]
     expect(strengthDay?.disciplineId).toBe('demo-gym')

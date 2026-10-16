@@ -2,6 +2,7 @@ import { Check, ChevronLeft, Plus, Timer, Trash2 } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useLocation, useParams } from 'wouter'
 import { useData } from '../../app/data.tsx'
+import { cameFrom } from '../../app/hashLocation.ts'
 import { useToast } from '../../app/toast.tsx'
 import { newId } from '../../core/model/ids.ts'
 import { describeBlock, emptySet } from '../../core/model/program.ts'
@@ -36,6 +37,7 @@ export function Log() {
   const units = useUnits()
   const toast = useToast()
   const saving = useRef<Promise<void>>(Promise.resolve())
+  const from = cameFrom()
 
   useEffect(() => {
     if (!session && stored) setSession(stored)
@@ -70,10 +72,19 @@ export function Log() {
   return (
     <main className={styles.log} aria-labelledby="log-title">
       <header className={styles.bar}>
-        <Link href="/" className={styles.back}>
+        {/* Back to where the session was opened from (Today, a program, History), or Today. */}
+        <a
+          href={`#${from ?? '/'}`}
+          className={styles.back}
+          onClick={(e) => {
+            e.preventDefault()
+            if (from !== undefined) history.back()
+            else navigate('/', { replace: true })
+          }}
+        >
           <ChevronLeft size={20} strokeWidth={2} aria-hidden="true" />
-          Today
-        </Link>
+          {from !== undefined ? 'Back' : 'Today'}
+        </a>
         <span className={styles.count}>
           {setDone} of {setTotal} sets
         </span>
@@ -158,13 +169,13 @@ export function Log() {
           await saving.current
           await data.put('sessions', done)
           rest.stop()
-          navigate(`/progress/sessions/${done.id}?saved=1`)
+          navigate(`/progress/sessions/${done.id}?saved=1`, { replace: true })
         }}
         onDiscard={async () => {
           await saving.current
           await data.remove('sessions', session.id)
           rest.stop()
-          navigate('/')
+          navigate('/', { replace: true })
           toast('Session discarded')
         }}
       />

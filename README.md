@@ -17,13 +17,16 @@ starting point. AI, to design programs and propose exercises, is optional and us
   only if you pick one. Exercises can be created from the picker, in the middle of a session, or proposed by AI.
 - **Demo**: on the welcome screen or in *Settings › Demo*, pick Gym, Swimming, Track and field, or several: each brings
   its discipline, exercises (main lifts and accessories; strokes and drills; sprints, runs, drills and plyometrics) and
-  programs (beginner full body, 5/3/1-style strength, 1500 m swim build, 100 m sprinter block). Ten weeks of example
+  programs (beginner full body, 5/3/1-style strength, push/pull/legs as a set of sessions, 1500 m swim build,
+  100 m sprinter block). Ten weeks of example
   sessions and a goal per sport can be added to see the charts. Everything stays editable, and *Remove the demo* takes
   it away again, keeping what your own records use.
-- **Today**: *Resume session* when one is in progress, and *New session*: every session of your programs (the
-  current one first, the next one marked), each pre-filled from its plan ("5×5 @80%", "8×50 m @1:50", "6×60 m @95%
-  max · rest 3:00"), and a free session per discipline. Starting another while one is in progress asks whether to
-  save or discard what was done. Then this week at a glance and the next goal.
+- **Today**: *Resume session* when one is in progress; *This week* (Monday to Sunday by default): the sessions
+  logged each day, then, for each program under way, its todo for the week (the days of its week under way, or each
+  session of a set once), ticked off as they are done, with what is left to finish the program; *New session*: every
+  session of every program, each pre-filled from its plan ("5×5 @80%", "8×50 m @1:50", "6×60 m @95% max · rest
+  3:00"), and a free session per discipline; the next goals. There is no "current" program: switch between programs
+  during the week as you like. Starting a session while one is in progress asks whether to save or discard it.
 - **Logging**: one card per exercise, one row per set with large touch targets, values pre-filled from the plan, a
   tick per set. No clock runs: a rest timer starts only when you tap *Rest* on an exercise (its planned rest, or the
   length set in Settings; −15 s, +15 s, skip, vibration at the end). Finish with the duration, an effort rating
@@ -85,8 +88,8 @@ Cadence works fully without AI. With a model set up under *Settings › AI* it c
   give, or days per week and weeks; goal; Advanced adds
   session length, equipment, target date, limitations and intensity style) for your disciplines or sports you name,
   or **from your own history** (recent
-  sessions, records, goals and current program, summarised; the exact text sent is shown before sending).
-- **Adjust a week** of the current program from what you actually logged.
+  sessions, records, goals and the programs under way, summarised; the exact text sent is shown before sending).
+- **Adjust a week** of a program from what you actually logged.
 - **Propose exercises** for your disciplines or sports you name (level, essentials or a complete library, equipment),
   each with its discipline, how it is measured, a fixed distance or a pace unit, and the muscles worked. Exercises you
   already have are left out; you untick and edit the list before adding it to your library.

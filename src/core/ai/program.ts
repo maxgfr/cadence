@@ -1,8 +1,8 @@
 import { z } from 'zod'
 import { type ExerciseIndex, findExercise, normalizeName } from '../library/exercises.ts'
-import { addDays, daysBetween } from '../model/dates.ts'
+import { addDays, daysBetween, startOfWeek } from '../model/dates.ts'
 import { newId } from '../model/ids.ts'
-import { describeBlock, nextDay } from '../model/program.ts'
+import { describeBlock, nextDay, programsUnderWay } from '../model/program.ts'
 import {
   type Block,
   DISCIPLINE_COLORS,
@@ -379,7 +379,6 @@ export interface ContextInput {
   sessions: readonly Session[]
   goals: readonly Goal[]
   programs: readonly Program[]
-  activeProgramId?: string
   exercises: ExerciseIndex
   disciplines: readonly Discipline[]
   today: string
@@ -475,12 +474,11 @@ export function summarizeContext(c: ContextInput): string {
       )
     }
   }
-  const active = c.programs.find((p) => p.id === c.activeProgramId)
-  if (active) {
+  for (const { program: active } of programsUnderWay(c.programs, c.sessions, startOfWeek(c.today, c.weekStart))) {
     const adh = programAdherence(c.sessions, active.id)
     const next = nextDay(active, c.sessions)
     out.push(
-      `Current program: ${active.name} (${active.weeks.length} weeks)${adh !== undefined ? `, ${Math.round(adh * 100)}% of planned sets done` : ''}${next ? `, next: week ${next.week + 1} day ${next.day + 1}` : ', finished'}.`,
+      `Program under way: ${active.name} (${active.weeks.length} weeks)${adh !== undefined ? `, ${Math.round(adh * 100)}% of planned sets done` : ''}${next ? `, next: week ${next.week + 1} day ${next.day + 1}` : ', finished'}.`,
     )
     const w = active.weeks[next?.week ?? 0]
     if (w)

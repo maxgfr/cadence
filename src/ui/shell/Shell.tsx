@@ -1,6 +1,7 @@
 import { CalendarCheck, ClipboardList, Dumbbell, type LucideIcon, Settings, TrendingUp } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { Link, useLocation } from 'wouter'
+import { sectionOf } from '../../app/hashLocation.ts'
 import { cx } from '../cx.ts'
 import styles from './Shell.module.css'
 
@@ -20,12 +21,6 @@ const DESTINATIONS: readonly Destination[] = [
   { href: '/settings', label: 'Settings', icon: Settings },
 ]
 
-/** The section a path belongs to ("/programs/abc" → "/programs"). */
-function section(path: string): string {
-  const first = path.split('/')[1] ?? ''
-  return `/${first}`
-}
-
 /** Routes that take the whole screen: logging a session. */
 export function isFocusRoute(path: string): boolean {
   return path.startsWith('/log/')
@@ -34,7 +29,7 @@ export function isFocusRoute(path: string): boolean {
 export function Shell({ children }: { children: ReactNode }) {
   const [location] = useLocation()
   const focus = isFocusRoute(location)
-  const current = section(location)
+  const current = sectionOf(location)
   return (
     <div className={cx(styles.shell, focus && styles.focus)}>
       <a className={styles.skip} href="#main">

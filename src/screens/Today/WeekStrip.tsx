@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import { Link } from 'wouter'
 import { useData } from '../../app/data.tsx'
 import { addDays, fromIsoDate, startOfWeek } from '../../core/model/dates.ts'
@@ -8,8 +9,8 @@ import styles from './Today.module.css'
 
 const LETTERS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
-/** This week as a training diary line: one column per day, a dot per session logged. */
-export function WeekStrip() {
+/** This week as a training diary line (one column per day, a dot per session logged), then what is left of it. */
+export function WeekStrip({ children }: { children?: ReactNode }) {
   const { sessions, today, settings } = useData()
   const first = startOfWeek(today, settings.weekStart)
   const days = Array.from({ length: 7 }, (_, i) => addDays(first, i))
@@ -59,6 +60,7 @@ export function WeekStrip() {
           )
         })}
       </ol>
+      {children}
     </section>
   )
 }

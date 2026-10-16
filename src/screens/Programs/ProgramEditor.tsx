@@ -83,7 +83,6 @@ function ProgramForm({ initial, draft, saved }: { initial: Program; draft?: Prog
   const [adding, setAdding] = useState<number | null>(null)
   const [confirmDelete, setConfirmDelete] = useState(false)
   const advanced = data.settings.mode === 'advanced'
-  const isActive = data.settings.activeProgramId === program.id
   const week = program.weeks[weekIndex] ?? program.weeks[0]
   const set = isSessionSet(program)
   const unit = set ? 'Session' : 'Day'
@@ -119,14 +118,12 @@ function ProgramForm({ initial, draft, saved }: { initial: Program; draft?: Prog
       if (JSON.stringify(final.weeks).includes(ex.id)) await data.put('exercises', ex)
     }
     await data.put('programs', final)
-    if (!data.settings.activeProgramId || draft?.origin === 'adjust')
-      await data.updateSettings({ activeProgramId: final.id })
     setDirty(false)
     if (draft) {
       setDraft(null)
       navigate(`/programs/${final.id}`, { replace: true })
     }
-    toast(saved ? 'Program saved' : `${final.name} saved${!data.settings.activeProgramId ? ' and set as current' : ''}`)
+    toast(saved ? 'Program saved' : `${final.name} saved`)
   }
 
   return (
@@ -136,7 +133,7 @@ function ProgramForm({ initial, draft, saved }: { initial: Program; draft?: Prog
         set
           ? `${program.weeks[0]?.days.length ?? 0} ${program.weeks[0]?.days.length === 1 ? 'session' : 'sessions'}, in any order`
           : `${program.weeks.length} ${program.weeks.length === 1 ? 'week' : 'weeks'}`
-      }${isActive ? ' · current program' : ''}`}
+      }`}
       back={{ href: '/programs', label: 'Programs' }}
     >
       {draft && (
@@ -391,7 +388,6 @@ function ProgramForm({ initial, draft, saved }: { initial: Program; draft?: Prog
                   variant="danger"
                   onClick={async () => {
                     await data.remove('programs', program.id)
-                    if (isActive) await data.updateSettings({ activeProgramId: undefined })
                     navigate('/programs', { replace: true })
                     toast('Program deleted', [{ label: 'Undo', onClick: () => data.put('programs', initial) }])
                   }}
@@ -412,11 +408,6 @@ function ProgramForm({ initial, draft, saved }: { initial: Program; draft?: Prog
       )}
 
       <div className={styles.footer}>
-        {saved && !isActive && (
-          <Button variant="secondary" onClick={() => data.updateSettings({ activeProgramId: program.id })}>
-            Make current
-          </Button>
-        )}
         {draft && (
           <Button
             variant="plain"

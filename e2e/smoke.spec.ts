@@ -34,7 +34,10 @@ test('demo sport → logged session → record and chart → backup round trip',
   // The demo's first program is current: Today shows its next session, pre-filled.
   await expect(page.getByRole('heading', { name: 'New session' })).toBeVisible()
   await accessible(page, 'today')
-  await page.getByRole('button', { name: /^Full body A.*next up/ }).click()
+  await page
+    .getByRole('button', { name: /^Full body A/ })
+    .first()
+    .click()
 
   // Log two sets of squats.
   await expect(page.getByRole('heading', { name: 'Full body A · Week 1' })).toBeVisible()
@@ -101,7 +104,7 @@ test('demo sport → logged session → record and chart → backup round trip',
   await expect(page.getByRole('heading', { name: 'No session logged yet' })).toBeVisible()
   await page.goto('./#/settings')
   await page.getByLabel('Backup file').setInputFiles(file)
-  await expect(page.getByText('Backup imported: 1 sessions, 2 programs')).toBeVisible()
+  await expect(page.getByText('Backup imported: 1 sessions, 3 programs')).toBeVisible()
   // History is a view of Progress; old links still lead there.
   await page.goto('./#/history')
   await expect(page.getByRole('radio', { name: 'History' })).toBeChecked()
@@ -127,6 +130,16 @@ test('starting empty: create a discipline and an exercise from the picker, mid-s
   await page.goto('./')
   await page.getByRole('button', { name: 'Start empty' }).click()
   await expect(page.getByRole('heading', { name: 'Start your training log' })).toBeVisible()
+  // Opened from Today, the demo screen of Settings offers no way back into another tab.
+  await page.getByRole('link', { name: 'Load a demo sport' }).click()
+  await expect(page.getByRole('heading', { name: 'Demo', level: 1 })).toBeVisible()
+  await expect(page.locator('main').getByRole('link', { name: 'Settings' })).toHaveCount(0)
+  // Opened from Settings, it goes back there.
+  await page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name: 'Settings' }).click()
+  await page.getByRole('link', { name: /^Demo/ }).click()
+  await page.locator('main').getByRole('link', { name: 'Settings' }).click()
+  await expect(page.getByRole('heading', { name: 'Settings', level: 1 })).toBeVisible()
+  await page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name: 'Today' }).click()
   await page.getByRole('button', { name: 'Start a session' }).click()
   await page.getByRole('button', { name: 'Add exercise' }).click()
   await page.getByRole('searchbox', { name: 'Search exercises' }).fill('Campus board')
@@ -187,13 +200,12 @@ test('a set of sessions: written once, then Today runs the next one or any other
   await expect(page.getByRole('radio', { name: 'Week by week' })).not.toBeChecked()
   await accessible(page, 'set of sessions')
   await page.getByRole('button', { name: 'Save program' }).click()
-  await page.getByRole('button', { name: 'Make current' }).click()
-  await expect(page.getByText('2 sessions, in any order · current program')).toBeVisible()
+  await expect(page.getByText('My split saved')).toBeVisible()
 
-  await page.getByRole('link', { name: 'Today' }).click()
-  // Every session of every program is on Today, ready to start.
-  await expect(page.getByRole('button', { name: /^Leg day.*next up/ })).toBeVisible()
-  await expect(page.getByRole('heading', { name: 'My split (current)' })).toBeVisible()
+  await page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name: 'Today' }).click()
+  // Every session of every program is on Today, ready to start; no program is "the" current one.
+  await expect(page.getByRole('button', { name: /^Leg day/ })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'My split' })).toBeVisible()
   await expect(page.getByRole('heading', { name: 'Beginner full body' })).toBeVisible()
   await accessible(page, 'choose a session')
   await page.getByRole('button', { name: /^Bodyweight/ }).click()
@@ -202,13 +214,21 @@ test('a set of sessions: written once, then Today runs the next one or any other
 
   // Switching from a session with sets done asks what to keep.
   await page.getByRole('button', { name: 'Push-up, set 1 done' }).click()
-  await page.getByRole('link', { name: 'Today' }).click()
+  await page.getByRole('link', { name: 'Back' }).click()
   await expect(page.getByRole('link', { name: 'Resume session' })).toBeVisible()
   await page.getByRole('button', { name: /^Leg day/ }).click()
   await expect(page.getByRole('dialog', { name: 'Switch session?' })).toBeVisible()
   await accessible(page, 'switch session')
   await page.getByRole('button', { name: 'Save it and switch' }).click()
   await expect(page.getByRole('heading', { name: 'Leg day', level: 1 })).toBeVisible()
+
+  // This week's todo: Bodyweight done today, Leg day under way.
+  await page.getByRole('link', { name: 'Back' }).click()
+  const week = page.getByRole('region', { name: 'My split' })
+  await expect(week.getByRole('button', { name: /^Leg day.*In progress/ })).toBeVisible()
+  await expect(week.getByText(/^Done /)).toBeVisible()
+  await expect(week.getByText(/1 of 2 done/)).toBeVisible()
+  await accessible(page, 'week todo')
   await page.goto('./#/progress?view=history')
   await expect(page.getByRole('link', { name: /^Bodyweight/ })).toBeVisible()
   await expect(page.getByRole('heading', { name: 'In progress' })).toHaveCount(0)

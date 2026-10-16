@@ -202,3 +202,15 @@ a.day:hover {
   font-size: var(--text-footnote);
   font-weight: 600;
 }
+
+.done {
+  color: var(--success);
+}
+
+.running {
+  color: var(--accent);
+}
+
+.todo {
+  color: var(--ink-3);
+}

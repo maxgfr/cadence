@@ -207,7 +207,6 @@ export const Settings = z.object({
   /** 1 = Monday, 0 = Sunday. */
   weekStart: z.union([z.literal(0), z.literal(1)]).default(1),
   theme: z.enum(['system', 'light', 'dark']).default('system'),
-  activeProgramId: z.string().optional(),
   /** Default rest timer, seconds, when a block prescribes none. */
   defaultRest: z.number().int().min(0).max(900).default(90),
   onboarded: z.boolean().default(false),

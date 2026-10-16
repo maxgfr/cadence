@@ -162,7 +162,7 @@ Danger, warning and success each pair a strong tone with a soft ground, used in 
 
 ### Hierarchy
 - **Large Title** (700, 2.125rem, -0.02em): one per screen.
-- **Headline** (700, 1.5rem): Today's session name, the logging screen's title, the current program, the rest countdown.
+- **Headline** (700, 1.5rem): the session in progress on Today, the logging screen's title, the rest countdown.
 - **Title** (700, 1.25rem): section headings, exercise names in the log, figure values.
 - **Body** (400, 1.0625rem, 1.45).
 - **Footnote** (0.9375rem): plan lines, context lines, subtitles; 600 for small headings.
@@ -172,7 +172,7 @@ Danger, warning and success each pair a strong tone with a soft ground, used in 
 ### Named Rules
 **The Tabular Rule.** All figures are tabular (`font-variant-numeric: tabular-nums` on body and every plan line).
 **The 16px Floor.** Inputs never go below 16px so iOS never zooms.
-**The No-Eyebrow Rule.** No label above a heading: context goes on the line below it ("Current program · 4 weeks…").
+**The No-Eyebrow Rule.** No label above a heading: context goes on the line below it ("Week 1 · 1 of 3 done…").
 
 ## Layout
 

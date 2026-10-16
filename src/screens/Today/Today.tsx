@@ -4,7 +4,9 @@ import { Link, useLocation } from 'wouter'
 import { useStartSession } from '../../app/actions.ts'
 import { useAi } from '../../app/ai.tsx'
 import { useData } from '../../app/data.tsx'
-import { formatDay } from '../../core/model/dates.ts'
+import { formatDay, startOfWeek } from '../../core/model/dates.ts'
+import { programsUnderWay } from '../../core/model/program.ts'
+import type { Program, ProgramRef } from '../../core/model/schemas.ts'
 import { goalProgress } from '../../core/stats/trends.ts'
 import { Button, buttonClass } from '../../ui/components/Button.tsx'
 import { DisciplineDot } from '../../ui/components/Discipline.tsx'
@@ -12,9 +14,10 @@ import { EmptyState } from '../../ui/components/EmptyState.tsx'
 import { Sheet } from '../../ui/components/Sheet.tsx'
 import { Screen } from '../../ui/shell/Screen.tsx'
 import { GoalLine } from '../Progress/Goals.tsx'
-import { SessionList, useChoosableSessions } from './SessionChooser.tsx'
+import { SessionList, sameRef, useChoosableSessions } from './SessionChooser.tsx'
 import styles from './Today.module.css'
 import { WeekStrip } from './WeekStrip.tsx'
+import { WeekTodoCard } from './WeekTodo.tsx'
 
 export function Today() {
   const data = useData()
@@ -33,9 +36,16 @@ export function Today() {
     setPending({ title, go })
     return Promise.resolve()
   }
-  const goal = data.goals
+  const goals = data.goals
     .filter((g) => !g.achievedAt && g.deadline >= data.today)
-    .sort((a, b) => a.deadline.localeCompare(b.deadline))[0]
+    .sort((a, b) => a.deadline.localeCompare(b.deadline))
+    .slice(0, 3)
+  // What each program under way asks of this week (Monday to Sunday by default).
+  const todos = programsUnderWay(data.programs, data.sessions, startOfWeek(data.today, data.settings.weekStart))
+  const pick = (program: Program, ref: ProgramRef) => {
+    if (active && sameRef(active.programRef, ref)) navigate(`/log/${active.id}`)
+    else switchTo(program.weeks[ref.week]?.days[ref.day]?.name ?? program.name, () => start.fromDay(program, ref))
+  }
 
   return (
     <Screen title="Today" subtitle={formatDay(data.today)}>
@@ -73,20 +83,32 @@ export function Today() {
         />
       )}
 
+      {data.exercises.length > 0 && (
+        <WeekStrip>
+          {todos.length > 0 ? (
+            todos.map((t) => (
+              <WeekTodoCard
+                key={t.program.id}
+                todo={t}
+                activeRef={active?.programRef}
+                onStart={(ref) => pick(t.program, ref)}
+              />
+            ))
+          ) : (
+            <p className={styles.nudge}>
+              <ClipboardList size={16} strokeWidth={1.75} aria-hidden="true" />
+              Start a session of a program below: what is left of its week shows here, ticked off as you go.
+            </p>
+          )}
+        </WeekStrip>
+      )}
+
       <section className={styles.sessions} aria-labelledby="new-title">
         <h2 id="new-title" className={styles.sectionTitle}>
           New session
         </h2>
         {choices.length > 0 ? (
-          <SessionList
-            activeRef={active?.programRef}
-            onPick={(p, ref) => {
-              const r = active?.programRef
-              if (active && r && r.programId === ref.programId && r.week === ref.week && r.day === ref.day)
-                navigate(`/log/${active.id}`)
-              else switchTo(p.weeks[ref.week]?.days[ref.day]?.name ?? p.name, () => start.fromDay(p, ref))
-            }}
-          />
+          <SessionList activeRef={active?.programRef} onPick={pick} />
         ) : (
           data.exercises.length > 0 && (
             <p className={styles.nudge}>
@@ -168,17 +190,18 @@ export function Today() {
         )}
       </Sheet>
 
-      <WeekStrip />
-
       <section aria-labelledby="goal-title" className={styles.goal}>
         <h2 id="goal-title" className={styles.sectionTitle}>
-          Next goal
+          Next goals
         </h2>
-        {goal ? (
-          <GoalLine
-            goal={goal}
-            progress={goalProgress(goal, data.sessions, data.index, data.today, data.settings.weekStart)}
-          />
+        {goals.length > 0 ? (
+          goals.map((g) => (
+            <GoalLine
+              key={g.id}
+              goal={g}
+              progress={goalProgress(g, data.sessions, data.index, data.today, data.settings.weekStart)}
+            />
+          ))
         ) : (
           <p className={styles.nudge}>
             <Target size={16} strokeWidth={1.75} aria-hidden="true" />

@@ -208,7 +208,6 @@ describe('context', () => {
         },
       ],
       programs: [program],
-      activeProgramId: program.id,
       exercises: IDX,
       disciplines: DISCIPLINES,
       today: '2026-10-16',
@@ -218,7 +217,7 @@ describe('context', () => {
     expect(text).toContain('Back squat [100kgx5@RPE8]')
     expect(text).toContain('Back squat: estimated 1RM 116.7 kg')
     expect(text).toContain('estimated 1RM in kg on Back squat: target 140 by 2026-12-31')
-    expect(text).toContain('Current program: Beginner full body')
+    expect(text).toContain('Program under way: Beginner full body')
     expect(
       contextPrompt({ shape: { layout: 'weeks', weeks: 4, daysPerWeek: 3 }, focus: '', sports: ['Gym'] }, text, ATHLETE)
         .prompt,

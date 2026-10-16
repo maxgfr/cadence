@@ -1,4 +1,5 @@
 import type { ExerciseIndex } from '../library/exercises.ts'
+import { addDays } from './dates.ts'
 import { newId } from './ids.ts'
 import type { Block, Day, Entry, Exercise, Intensity, Program, ProgramRef, Session, SetLog } from './schemas.ts'
 import { type DistanceUnit, formatDistance, formatTime, formatWeight, type WeightUnit } from './units.ts'
@@ -202,6 +203,71 @@ export function programDisciplines(program: Program): string[] {
   for (const w of program.weeks)
     for (const d of w.days) if (d.disciplineId && !out.includes(d.disciplineId)) out.push(d.disciplineId)
   return out
+}
+
+export interface WeekTodo {
+  program: Program
+  /** The program week this calendar week works on; undefined for a set of sessions. */
+  week: number | undefined
+  days: { ref: ProgramRef; day: Day; done: Session | undefined }[]
+  /** Days of the list not done yet. */
+  left: number
+  /** Days of a plan not done yet, to its end; undefined for a set of sessions. */
+  programLeft: number | undefined
+}
+
+/**
+ * What a program asks of this calendar week (from `weekStart`, the first day, for seven days), each day with the
+ * session that did it:
+ * - a plan: the days of the program week under way, that is the week of the first of its sessions done this calendar
+ *   week, or else the week of its next day; a day done earlier counts as done;
+ * - a set of sessions: each of its sessions once, done when logged this calendar week.
+ * Undefined for a plan finished before this week.
+ */
+export function weekTodo(program: Program, sessions: readonly Session[], weekStart: string): WeekTodo | undefined {
+  const weekEnd = addDays(weekStart, 6)
+  const mine = sessions.filter((s) => s.status === 'done' && s.programRef?.programId === program.id)
+  const thisWeek = mine.filter((s) => s.date >= weekStart && s.date <= weekEnd)
+  const set = isSessionSet(program)
+  const week = set
+    ? 0
+    : thisWeek.length > 0
+      ? Math.min(...thisWeek.map((s) => s.programRef?.week ?? 0))
+      : nextDay(program, sessions)?.week
+  if (week === undefined) return undefined
+  const days = (program.weeks[week]?.days ?? []).map((day, d) => ({
+    ref: { programId: program.id, week, day: d },
+    day,
+    done: (set ? thisWeek : mine).find((s) => s.programRef?.week === week && s.programRef.day === d),
+  }))
+  return {
+    program,
+    week: set ? undefined : week,
+    days,
+    left: days.filter((x) => !x.done).length,
+    programLeft: set ? undefined : totalDays(program) - completedDays(program, sessions),
+  }
+}
+
+/**
+ * The programs under way, the latest trained first: those with a session logged, minus plans finished before this
+ * week. Athletes switch between them during the week; none is "the" current one.
+ */
+export function programsUnderWay(
+  programs: readonly Program[],
+  sessions: readonly Session[],
+  weekStart: string,
+): WeekTodo[] {
+  const last = new Map<string, string>()
+  for (const s of sessions) {
+    const id = s.programRef?.programId
+    if (s.status === 'done' && id && s.date > (last.get(id) ?? '')) last.set(id, s.date)
+  }
+  return programs
+    .filter((p) => last.has(p.id))
+    .sort((a, b) => (last.get(b.id) ?? '').localeCompare(last.get(a.id) ?? ''))
+    .map((p) => weekTodo(p, sessions, weekStart))
+    .filter((t): t is WeekTodo => t !== undefined)
 }
 
 /** Fresh ids throughout, for a copied week or day. */

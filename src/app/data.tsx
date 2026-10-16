@@ -206,12 +206,7 @@ export function DataProvider({ children, fallback }: { children: ReactNode; fall
         for (const x of fresh) await loaded.store.put(key, x as never)
         ;(next as Record<ListKey, unknown[]>)[key] = [...loaded[key], ...fresh]
       }
-      // The first demo program becomes the current one when there is none.
-      const settings = Settings.parse({
-        ...loaded.settings,
-        onboarded: true,
-        ...(!loaded.settings.activeProgramId && demo.programs[0] ? { activeProgramId: demo.programs[0].id } : {}),
-      })
+      const settings = Settings.parse({ ...loaded.settings, onboarded: true })
       await loaded.store.putSettings(settings)
       setLoaded({ ...next, settings })
     },
@@ -228,11 +223,7 @@ export function DataProvider({ children, fallback }: { children: ReactNode; fall
       for (const id of ids) await loaded.store.remove(key, id)
       ;(next as Record<ListKey, unknown[]>)[key] = (loaded[key] as { id: string }[]).filter((x) => !ids.has(x.id))
     }
-    const active = loaded.settings.activeProgramId
-    const settings =
-      active && gone.programs.includes(active) ? { ...loaded.settings, activeProgramId: undefined } : loaded.settings
-    if (settings !== loaded.settings) await loaded.store.putSettings(settings)
-    setLoaded({ ...next, settings })
+    setLoaded(next)
   }, [setLoaded])
 
   const value = useMemo<Data | null>(() => {

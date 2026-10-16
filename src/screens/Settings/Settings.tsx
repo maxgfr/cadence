@@ -227,7 +227,7 @@ export function Settings() {
                     app: 'cadence',
                     version: BACKUP_VERSION,
                     exportedAt: new Date().toISOString(),
-                    settings: { ...DEFAULT_SETTINGS, ...s, activeProgramId: undefined },
+                    settings: { ...DEFAULT_SETTINGS, ...s },
                     disciplines: [],
                     exercises: [],
                     programs: [],

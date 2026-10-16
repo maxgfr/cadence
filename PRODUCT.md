@@ -26,8 +26,10 @@ Local-first and account-free: data lives on the device, exports to open JSON/CSV
 
 ## Operating Context
 
+- Home (user request): resume the session in progress, see this week (Monday to Sunday by default) with each program's todo and what is done, start any session of any program, and see the next goals. No program is "current": athletes switch between programs during the week.
+- Back never changes tab: it returns within the tab, or is not shown (user request).
 - Ritual: open Today, resume the session in progress or start a new one: any session of a program (the next one marked) or a free session, switching from one in progress by saving or discarding it (user request); log sets (no clock runs; a rest timer only when the athlete starts it from an exercise), finish with session RPE and notes.
-- Starting: the app is empty. The user creates disciplines and exercises (also from the exercise picker, mid-session), or loads demo sports (Gym, Swimming, Track and field, any combination) with their exercises and programs (beginner full-body, 5/3/1-style strength, 1500 m swim build, 100 m sprinter block), optionally with example sessions; the demo can be removed again.
+- Starting: the app is empty. The user creates disciplines and exercises (also from the exercise picker, mid-session), or loads demo sports (Gym, Swimming, Track and field, any combination) with their exercises and programs (beginner full-body, 5/3/1-style strength, push/pull/legs as a set of sessions, 1500 m swim build, 100 m sprinter block), optionally with example sessions; the demo can be removed again.
 - Planning: edit a demo program, write one from scratch, or generate one with AI from a questionnaire or from the user's own history, PRs and goals. The demo is loaded and removed from Settings only.
 - Library: create exercises by hand, or have AI propose a library for chosen sports (picked from and edited before it is added).
 - Programs are a set of sessions done in any order and repeated (Leg day, Bodyweight…), or a week-by-week plan to an end (user request).
