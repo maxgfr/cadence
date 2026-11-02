@@ -349,3 +349,18 @@ test('once loaded, the app opens offline', async ({ page, context }) => {
   await expect(page.getByRole('heading', { name: 'Progress' })).toBeVisible()
   await context.setOffline(false)
 })
+
+test('a change the browser refuses to store is reported, and the app keeps working', async ({ page }) => {
+  await page.goto('./')
+  await expect(page.getByRole('heading', { name: 'Cadence' })).toBeVisible()
+  // maxgfr.github.io is one origin for many sites: another one can fill the storage quota.
+  await page.evaluate(() => {
+    IDBObjectStore.prototype.put = () => {
+      throw new DOMException('The quota has been exceeded.', 'QuotaExceededError')
+    }
+  })
+  await page.getByRole('checkbox', { name: /^Gym/ }).check()
+  await page.getByRole('button', { name: 'Start with the demo' }).click()
+  await expect(page.getByRole('heading', { name: 'New session' })).toBeVisible()
+  await expect(page.getByText(/^Storage for this site is full/)).toBeVisible()
+})

@@ -10,7 +10,11 @@ export function lazyChunk<T extends ComponentType<object>>(load: () => Promise<T
   return lazy(async () => {
     try {
       const c = await load()
-      sessionStorage.removeItem(RELOADED)
+      try {
+        sessionStorage.removeItem(RELOADED)
+      } catch {
+        // Storage blocked: nothing was set either.
+      }
       return { default: c }
     } catch (e) {
       let reloaded = true

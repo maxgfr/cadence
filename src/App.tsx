@@ -1,4 +1,4 @@
-import { Suspense } from 'react'
+import { Suspense, useEffect } from 'react'
 import { Redirect, Route, Router, Switch } from 'wouter'
 import { AiProvider } from './app/ai.tsx'
 import { DataProvider, useData } from './app/data.tsx'
@@ -6,7 +6,7 @@ import { DraftProvider } from './app/drafts.tsx'
 import { useHashLocation, useHashSearch } from './app/hashLocation.ts'
 import { lazyChunk, ScreenBoundary } from './app/lazyChunk.tsx'
 import { useTheme } from './app/theme.ts'
-import { ToastProvider } from './app/toast.tsx'
+import { ToastProvider, useToast } from './app/toast.tsx'
 import { Exercises } from './screens/Exercises/Exercises.tsx'
 import { SessionDetail } from './screens/History/SessionDetail.tsx'
 import { Log } from './screens/Log/Log.tsx'
@@ -62,6 +62,16 @@ function Routes() {
   )
 }
 
+/** Says so when the browser refused to store a change, rather than letting it look saved. */
+function StorageNotice() {
+  const { saveFailures } = useData()
+  const toast = useToast()
+  useEffect(() => {
+    if (saveFailures > 0) toast('Storage for this site is full: this change will be lost on reload. Export a backup.')
+  }, [saveFailures, toast])
+  return null
+}
+
 export function App() {
   return (
     <Router hook={useHashLocation} searchHook={useHashSearch}>
@@ -70,6 +80,7 @@ export function App() {
           <DraftProvider>
             <ToastProvider>
               <Routes />
+              <StorageNotice />
             </ToastProvider>
           </DraftProvider>
         </AiProvider>
