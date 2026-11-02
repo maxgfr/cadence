@@ -6,11 +6,13 @@
   "dependencies": {
     "@ai-sdk/anthropic": "4.0.79",
     "@ai-sdk/google": "4.0.95",
+    "@ai-sdk/mistral": "4.0.77",
     "@ai-sdk/openai": "4.0.93",
     "@ai-sdk/openai-compatible": "3.0.68",
     "@openrouter/ai-sdk-provider": "3.1.0",
     "ai": "7.0.140",
     "idb": "8.0.4",
+    "llm-connect": "2.7.0",
     "llm-models": "1.8.0",
     "lucide-react": "1.57.0",
     "react": "19.3.0",

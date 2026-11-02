@@ -6,7 +6,6 @@ import { entry, IDX, must, session, set } from '../testkit.test.ts'
 import { BackupError, exportBackup, importBackup, parseBackup, sessionsCsv } from './backup.ts'
 import { idbStore } from './idb.ts'
 import { needsGoalMigration } from './migrate.ts'
-import { isSealed, type Sealed } from './sealed.ts'
 import { memoryStore, type Store } from './store.ts'
 
 let n = 0
@@ -195,54 +194,127 @@ describe('CSV', () => {
 })
 
 describe('secrets at rest', () => {
-  const raw = async (name: string, key: string) => {
+  const records = async (dbName: string, storeName: string) => {
+    const db = await openDB(dbName)
+    const out: unknown[] = db.objectStoreNames.contains(storeName) ? await db.getAll(storeName) : []
+    db.close()
+    return out
+  }
+  const legacy = async (name: string, key: string) => {
     const db = await openDB(name)
     const value: unknown = await db.get('secrets', key)
     db.close()
     return value
   }
-  const clearText = (value: unknown, text: string) =>
-    typeof value === 'string' ||
-    (isSealed(value) && new TextDecoder().decode(value.data).includes(text)) ||
-    JSON.stringify(value ?? null).includes(text)
+  const sealedRecord = async (name: string, key: string) => {
+    const db = await openDB(`${name}-sealed`)
+    const value = (await db.get('kv', key)) as { iv: Uint8Array; ciphertext: ArrayBuffer } | undefined
+    db.close()
+    return value
+  }
+  const holdsClearText = (values: unknown[], text: string) =>
+    values.some(
+      (value) =>
+        typeof value === 'string' ||
+        (value instanceof Object &&
+          'ciphertext' in value &&
+          new TextDecoder().decode(value.ciphertext as ArrayBuffer).includes(text)) ||
+        JSON.stringify(value ?? null).includes(text),
+    )
+  const databases = async () => (await indexedDB.databases()).map((d) => d.name)
+  /** A secret as the earlier wrapper sealed it: `{ v: 1, iv, data }` under a key kept in `<name>-keys`. */
+  const putEarlierSealed = async (name: string, key: string, text: string) => {
+    const cryptoKey = await crypto.subtle.generateKey({ name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt'])
+    const keys = await openDB(`${name}-keys`, 1, { upgrade: (d) => d.createObjectStore('keys') })
+    await keys.put('keys', cryptoKey, 'secrets')
+    keys.close()
+    const iv = crypto.getRandomValues(new Uint8Array(12))
+    const data = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, cryptoKey, new TextEncoder().encode(text))
+    const db = await openDB(name)
+    await db.put('secrets', { v: 1, iv, data }, key)
+    db.close()
+  }
 
-  test('are stored encrypted and read back', async () => {
+  test('are stored encrypted, apart from the data, and read back', async () => {
     const name = `cadence-test-${n++}`
     const s = await idbStore(name)
     await s.putSecret('ai.key', 'sk-live-123')
-    const stored = await raw(name, 'ai.key')
-    expect(isSealed(stored)).toBe(true)
-    expect(clearText(stored, 'sk-live-123')).toBe(false)
+    const stored = await sealedRecord(name, 'ai.key')
+    expect(stored?.ciphertext).toBeInstanceOf(ArrayBuffer)
+    expect(holdsClearText(await records(`${name}-sealed`, 'kv'), 'sk-live-123')).toBe(false)
+    expect(await legacy(name, 'ai.key')).toBeUndefined()
     expect(await s.getSecret('ai.key')).toBe('sk-live-123')
     // A fresh IV on every write.
     await s.putSecret('ai.key', 'sk-live-123')
-    expect((await raw(name, 'ai.key')) as Sealed).not.toEqual(stored as Sealed)
+    expect(await sealedRecord(name, 'ai.key')).not.toEqual(stored)
+    await s.putSecret('ai.key', '')
+    expect(await sealedRecord(name, 'ai.key')).toBeUndefined()
   })
 
-  test('saved in clear text by an earlier version are sealed on open', async () => {
+  test('saved in clear text by an earlier version move to the sealed store on open', async () => {
     const name = `cadence-test-${n++}`
     await idbStore(name)
     const db = await openDB(name)
     await db.put('secrets', 'sk-old', 'ai.key')
     db.close()
     const s = await idbStore(name)
-    expect(isSealed(await raw(name, 'ai.key'))).toBe(true)
+    expect(await legacy(name, 'ai.key')).toBeUndefined()
+    expect(holdsClearText(await records(`${name}-sealed`, 'kv'), 'sk-old')).toBe(false)
     expect(await s.getSecret('ai.key')).toBe('sk-old')
+  })
+
+  test('sealed by the earlier wrapper move to the sealed store, and its key database goes', async () => {
+    const name = `cadence-test-${n++}`
+    await idbStore(name)
+    await putEarlierSealed(name, 'ai.key', 'sk-earlier')
+    const s = await idbStore(name)
+    expect(await legacy(name, 'ai.key')).toBeUndefined()
+    expect(await sealedRecord(name, 'ai.key')).toBeDefined()
+    expect(await s.getSecret('ai.key')).toBe('sk-earlier')
+    expect(await databases()).not.toContain(`${name}-keys`)
+    // Idempotent: opening again changes nothing.
+    expect(await (await idbStore(name)).getSecret('ai.key')).toBe('sk-earlier')
+  })
+
+  test('a newer sealed value wins over a leftover of the earlier layout', async () => {
+    const name = `cadence-test-${n++}`
+    const s = await idbStore(name)
+    await s.putSecret('ai.key', 'sk-new')
+    const db = await openDB(name)
+    await db.put('secrets', 'sk-stale', 'ai.key')
+    db.close()
+    const again = await idbStore(name)
+    expect(await legacy(name, 'ai.key')).toBeUndefined()
+    expect(await again.getSecret('ai.key')).toBe('sk-new')
+  })
+
+  test('stay where they were, and readable, when the sealed store refuses them', async () => {
+    const name = `cadence-test-${n++}`
+    await idbStore(name)
+    await putEarlierSealed(name, 'ai.key', 'sk-earlier')
+    // A sealed database of a newer version cannot be opened: no key, nothing can be stored there.
+    ;(await openDB(`${name}-sealed`, 5)).close()
+    const s = await idbStore(name)
+    expect(await legacy(name, 'ai.key')).toBeDefined()
+    expect(await databases()).toContain(`${name}-keys`)
+    expect(await s.getSecret('ai.key')).toBe('sk-earlier')
   })
 
   test('are never written in clear text when encryption is unavailable', async () => {
     const name = `cadence-test-${n++}`
-    // A key database of a newer version cannot be opened: no key, no encryption.
-    ;(await openDB(`${name}-keys`, 5)).close()
+    ;(await openDB(`${name}-sealed`, 5)).close()
     const s = await idbStore(name)
     await expect(s.putSecret('ai.key', 'sk-live-123')).rejects.toThrow()
-    expect(await raw(name, 'ai.key')).toBeUndefined()
+    expect(await legacy(name, 'ai.key')).toBeUndefined()
+    expect(holdsClearText(await records(`${name}-sealed`, 'kv'), 'sk-live-123')).toBe(false)
   })
 
   test('sealed with a key that is gone read as missing', async () => {
     const name = `cadence-test-${n++}`
     await (await idbStore(name)).putSecret('ai.key', 'sk-live-123')
-    const other = await idbStore(name, `${name}-other-keys`)
-    expect(await other.getSecret('ai.key')).toBeUndefined()
+    const db = await openDB(`${name}-sealed`)
+    await db.delete('kv', 'crypto-key')
+    db.close()
+    expect(await (await idbStore(name)).getSecret('ai.key')).toBeUndefined()
   })
 })
