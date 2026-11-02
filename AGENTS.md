@@ -22,7 +22,7 @@ under `/cadence/`, no server.
   `demo-*` ids so it can be removed), never in defaults. Stored data of an older shape is migrated in
   `core/storage/migrate.ts`, both on load and on backup import.
 - AI is optional and never writes data: every AI result is a draft the user edits and saves. Keys and the endpoint live
-  in the `secrets` store, encrypted at rest (`core/storage/sealed.ts`), never in clear text, and never appear in exports. The Anthropic browser header goes to Anthropic's own host only.
+  in `llm-connect`'s `sealedStore` (database `cadence-sealed`), encrypted at rest, never in clear text, and never appear in exports. The Anthropic browser header goes to Anthropic's own host only.
 - AI and provider SDK code is loaded lazily (AI screens only); keep it out of the main chunk.
 - Charts are hand-written SVG (`src/ui/charts`), following the dataviz rules in `DESIGN.md`. No charting library.
 - Visual rules are in `DESIGN.md`, product truth in `PRODUCT.md`. `.impeccable/` is local working output, never committed.

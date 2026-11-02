@@ -13,7 +13,7 @@ export const COLLECTIONS: readonly CollectionName[] = ['disciplines', 'exercises
 
 /**
  * Device-only values (API keys, the AI endpoint). Kept apart from training data so they can never leave in an
- * export, and encrypted at rest in IndexedDB (see `sealed.ts`).
+ * export, and encrypted at rest in IndexedDB (`llm-connect`'s `sealedStore`, see `idb.ts`).
  */
 export type Secrets = Record<string, string>
 

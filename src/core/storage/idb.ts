@@ -1,6 +1,7 @@
 import { type DBSchema, type IDBPDatabase, openDB } from 'idb'
+import { sealedStore } from 'llm-connect'
 import type { Discipline, Exercise, Goal, Program, Session, Settings } from '../model/schemas.ts'
-import { isSealed, openSealer, type Sealed, type Sealer } from './sealed.ts'
+import { dropLegacyKeys, type LegacySealed, openLegacy } from './legacy-secrets.ts'
 import { COLLECTIONS, type Store } from './store.ts'
 
 interface CadenceDB extends DBSchema {
@@ -10,15 +11,22 @@ interface CadenceDB extends DBSchema {
   sessions: { key: string; value: Session; indexes: { date: string } }
   goals: { key: string; value: Goal }
   meta: { key: string; value: Settings }
-  /** Sealed (encrypted) values; a string is clear text left by an earlier version, sealed on open. */
-  secrets: { key: string; value: Sealed | string }
+  /** Secrets as earlier versions stored them, moved to the sealed store on open (see `legacy-secrets.ts`). */
+  secrets: { key: string; value: LegacySealed | string }
 }
 
 /** 2: the user's own disciplines (records of version 1 are migrated when the app loads them). */
 const DB_VERSION = 2
 
-/** `keysDb`: where the secrets' encryption key lives, apart from the data. */
-export async function idbStore(name = 'cadence', keysDb = `${name}-keys`): Promise<Store> {
+/**
+ * Secrets live in `sealedDb` (`llm-connect`'s `sealedStore`: AES-GCM under a non-extractable key, the name bound to
+ * each value), apart from the data; `legacyKeysDb` held the key of the earlier layout.
+ */
+export async function idbStore(
+  name = 'cadence',
+  sealedDb = `${name}-sealed`,
+  legacyKeysDb = `${name}-keys`,
+): Promise<Store> {
   const db: IDBPDatabase<CadenceDB> = await openDB<CadenceDB>(name, DB_VERSION, {
     upgrade(d, oldVersion) {
       if (oldVersion < 1) {
@@ -32,23 +40,20 @@ export async function idbStore(name = 'cadence', keysDb = `${name}-keys`): Promi
       if (oldVersion < 2) d.createObjectStore('disciplines', { keyPath: 'id' })
     },
   })
-  let sealer: Promise<Sealer> | undefined
-  const getSealer = () =>
-    (sealer ??= openSealer(keysDb).catch((e: unknown) => {
-      sealer = undefined
-      throw e
-    }))
-  // Each `put` replaces the clear value in one write: the clear copy is gone only once the sealed one is stored.
-  const seal = async (key: string, value: string) => db.put('secrets', await (await getSealer()).seal(value), key)
+  const sealed = sealedStore({ dbName: sealedDb })
 
-  // Keys saved in clear text by earlier versions are sealed now; on failure they stay readable and are retried next time.
+  // Secrets of the earlier layout move to the sealed store. A record is removed only once its value is stored there
+  // (or a newer one already is); when that fails it stays readable and is retried next time. Records that can never
+  // open again (their key is gone) already read as missing and are dropped.
   try {
     for (const key of await db.getAllKeys('secrets')) {
-      const value = await db.get('secrets', key)
-      if (typeof value === 'string') await seal(key, value)
+      const text = await openLegacy(await db.get('secrets', key), legacyKeysDb)
+      if (text === undefined || (await sealed.get(key)) !== null || (await sealed.set(key, text)))
+        await db.delete('secrets', key)
     }
+    if ((await db.count('secrets')) === 0) await dropLegacyKeys(legacyKeysDb)
   } catch {
-    // WebCrypto or the key database unavailable: nothing changed.
+    // IndexedDB refused: nothing was lost, the move is retried on the next open.
   }
 
   return {
@@ -75,20 +80,21 @@ export async function idbStore(name = 'cadence', keysDb = `${name}-keys`): Promi
       await db.put('meta', s, 'settings')
     },
     async getSecret(key) {
-      const value = await db.get('secrets', key)
-      if (typeof value === 'string' || value === undefined) return value
-      if (!isSealed(value)) return undefined
+      const value = await sealed.get(key)
+      if (value !== null) return value
+      // Not moved yet (the sealed store refused it on open): still readable where it was.
       try {
-        return await (await getSealer()).open(value)
+        const legacy = await db.get('secrets', key)
+        return legacy === undefined ? undefined : await openLegacy(legacy, legacyKeysDb)
       } catch {
-        // Sealed with a key that is gone (site data partly cleared): it has to be entered again.
         return undefined
       }
     },
     /** Rejects when the value could not be encrypted and stored: it is never written in clear text. */
     async putSecret(key, value) {
-      if (value === undefined || value === '') await db.delete('secrets', key)
-      else await seal(key, value)
+      if (value === undefined || value === '') await sealed.delete(key)
+      else if (!(await sealed.set(key, value))) throw new Error('This secret could not be stored on this device.')
+      await db.delete('secrets', key)
     },
   }
 }
