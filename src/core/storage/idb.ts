@@ -1,5 +1,6 @@
 import { type DBSchema, type IDBPDatabase, openDB } from 'idb'
 import type { Discipline, Exercise, Goal, Program, Session, Settings } from '../model/schemas.ts'
+import { isSealed, openSealer, type Sealed, type Sealer } from './sealed.ts'
 import { COLLECTIONS, type Store } from './store.ts'
 
 interface CadenceDB extends DBSchema {
@@ -9,13 +10,15 @@ interface CadenceDB extends DBSchema {
   sessions: { key: string; value: Session; indexes: { date: string } }
   goals: { key: string; value: Goal }
   meta: { key: string; value: Settings }
-  secrets: { key: string; value: string }
+  /** Sealed (encrypted) values; a string is clear text left by an earlier version, sealed on open. */
+  secrets: { key: string; value: Sealed | string }
 }
 
 /** 2: the user's own disciplines (records of version 1 are migrated when the app loads them). */
 const DB_VERSION = 2
 
-export async function idbStore(name = 'cadence'): Promise<Store> {
+/** `keysDb`: where the secrets' encryption key lives, apart from the data. */
+export async function idbStore(name = 'cadence', keysDb = `${name}-keys`): Promise<Store> {
   const db: IDBPDatabase<CadenceDB> = await openDB<CadenceDB>(name, DB_VERSION, {
     upgrade(d, oldVersion) {
       if (oldVersion < 1) {
@@ -29,6 +32,25 @@ export async function idbStore(name = 'cadence'): Promise<Store> {
       if (oldVersion < 2) d.createObjectStore('disciplines', { keyPath: 'id' })
     },
   })
+  let sealer: Promise<Sealer> | undefined
+  const getSealer = () =>
+    (sealer ??= openSealer(keysDb).catch((e: unknown) => {
+      sealer = undefined
+      throw e
+    }))
+  // Each `put` replaces the clear value in one write: the clear copy is gone only once the sealed one is stored.
+  const seal = async (key: string, value: string) => db.put('secrets', await (await getSealer()).seal(value), key)
+
+  // Keys saved in clear text by earlier versions are sealed now; on failure they stay readable and are retried next time.
+  try {
+    for (const key of await db.getAllKeys('secrets')) {
+      const value = await db.get('secrets', key)
+      if (typeof value === 'string') await seal(key, value)
+    }
+  } catch {
+    // WebCrypto or the key database unavailable: nothing changed.
+  }
+
   return {
     all: (collection) => db.getAll(collection) as never,
     async put(collection, value) {
@@ -52,10 +74,21 @@ export async function idbStore(name = 'cadence'): Promise<Store> {
     async putSettings(s) {
       await db.put('meta', s, 'settings')
     },
-    getSecret: (key) => db.get('secrets', key),
+    async getSecret(key) {
+      const value = await db.get('secrets', key)
+      if (typeof value === 'string' || value === undefined) return value
+      if (!isSealed(value)) return undefined
+      try {
+        return await (await getSealer()).open(value)
+      } catch {
+        // Sealed with a key that is gone (site data partly cleared): it has to be entered again.
+        return undefined
+      }
+    },
+    /** Rejects when the value could not be encrypted and stored: it is never written in clear text. */
     async putSecret(key, value) {
       if (value === undefined || value === '') await db.delete('secrets', key)
-      else await db.put('secrets', value, key)
+      else await seal(key, value)
     },
   }
 }

@@ -110,7 +110,9 @@ two to return a complete program.
 
 - No account, no server, no analytics. Training data lives in IndexedDB in this browser.
 - AI requests go straight from the device to the provider you chose, only when you ask for them.
-- The API key and endpoint are stored on the device, apart from training data, and never included in backups.
+- The API key and endpoint are stored on the device, apart from training data, and never included in backups. They are
+  encrypted at rest (AES-GCM, under a key the browser keeps and will not export), so a dump of the site's storage holds
+  no key in clear text.
 - `maxgfr.github.io` is shared by every site the author publishes on GitHub Pages. If you rely on Cadence, deploy your
   own fork on your own domain, and export a backup now and then.
 
