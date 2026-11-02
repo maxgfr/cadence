@@ -2,7 +2,7 @@ import type { LanguageModel } from 'ai'
 import { createContext, type ReactNode, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import { useData } from './data.tsx'
 
-/** Device-only AI settings; stored with the key in the secrets store, never exported. */
+/** Device-only AI settings; stored encrypted with the key in the secrets store, never exported. */
 export interface AiConfig {
   providerId?: string
   modelId?: string
@@ -60,8 +60,9 @@ export function AiProvider({ children }: { children: ReactNode }) {
 
   const save = useCallback(
     async (next: AiConfig, apiKey: string | undefined) => {
-      await store.putSecret(CONFIG_KEY, JSON.stringify(next))
+      // The key first: when it cannot be stored, nothing claims to be set up.
       if (apiKey !== undefined) await store.putSecret(KEY_KEY, apiKey.trim())
+      await store.putSecret(CONFIG_KEY, JSON.stringify(next))
       setConfig(next)
       if (apiKey !== undefined) setHasKey(apiKey.trim() !== '')
     },

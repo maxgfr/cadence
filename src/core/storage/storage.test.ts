@@ -1,10 +1,12 @@
 import { describe, expect, test } from 'bun:test'
+import { openDB } from 'idb'
 import { instantiate, TEMPLATES } from '../demo/programs.ts'
 import { DEFAULT_SETTINGS } from '../model/schemas.ts'
 import { entry, IDX, must, session, set } from '../testkit.test.ts'
 import { BackupError, exportBackup, importBackup, parseBackup, sessionsCsv } from './backup.ts'
 import { idbStore } from './idb.ts'
 import { needsGoalMigration } from './migrate.ts'
+import { isSealed, type Sealed } from './sealed.ts'
 import { memoryStore, type Store } from './store.ts'
 
 let n = 0
@@ -189,5 +191,58 @@ describe('CSV', () => {
     const lines = csv.trim().split('\n')
     expect(lines[0]).toStartWith('date,session,discipline,exercise,set,reps,weight_kg')
     expect(lines[1]).toBe('2026-10-10,"Legs, heavy",Gym,Back squat,1,5,100,,,8,yes,,')
+  })
+})
+
+describe('secrets at rest', () => {
+  const raw = async (name: string, key: string) => {
+    const db = await openDB(name)
+    const value: unknown = await db.get('secrets', key)
+    db.close()
+    return value
+  }
+  const clearText = (value: unknown, text: string) =>
+    typeof value === 'string' ||
+    (isSealed(value) && new TextDecoder().decode(value.data).includes(text)) ||
+    JSON.stringify(value ?? null).includes(text)
+
+  test('are stored encrypted and read back', async () => {
+    const name = `cadence-test-${n++}`
+    const s = await idbStore(name)
+    await s.putSecret('ai.key', 'sk-live-123')
+    const stored = await raw(name, 'ai.key')
+    expect(isSealed(stored)).toBe(true)
+    expect(clearText(stored, 'sk-live-123')).toBe(false)
+    expect(await s.getSecret('ai.key')).toBe('sk-live-123')
+    // A fresh IV on every write.
+    await s.putSecret('ai.key', 'sk-live-123')
+    expect((await raw(name, 'ai.key')) as Sealed).not.toEqual(stored as Sealed)
+  })
+
+  test('saved in clear text by an earlier version are sealed on open', async () => {
+    const name = `cadence-test-${n++}`
+    await idbStore(name)
+    const db = await openDB(name)
+    await db.put('secrets', 'sk-old', 'ai.key')
+    db.close()
+    const s = await idbStore(name)
+    expect(isSealed(await raw(name, 'ai.key'))).toBe(true)
+    expect(await s.getSecret('ai.key')).toBe('sk-old')
+  })
+
+  test('are never written in clear text when encryption is unavailable', async () => {
+    const name = `cadence-test-${n++}`
+    // A key database of a newer version cannot be opened: no key, no encryption.
+    ;(await openDB(`${name}-keys`, 5)).close()
+    const s = await idbStore(name)
+    await expect(s.putSecret('ai.key', 'sk-live-123')).rejects.toThrow()
+    expect(await raw(name, 'ai.key')).toBeUndefined()
+  })
+
+  test('sealed with a key that is gone read as missing', async () => {
+    const name = `cadence-test-${n++}`
+    await (await idbStore(name)).putSecret('ai.key', 'sk-live-123')
+    const other = await idbStore(name, `${name}-other-keys`)
+    expect(await other.getSecret('ai.key')).toBeUndefined()
   })
 })

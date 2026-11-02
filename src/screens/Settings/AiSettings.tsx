@@ -20,6 +20,10 @@ import { SelectField } from '../../ui/components/SelectField.tsx'
 import { Screen } from '../../ui/shell/Screen.tsx'
 import styles from './Settings.module.css'
 
+/** Keys are only ever stored encrypted: when that fails, nothing is stored. */
+const NOT_STORED =
+  'This device could not store the settings encrypted (its storage may be full or blocked), so nothing was saved.'
+
 const usd = (n: number) => (n >= 1 ? `$${Math.round(n * 100) / 100}` : `$${Math.round(n * 1000) / 1000}`)
 
 export function AiSettings() {
@@ -60,7 +64,15 @@ export function AiSettings() {
       setStatus({ ok: false, text: 'Enter the endpoint address, such as http://localhost:11434/v1.' })
       return false
     }
-    await ai.save({ providerId, modelId: modelId.trim(), ...(baseUrl.trim() ? { baseUrl: baseUrl.trim() } : {}) }, key)
+    try {
+      await ai.save(
+        { providerId, modelId: modelId.trim(), ...(baseUrl.trim() ? { baseUrl: baseUrl.trim() } : {}) },
+        key,
+      )
+    } catch {
+      setStatus({ ok: false, text: NOT_STORED })
+      return false
+    }
     return true
   }
 
@@ -236,7 +248,12 @@ export function AiSettings() {
           <Button
             variant="plain"
             onClick={async () => {
-              await ai.save({}, '')
+              try {
+                await ai.save({}, '')
+              } catch {
+                setStatus({ ok: false, text: 'The key could not be deleted from this device. Try again.' })
+                return
+              }
               setKey('')
               setStatus({ ok: true, text: 'AI turned off and the key deleted from this device.' })
             }}
