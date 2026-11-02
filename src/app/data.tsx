@@ -21,6 +21,8 @@ export interface Data {
   store: Store
   /** False when IndexedDB was unavailable and data lives in memory only (lost on reload). */
   persistent: boolean
+  /** Counts writes the browser refused (storage full): those changes live in memory only. */
+  saveFailures: number
   settings: Settings
   /** The user's disciplines, in the order created. */
   disciplines: Discipline[]
@@ -73,7 +75,16 @@ async function open(): Promise<{ store: Store; persistent: boolean }> {
 }
 
 async function load(): Promise<Loaded> {
-  const { store, persistent } = await open()
+  const opened = await open()
+  try {
+    return await loadFrom(opened.store, opened.persistent)
+  } catch {
+    // Unreadable storage must not leave a blank page: start in memory, as when IndexedDB is missing.
+    return loadFrom(memoryStore(), false)
+  }
+}
+
+async function loadFrom(store: Store, persistent: boolean): Promise<Loaded> {
   const [stored, disciplines, exercises, programs, sessions, goals] = await Promise.all([
     store.getSettings(),
     store.all('disciplines'),
@@ -91,7 +102,8 @@ async function load(): Promise<Loaded> {
   if (v1) lists = migrateV1(lists)
   if (v1 || needsGoalMigration(lists.goals)) {
     lists = { ...lists, goals: migrateGoals(lists.goals) }
-    await store.replaceAll({ ...lists, settings })
+    // Migrated in memory either way; a refused write is retried on the next load.
+    await store.replaceAll({ ...lists, settings }).catch(() => {})
   }
   return { store, persistent, settings, ...lists }
 }
@@ -121,6 +133,18 @@ export function DataProvider({ children, fallback }: { children: ReactNode; fall
     setLoadedState(value)
   }, [])
   const today = useToday()
+  const [saveFailures, setSaveFailures] = useState(0)
+  /**
+   * Runs one write. maxgfr.github.io is a single origin shared by many sites, so its storage can be full: a refused
+   * write keeps the change in memory and is counted (and reported to the user) instead of thrown.
+   */
+  const write = useCallback(async (op: () => Promise<void>) => {
+    try {
+      await op()
+    } catch {
+      setSaveFailures((n) => n + 1)
+    }
+  }, [])
 
   useEffect(() => {
     let live = true
@@ -136,7 +160,7 @@ export function DataProvider({ children, fallback }: { children: ReactNode; fall
     async <C extends CollectionName>(name: C, value: Collections[C]) => {
       const loaded = current.current
       if (!loaded) return
-      await loaded.store.put(name, value)
+      await write(() => loaded.store.put(name, value))
       setLoaded((l) => {
         if (!l) return l
         const list = l[name as ListKey] as unknown as { id: string }[]
@@ -145,19 +169,19 @@ export function DataProvider({ children, fallback }: { children: ReactNode; fall
         return { ...l, [name]: next }
       })
     },
-    [setLoaded],
+    [setLoaded, write],
   )
 
   const remove = useCallback(
     async (name: CollectionName, id: string) => {
       const loaded = current.current
       if (!loaded) return
-      await loaded.store.remove(name, id)
+      await write(() => loaded.store.remove(name, id))
       setLoaded((l) =>
         l ? { ...l, [name]: (l[name as ListKey] as unknown as { id: string }[]).filter((x) => x.id !== id) } : l,
       )
     },
-    [setLoaded],
+    [setLoaded, write],
   )
 
   const updateSettings = useCallback(
@@ -165,10 +189,10 @@ export function DataProvider({ children, fallback }: { children: ReactNode; fall
       const loaded = current.current
       if (!loaded) return
       const next = Settings.parse({ ...loaded.settings, ...patch })
-      await loaded.store.putSettings(next)
+      await write(() => loaded.store.putSettings(next))
       setLoaded((l) => (l ? { ...l, settings: next } : l))
     },
-    [setLoaded],
+    [setLoaded, write],
   )
 
   const replaceAll = useCallback(
@@ -176,7 +200,7 @@ export function DataProvider({ children, fallback }: { children: ReactNode; fall
       const loaded = current.current
       if (!loaded) return
       const settings = Settings.parse({ ...backup.settings, onboarded: true })
-      await loaded.store.replaceAll({ ...backup, settings })
+      await write(() => loaded.store.replaceAll({ ...backup, settings }))
       setLoaded((l) =>
         l
           ? {
@@ -191,7 +215,7 @@ export function DataProvider({ children, fallback }: { children: ReactNode; fall
           : l,
       )
     },
-    [setLoaded],
+    [setLoaded, write],
   )
 
   const loadDemo = useCallback(
@@ -203,14 +227,14 @@ export function DataProvider({ children, fallback }: { children: ReactNode; fall
       for (const key of ['disciplines', 'exercises', 'programs', 'sessions', 'goals'] as const) {
         const have = new Set((loaded[key] as { id: string }[]).map((x) => x.id))
         const fresh = (demo[key] as { id: string }[]).filter((x) => !have.has(x.id))
-        for (const x of fresh) await loaded.store.put(key, x as never)
+        for (const x of fresh) await write(() => loaded.store.put(key, x as never))
         ;(next as Record<ListKey, unknown[]>)[key] = [...loaded[key], ...fresh]
       }
       const settings = Settings.parse({ ...loaded.settings, onboarded: true })
-      await loaded.store.putSettings(settings)
+      await write(() => loaded.store.putSettings(settings))
       setLoaded({ ...next, settings })
     },
-    [setLoaded],
+    [setLoaded, write],
   )
 
   const removeDemo = useCallback(async () => {
@@ -220,17 +244,18 @@ export function DataProvider({ children, fallback }: { children: ReactNode; fall
     const next = { ...loaded }
     for (const key of ['disciplines', 'exercises', 'programs', 'sessions', 'goals'] as const) {
       const ids = new Set(gone[key])
-      for (const id of ids) await loaded.store.remove(key, id)
+      for (const id of ids) await write(() => loaded.store.remove(key, id))
       ;(next as Record<ListKey, unknown[]>)[key] = (loaded[key] as { id: string }[]).filter((x) => !ids.has(x.id))
     }
     setLoaded(next)
-  }, [setLoaded])
+  }, [setLoaded, write])
 
   const value = useMemo<Data | null>(() => {
     if (!state) return null
     const exercises = sortedExercises(state.exercises)
     return {
       ...state,
+      saveFailures,
       exercises,
       index: indexExercises(exercises),
       disciplineIndex: new Map(state.disciplines.map((d) => [d.id, d])),
@@ -242,7 +267,7 @@ export function DataProvider({ children, fallback }: { children: ReactNode; fall
       loadDemo,
       removeDemo,
     }
-  }, [state, today, put, remove, updateSettings, replaceAll, loadDemo, removeDemo])
+  }, [state, saveFailures, today, put, remove, updateSettings, replaceAll, loadDemo, removeDemo])
 
   if (!value) return <>{fallback}</>
   return <DataContext.Provider value={value}>{children}</DataContext.Provider>
