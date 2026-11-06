@@ -13,6 +13,7 @@ import { programs } from './programs.ts'
 import { progress } from './progress.ts'
 import { settings } from './settings.ts'
 import { shell } from './shell.ts'
+import { sync } from './sync.ts'
 import { today } from './today.ts'
 import { welcome } from './welcome.ts'
 
@@ -33,6 +34,7 @@ export const namespaces = {
   progress,
   settings,
   shell,
+  sync,
   today,
   welcome,
 }

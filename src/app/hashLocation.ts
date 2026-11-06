@@ -24,7 +24,10 @@ const currentSearch = () => hash().split('?')[1] ?? ''
 export function sectionOf(path: string): string {
   const section = `/${path.split('?')[0]?.split('/')[1] ?? ''}`
   // The coach is opened from Today and goes back there.
-  return section === '/coach' ? '/' : section
+  if (section === '/coach') return '/'
+  // A pairing link opens the sync screen, which lives in Settings.
+  if (section === '/sync') return '/settings'
+  return section
 }
 
 /**

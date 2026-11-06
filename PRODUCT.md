@@ -22,7 +22,7 @@ Cadence plans and logs training sessions and shows what the training produced. A
 
 ## Positioning
 
-Local-first and account-free: data lives on the device, exports to open JSON/CSV, nothing is sent anywhere. One log covers every sport the user defines in the same model (sets of weight×reps, reps, time, distance) instead of one app per sport. Everything works without AI; AI program design is optional, uses the user's own key and model (from the `llm-models` catalog, or a local OpenAI-compatible server), and always produces an editable draft that is saved only on confirmation.
+Local-first and account-free: data lives on the device, exports to open JSON/CSV, and goes only to the user's other device during a sync they start (QR code pairing, direct and end-to-end encrypted). One log covers every sport the user defines in the same model (sets of weight×reps, reps, time, distance) instead of one app per sport. Everything works without AI; AI program design is optional, uses the user's own key and model (from the `llm-models` catalog, or a local OpenAI-compatible server), and always produces an editable draft that is saved only on confirmation.
 
 ## Operating Context
 
@@ -48,7 +48,7 @@ Local-first and account-free: data lives on the device, exports to open JSON/CSV
 - Intensity in plans: kg, %1RM, RPE, pace, or % of max.
 - AI is BYOK, called directly from the browser; keys and base URL stay on the device and are excluded from exports. AI never writes data without confirmation.
 - Coach (user request): a conversation by text or voice that logs sets said aloud, sets the app up (exercises, programs, goals, settings) and gives advice ("is this exercise a good idea for me?"); each change is a card applied only on confirmation. Voice notes go to a model that hears audio, or are transcribed by the provider or on the device; recorded offline, they wait on the device. The conversation and pending notes are never exported.
-- No account, no sync service, no analytics.
+- No account, no sync server, no analytics. Device-to-device sync (user request): a QR code pairs two devices, public relays only introduce them, the data is end-to-end encrypted and merged both ways (newest change wins, deletions carry over).
 
 ## Brand Commitments
 

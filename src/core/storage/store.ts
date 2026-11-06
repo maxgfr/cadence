@@ -1,4 +1,4 @@
-import type { Discipline, Exercise, Goal, Program, Session, Settings } from '../model/schemas.ts'
+import type { Deleted, Discipline, Exercise, Goal, Program, Session, Settings } from '../model/schemas.ts'
 
 /** Collections kept on the device. Each record is keyed by its `id`. */
 export interface Collections {
@@ -21,8 +21,13 @@ export interface Store {
   all<C extends CollectionName>(name: C): Promise<Collections[C][]>
   put<C extends CollectionName>(name: C, value: Collections[C]): Promise<void>
   remove(name: CollectionName, id: string): Promise<void>
-  /** Replaces every collection and the settings at once (an import). */
-  replaceAll(data: { [C in CollectionName]: Collections[C][] } & { settings: Settings }): Promise<void>
+  /** Replaces every collection and the settings at once (an import, a sync); the tombstones too when given. */
+  replaceAll(
+    data: { [C in CollectionName]: Collections[C][] } & { settings: Settings; deleted?: readonly Deleted[] },
+  ): Promise<void>
+  /** Records deleted on this device, kept so a sync deletes them on the other one. */
+  tombstones(): Promise<Deleted[]>
+  putTombstone(d: Deleted): Promise<void>
   getSettings(): Promise<Settings | undefined>
   putSettings(settings: Settings): Promise<void>
   getSecret(key: string): Promise<string | undefined>
@@ -40,6 +45,8 @@ export function memoryStore(): Store {
   }
   let settings: Settings | undefined
   const secrets = new Map<string, string>()
+  const deleted = new Map<string, Deleted>()
+  const tomb = (d: Pick<Deleted, 'collection' | 'id'>) => `${d.collection}:${d.id}`
   const copy = <T>(v: T): T => structuredClone(v)
   return {
     async all(name) {
@@ -58,6 +65,16 @@ export function memoryStore(): Store {
         for (const v of next[name]) m.set(v.id, copy(v))
       }
       settings = copy(next.settings)
+      if (next.deleted) {
+        deleted.clear()
+        for (const d of next.deleted) deleted.set(tomb(d), copy(d))
+      }
+    },
+    async tombstones() {
+      return [...deleted.values()].map(copy)
+    },
+    async putTombstone(d) {
+      deleted.set(tomb(d), copy(d))
     },
     async getSettings() {
       return settings ? copy(settings) : undefined

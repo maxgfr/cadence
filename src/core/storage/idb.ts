@@ -1,7 +1,7 @@
 import { type DBSchema, type IDBPDatabase, openDB } from 'idb'
 import { sealedStore } from 'llm-connect'
 import { currentMessages } from '../i18n/index.ts'
-import type { Discipline, Exercise, Goal, Program, Session, Settings } from '../model/schemas.ts'
+import type { Deleted, Discipline, Exercise, Goal, Program, Session, Settings } from '../model/schemas.ts'
 import { dropLegacyKeys, type LegacySealed, openLegacy } from './legacy-secrets.ts'
 import { COLLECTIONS, type Store } from './store.ts'
 
@@ -12,12 +12,17 @@ interface CadenceDB extends DBSchema {
   sessions: { key: string; value: Session; indexes: { date: string } }
   goals: { key: string; value: Goal }
   meta: { key: string; value: Settings }
+  /** Tombstones of deleted records, keyed by collection and id. */
+  deleted: { key: [string, string]; value: Deleted }
   /** Secrets as earlier versions stored them, moved to the sealed store on open (see `legacy-secrets.ts`). */
   secrets: { key: string; value: LegacySealed | string }
 }
 
-/** 2: the user's own disciplines (records of version 1 are migrated when the app loads them). */
-const DB_VERSION = 2
+/**
+ * 2: the user's own disciplines (records of version 1 are migrated when the app loads them). 3: tombstones of deleted
+ * records, for sync.
+ */
+const DB_VERSION = 3
 
 /**
  * Secrets live in `sealedDb` (`llm-connect`'s `sealedStore`: AES-GCM under a non-extractable key, the name bound to
@@ -39,6 +44,7 @@ export async function idbStore(
         d.createObjectStore('secrets')
       }
       if (oldVersion < 2) d.createObjectStore('disciplines', { keyPath: 'id' })
+      if (oldVersion < 3) d.createObjectStore('deleted', { keyPath: ['collection', 'id'] })
     },
   })
   const sealed = sealedStore({ dbName: sealedDb })
@@ -66,7 +72,10 @@ export async function idbStore(
       await db.delete(collection, id)
     },
     async replaceAll(next) {
-      const tx = db.transaction(['disciplines', 'exercises', 'programs', 'sessions', 'goals', 'meta'], 'readwrite')
+      const tx = db.transaction(
+        ['disciplines', 'exercises', 'programs', 'sessions', 'goals', 'meta', 'deleted'],
+        'readwrite',
+      )
       for (const c of COLLECTIONS) {
         // One store type for all five: the values were validated against their own schema by the caller.
         const store = tx.objectStore(c as 'goals')
@@ -74,7 +83,16 @@ export async function idbStore(
         for (const v of next[c]) await store.put(v as Goal)
       }
       await tx.objectStore('meta').put(next.settings, 'settings')
+      if (next.deleted) {
+        const tombs = tx.objectStore('deleted')
+        await tombs.clear()
+        for (const d of next.deleted) await tombs.put(d)
+      }
       await tx.done
+    },
+    tombstones: () => db.getAll('deleted'),
+    async putTombstone(d) {
+      await db.put('deleted', d)
     },
     getSettings: () => db.get('meta', 'settings'),
     async putSettings(s) {
