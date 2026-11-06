@@ -1,4 +1,5 @@
 import { Component, type ComponentType, lazy, type ReactNode } from 'react'
+import { useT } from './i18n.tsx'
 
 const RELOADED = 'cadence:chunk-reload'
 
@@ -40,32 +41,35 @@ export class ScreenBoundary extends Component<{ children: ReactNode }, { failed:
 
   render() {
     if (!this.state.failed) return this.props.children
-    return (
-      <div
-        role="alert"
-        style={{ display: 'grid', gap: '1rem', maxWidth: '30rem', margin: '4rem auto', padding: '0 1rem' }}
-      >
-        <h1 style={{ fontSize: 'var(--text-headline)' }}>This screen could not load</h1>
-        <p style={{ color: 'var(--ink-2)' }}>
-          Cadence may have just been updated, or the network dropped while it loaded. Your data is safe on this device.
-        </p>
-        <button
-          type="button"
-          onClick={() => location.reload()}
-          style={{
-            justifySelf: 'start',
-            minHeight: '2.75rem',
-            padding: '0 1rem',
-            border: 0,
-            borderRadius: 'var(--radius-control)',
-            background: 'var(--accent)',
-            color: 'var(--on-accent)',
-            fontWeight: 600,
-          }}
-        >
-          Reload
-        </button>
-      </div>
-    )
+    return <LoadFailed />
   }
+}
+
+function LoadFailed() {
+  const t = useT()
+  return (
+    <div
+      role="alert"
+      style={{ display: 'grid', gap: '1rem', maxWidth: '30rem', margin: '4rem auto', padding: '0 1rem' }}
+    >
+      <h1 style={{ fontSize: 'var(--text-headline)' }}>{t.shell.loadFailedTitle}</h1>
+      <p style={{ color: 'var(--ink-2)' }}>{t.shell.loadFailedBody}</p>
+      <button
+        type="button"
+        onClick={() => location.reload()}
+        style={{
+          justifySelf: 'start',
+          minHeight: '2.75rem',
+          padding: '0 1rem',
+          border: 0,
+          borderRadius: 'var(--radius-control)',
+          background: 'var(--accent)',
+          color: 'var(--on-accent)',
+          fontWeight: 600,
+        }}
+      >
+        {t.shell.reload}
+      </button>
+    </div>
+  )
 }

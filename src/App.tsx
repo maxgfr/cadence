@@ -1,10 +1,10 @@
-import { Suspense, useEffect } from 'react'
+import { Suspense, useEffect, useRef } from 'react'
 import { Redirect, Route, Router, Switch } from 'wouter'
 import { AiProvider } from './app/ai.tsx'
 import { DataProvider, useData } from './app/data.tsx'
 import { DraftProvider } from './app/drafts.tsx'
 import { useHashLocation, useHashSearch } from './app/hashLocation.ts'
-import { I18nProvider } from './app/i18n.tsx'
+import { I18nProvider, useT } from './app/i18n.tsx'
 import { lazyChunk, ScreenBoundary } from './app/lazyChunk.tsx'
 import { useTheme } from './app/theme.ts'
 import { ToastProvider, useToast } from './app/toast.tsx'
@@ -67,8 +67,11 @@ function Routes() {
 function StorageNotice() {
   const { saveFailures } = useData()
   const toast = useToast()
+  // Read when a save fails: a change of language alone shows nothing.
+  const message = useRef('')
+  message.current = useT().shell.storageFull
   useEffect(() => {
-    if (saveFailures > 0) toast('Storage for this site is full: this change will be lost on reload. Export a backup.')
+    if (saveFailures > 0) toast(message.current)
   }, [saveFailures, toast])
   return null
 }

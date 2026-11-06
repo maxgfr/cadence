@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useT } from '../../app/i18n.tsx'
 import styles from './Chart.module.css'
 import { compact, linear, niceTicks, useWidth } from './scale.ts'
 
@@ -21,6 +22,7 @@ const PAD = { top: 20, right: 8, bottom: 28, left: 44 }
 
 /** Columns from one baseline: capped at 24px, rounded at the data end only, value of the hovered one in a tooltip. */
 export function BarChart({ label, bars, format, height = 180 }: BarChartProps) {
+  const t = useT()
   const [ref, width] = useWidth<HTMLDivElement>()
   const [active, setActive] = useState<number | null>(null)
   const max = Math.max(0, ...bars.map((b) => b.value))
@@ -48,17 +50,17 @@ export function BarChart({ label, bars, format, height = 180 }: BarChartProps) {
           }}
           onPointerLeave={() => setActive(null)}
         >
-          {ticks.map((t) => (
-            <g key={t}>
+          {ticks.map((tick) => (
+            <g key={tick}>
               <line
                 x1={PAD.left}
                 x2={w - PAD.right}
-                y1={y(t)}
-                y2={y(t)}
-                className={t === 0 ? styles.baseline : styles.grid}
+                y1={y(tick)}
+                y2={y(tick)}
+                className={tick === 0 ? styles.baseline : styles.grid}
               />
-              <text x={PAD.left - 8} y={y(t)} className={styles.tick} textAnchor="end" dominantBaseline="middle">
-                {compact(t)}
+              <text x={PAD.left - 8} y={y(tick)} className={styles.tick} textAnchor="end" dominantBaseline="middle">
+                {compact(tick)}
               </text>
             </g>
           ))}
@@ -102,8 +104,7 @@ export function BarChart({ label, bars, format, height = 180 }: BarChartProps) {
         >
           <span className={styles.tooltipValue}>{format(a.value)}</span>
           <span className={styles.tooltipLabel}>
-            Week of {a.label}
-            {a.partial ? ' (so far)' : ''}
+            {a.partial ? t.charts.weekOfSoFar(a.label) : t.charts.weekOf(a.label)}
           </span>
         </div>
       )}

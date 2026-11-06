@@ -1,4 +1,5 @@
 import { useData } from '../app/data.tsx'
+import { useT } from '../app/i18n.tsx'
 import type { Discipline } from '../core/model/schemas.ts'
 import { DisciplineDot } from './components/Discipline.tsx'
 import { Field } from './components/Field.tsx'
@@ -31,11 +32,12 @@ export function SportsPicker({
   hint: string
 }) {
   const { disciplines } = useData()
+  const t = useT()
   return (
     <div className={styles.sports}>
       {disciplines.length > 0 && (
         <fieldset className={styles.chips}>
-          <legend className={styles.legend}>Your disciplines</legend>
+          <legend className={styles.legend}>{t.forms.sports.yours}</legend>
           {disciplines.map((d) => (
             <label key={d.id} className={styles.chip}>
               <input
@@ -50,8 +52,8 @@ export function SportsPicker({
         </fieldset>
       )}
       <Field
-        label={disciplines.length > 0 ? 'Other sports (optional)' : 'Sports'}
-        placeholder="Climbing, cycling…"
+        label={disciplines.length > 0 ? t.forms.sports.other : t.forms.sports.sports}
+        placeholder={t.forms.sports.placeholder}
         hint={hint}
         value={other}
         onChange={(e) => onOther(e.target.value)}

@@ -4,6 +4,7 @@ import { Link, useLocation } from 'wouter'
 import { useStartSession } from '../../app/actions.ts'
 import { useAi } from '../../app/ai.tsx'
 import { useData } from '../../app/data.tsx'
+import { useT } from '../../app/i18n.tsx'
 import { formatDay, startOfWeek } from '../../core/model/dates.ts'
 import { dayToStart, programsUnderWay } from '../../core/model/program.ts'
 import type { Program, ProgramRef } from '../../core/model/schemas.ts'
@@ -21,6 +22,7 @@ import { WeekTodoCard } from './WeekTodo.tsx'
 
 export function Today() {
   const data = useData()
+  const t = useT()
   const ai = useAi()
   const start = useStartSession()
   const active = data.sessions.find((s) => s.status === 'active')
@@ -44,7 +46,7 @@ export function Today() {
   const todos = programsUnderWay(data.programs, data.sessions, startOfWeek(data.today, data.settings.weekStart))
   const pick = (program: Program, picked: ProgramRef) => {
     const ref = dayToStart(
-      todos.find((t) => t.program.id === program.id),
+      todos.find((todo) => todo.program.id === program.id),
       picked,
     )
     if (active && sameRef(active.programRef, ref)) navigate(`/log/${active.id}`)
@@ -52,7 +54,7 @@ export function Today() {
   }
 
   return (
-    <Screen title="Today" subtitle={formatDay(data.today)}>
+    <Screen title={t.today.title} subtitle={formatDay(data.today)}>
       {active && (
         <section className={styles.hero} aria-labelledby="active-title">
           <h2 id="active-title" className={styles.heroTitle}>
@@ -60,11 +62,14 @@ export function Today() {
           </h2>
           <p className={styles.meta}>
             <span className={styles.live} aria-hidden="true" />
-            In progress · {doneSets} of {active.entries.reduce((n, e) => n + e.sets.length, 0)} sets done
+            {t.today.heroMeta(
+              doneSets,
+              active.entries.reduce((n, e) => n + e.sets.length, 0),
+            )}
           </p>
           <Link href={`/log/${active.id}`} className={buttonClass({ variant: 'primary', size: 'large', full: true })}>
             <Play size={20} strokeWidth={2} aria-hidden="true" />
-            Resume session
+            {t.today.resume}
           </Link>
         </section>
       )}
@@ -72,15 +77,15 @@ export function Today() {
       {data.exercises.length === 0 && !active && (
         <EmptyState
           icon={ClipboardList}
-          title="Start your training log"
-          body="Create the disciplines and exercises you train, or start from a demo sport: Gym, Swimming, Track and field, with their programs."
+          title={t.today.emptyTitle}
+          body={t.today.emptyBody}
           action={
             <div className={styles.actions}>
               <Link href="/settings/demo" className={buttonClass({ variant: 'primary' })}>
-                Load a demo sport
+                {t.today.loadDemo}
               </Link>
               <Link href="/exercises" className={buttonClass({ variant: 'secondary' })}>
-                Create exercises
+                {t.today.createExercises}
               </Link>
             </div>
           }
@@ -90,18 +95,18 @@ export function Today() {
       {data.exercises.length > 0 && (
         <WeekStrip>
           {todos.length > 0 ? (
-            todos.map((t) => (
+            todos.map((todo) => (
               <WeekTodoCard
-                key={t.program.id}
-                todo={t}
+                key={todo.program.id}
+                todo={todo}
                 activeRef={active?.programRef}
-                onStart={(ref) => pick(t.program, ref)}
+                onStart={(ref) => pick(todo.program, ref)}
               />
             ))
           ) : (
             <p className={styles.nudge}>
               <ClipboardList size={16} strokeWidth={1.75} aria-hidden="true" />
-              Start a session of a program below: what is left of its week shows here, ticked off as you go.
+              {t.today.weekNudge}
             </p>
           )}
         </WeekStrip>
@@ -109,7 +114,7 @@ export function Today() {
 
       <section className={styles.sessions} aria-labelledby="new-title">
         <h2 id="new-title" className={styles.sectionTitle}>
-          New session
+          {t.today.newSession}
         </h2>
         {choices.length > 0 ? (
           <SessionList activeRef={active?.programRef} onPick={pick} />
@@ -118,11 +123,11 @@ export function Today() {
             <p className={styles.nudge}>
               <ClipboardList size={16} strokeWidth={1.75} aria-hidden="true" />
               <span>
-                The sessions of your programs appear here, ready to start. <Link href="/programs">Write one</Link>
+                {t.today.programsNudge} <Link href="/programs">{t.today.writeOne}</Link>
                 {ai.ready && (
                   <>
                     {' '}
-                    or <Link href="/programs/generate">design one with AI</Link>
+                    {t.today.or} <Link href="/programs/generate">{t.today.designWithAi}</Link>
                   </>
                 )}
                 .
@@ -130,14 +135,14 @@ export function Today() {
             </p>
           )
         )}
-        <h3 className={styles.subTitle}>Free session</h3>
+        <h3 className={styles.subTitle}>{t.today.freeSession}</h3>
         <div className={styles.freeButtons}>
           {data.disciplines.map((d) => (
             <button
               key={d.id}
               type="button"
               className={styles.freeButton}
-              onClick={() => switchTo(`${d.name} session`, () => start.free(d.id))}
+              onClick={() => switchTo(t.today.disciplineSession(d.name), () => start.free(d.id))}
             >
               <DisciplineDot disciplineId={d.id} />
               <span className={styles.freeName}>{d.name}</span>
@@ -147,21 +152,20 @@ export function Today() {
           <button
             type="button"
             className={styles.freeButton}
-            onClick={() => switchTo('a free session', () => start.free(undefined))}
+            onClick={() => switchTo(t.today.aFreeSession, () => start.free(undefined))}
           >
-            <span className={styles.freeName}>{data.disciplines.length > 0 ? 'Other' : 'Start a session'}</span>
+            <span className={styles.freeName}>
+              {data.disciplines.length > 0 ? t.today.other : t.today.startSession}
+            </span>
             <Plus className={styles.freePlus} size={18} strokeWidth={2} aria-hidden="true" />
           </button>
         </div>
       </section>
 
-      <Sheet open={pending !== null} title="Switch session?" onClose={() => setPending(null)}>
+      <Sheet open={pending !== null} title={t.today.switchTitle} onClose={() => setPending(null)}>
         {active && pending && (
           <div className={styles.switch}>
-            <p>
-              {active.title} is in progress with {doneSets} {doneSets === 1 ? 'set' : 'sets'} done. Keep what you did
-              before starting {pending.title}?
-            </p>
+            <p>{t.today.switchBody(active.title, doneSets, pending.title)}</p>
             <Button
               variant="primary"
               size="large"
@@ -173,7 +177,7 @@ export function Today() {
                 await go()
               }}
             >
-              Save it and switch
+              {t.today.saveAndSwitch}
             </Button>
             <Button
               variant="danger"
@@ -185,10 +189,10 @@ export function Today() {
                 await go()
               }}
             >
-              Discard it and switch
+              {t.today.discardAndSwitch}
             </Button>
             <Button variant="plain" full onClick={() => setPending(null)}>
-              Keep going with {active.title}
+              {t.today.keepGoing(active.title)}
             </Button>
           </div>
         )}
@@ -196,7 +200,7 @@ export function Today() {
 
       <section aria-labelledby="goal-title" className={styles.goal}>
         <h2 id="goal-title" className={styles.sectionTitle}>
-          Next goals
+          {t.today.nextGoals}
         </h2>
         {goals.length > 0 ? (
           goals.map((g) => (
@@ -209,7 +213,7 @@ export function Today() {
         ) : (
           <p className={styles.nudge}>
             <Target size={16} strokeWidth={1.75} aria-hidden="true" />
-            No goal yet · <Link href="/progress?goal=new">Set a goal</Link>
+            {t.today.noGoal} · <Link href="/progress?goal=new">{t.today.setGoal}</Link>
           </p>
         )}
       </section>

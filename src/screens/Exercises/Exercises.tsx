@@ -2,6 +2,7 @@ import { Dumbbell, Plus, Search, Sparkles } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { Link } from 'wouter'
 import { useData } from '../../app/data.tsx'
+import { useT } from '../../app/i18n.tsx'
 import type { Discipline, Exercise } from '../../core/model/schemas.ts'
 import { toDisplayDistance } from '../../core/model/units.ts'
 import { trainedExercises } from '../../core/stats/metrics.ts'
@@ -11,7 +12,7 @@ import { EmptyState } from '../../ui/components/EmptyState.tsx'
 import { ListGroup, ListRow } from '../../ui/components/List.tsx'
 import { Sheet } from '../../ui/components/Sheet.tsx'
 import { DisciplineForm } from '../../ui/DisciplineForm.tsx'
-import { ExerciseForm, METRIC_LABEL } from '../../ui/ExerciseForm.tsx'
+import { ExerciseForm } from '../../ui/ExerciseForm.tsx'
 import { Screen } from '../../ui/shell/Screen.tsx'
 import { useUnits } from '../../ui/units.ts'
 import styles from './Exercises.module.css'
@@ -21,6 +22,8 @@ type Editing = { kind: 'exercise'; value: Exercise | null } | { kind: 'disciplin
 export function Exercises() {
   const data = useData()
   const units = useUnits()
+  const t = useT()
+  const x = t.exercises
   const [query, setQuery] = useState('')
   const [editing, setEditing] = useState<Editing>(null)
   const trained = useMemo(
@@ -32,7 +35,7 @@ export function Exercises() {
   const known = new Set(data.disciplines.map((d) => d.id))
   const groups = [
     ...data.disciplines.map((d) => ({ id: d.id as string | undefined, name: d.name })),
-    { id: undefined, name: 'No discipline' },
+    { id: undefined, name: t.common.noDiscipline },
   ]
     .map((g) => ({
       ...g,
@@ -44,52 +47,49 @@ export function Exercises() {
   const empty = data.exercises.length === 0 && data.disciplines.length === 0
 
   return (
-    <Screen
-      title="Exercises"
-      subtitle={`${data.exercises.length} ${data.exercises.length === 1 ? 'exercise' : 'exercises'} · ${data.disciplines.length} ${data.disciplines.length === 1 ? 'discipline' : 'disciplines'}`}
-    >
+    <Screen title={t.common.exercises} subtitle={x.summary(data.exercises.length, data.disciplines.length)}>
       <div className={styles.actions}>
         <Button
           variant="primary"
           icon={<Plus size={18} strokeWidth={2} aria-hidden="true" />}
           onClick={() => setEditing({ kind: 'exercise', value: null })}
         >
-          New exercise
+          {x.newExercise}
         </Button>
         <Button
           variant="secondary"
           icon={<Plus size={18} strokeWidth={2} aria-hidden="true" />}
           onClick={() => setEditing({ kind: 'discipline', value: null })}
         >
-          New discipline
+          {x.newDiscipline}
         </Button>
         <Link href="/exercises/generate" className={buttonClass({ variant: 'secondary' })}>
           <Sparkles size={18} strokeWidth={1.75} aria-hidden="true" />
-          With AI
+          {x.withAi}
         </Link>
       </div>
 
       {empty ? (
         <EmptyState
           icon={Dumbbell}
-          title="Your library is empty"
-          body="Create the disciplines you train (Gym, Swimming, Climbing…) and their exercises, have them proposed with AI, or load a demo sport as a starting point."
+          title={x.emptyTitle}
+          body={x.emptyBody}
           action={
             <Link href="/settings/demo" className={buttonClass({ variant: 'secondary' })}>
-              Load a demo sport
+              {x.loadDemo}
             </Link>
           }
         />
       ) : (
         <>
           {data.disciplines.length > 0 && (
-            <ListGroup title="Disciplines">
+            <ListGroup title={x.disciplines}>
               {data.disciplines.map((d) => (
                 <ListRow
                   key={d.id}
                   leading={<DisciplineDot disciplineId={d.id} />}
                   title={d.name}
-                  subtitle={`${data.exercises.filter((e) => e.disciplineId === d.id).length} exercises`}
+                  subtitle={x.inDiscipline(data.exercises.filter((e) => e.disciplineId === d.id).length)}
                   onClick={() => setEditing({ kind: 'discipline', value: d })}
                   chevron
                 />
@@ -99,10 +99,10 @@ export function Exercises() {
           {data.exercises.length > 0 && (
             <label className={styles.search}>
               <Search size={18} strokeWidth={1.75} aria-hidden="true" />
-              <span className="sr-only">Search exercises</span>
+              <span className="sr-only">{x.search}</span>
               <input
                 type="search"
-                placeholder="Search exercises"
+                placeholder={x.search}
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 className={styles.input}
@@ -121,11 +121,11 @@ export function Exercises() {
                   }
                   title={e.name}
                   subtitle={[
-                    METRIC_LABEL[e.metric],
+                    t.labels.metric[e.metric],
                     e.distance !== undefined
                       ? `${Math.round(toDisplayDistance(e.distance, units.distanceUnit))} ${units.distanceUnit}`
                       : '',
-                    trained.has(e.id) ? 'logged' : '',
+                    trained.has(e.id) ? x.logged : '',
                   ]
                     .filter(Boolean)
                     .join(' · ')}
@@ -137,13 +137,13 @@ export function Exercises() {
           ))}
           {q && hits.length === 0 && (
             <div className={styles.none}>
-              <p>No exercise called “{query.trim()}”.</p>
+              <p>{x.noMatch(query.trim())}</p>
               <Button
                 variant="secondary"
                 icon={<Plus size={18} strokeWidth={2} aria-hidden="true" />}
                 onClick={() => setEditing({ kind: 'exercise', value: null })}
               >
-                Create it
+                {x.createIt}
               </Button>
             </div>
           )}
@@ -155,11 +155,11 @@ export function Exercises() {
         title={
           editing?.kind === 'discipline'
             ? editing.value
-              ? 'Edit discipline'
-              : 'New discipline'
+              ? x.editDiscipline
+              : x.newDiscipline
             : editing?.value
-              ? 'Edit exercise'
-              : 'New exercise'
+              ? x.editExercise
+              : x.newExercise
         }
         onClose={() => setEditing(null)}
       >

@@ -1,18 +1,15 @@
+import { useT } from '../app/i18n.tsx'
 import { DEMO_DISCIPLINES, DEMO_EXERCISES, DEMO_SPORTS, type DemoSport } from '../core/demo/catalog.ts'
 import { TEMPLATES } from '../core/demo/programs.ts'
+import type { Messages } from '../core/i18n/index.ts'
 import { ColorDot } from './components/Discipline.tsx'
 import styles from './DemoPicker.module.css'
 
-const SPORT_TEXT: Record<DemoSport, string> = {
-  gym: 'Main lifts and accessories',
-  swim: 'Strokes and drills',
-  track: 'Sprints, runs, drills and plyometrics',
-}
-
-export function sportSummary(s: DemoSport): string {
+/** What a demo sport brings: its kind of exercises, how many, and its programs. */
+export function sportSummary(s: DemoSport, t: Messages): string {
   const n = DEMO_EXERCISES.filter((e) => e.sport === s).length
-  const programs = TEMPLATES.filter((t) => t.sport === s).map((t) => t.name)
-  return `${SPORT_TEXT[s]}: ${n} exercises. ${programs.length === 1 ? 'Program' : 'Programs'}: ${programs.join(', ')}.`
+  const programs = TEMPLATES.filter((p) => p.sport === s).map((p) => p.name)
+  return t.forms.demo.summary(t.forms.demo.sport[s], n, programs.length, programs.join(', '))
 }
 
 interface DemoPickerProps {
@@ -24,10 +21,11 @@ interface DemoPickerProps {
 
 /** Pick the demo sports to start from, any combination, and whether to add example history. */
 export function DemoPicker({ sports, onSports, withSessions, onWithSessions }: DemoPickerProps) {
+  const t = useT()
   return (
     <div className={styles.picker}>
       <fieldset className={styles.group}>
-        <legend className={styles.legend}>Start from a demo sport (optional)</legend>
+        <legend className={styles.legend}>{t.forms.demo.legend}</legend>
         {DEMO_SPORTS.map((s) => {
           const d = DEMO_DISCIPLINES[s]
           return (
@@ -42,7 +40,7 @@ export function DemoPicker({ sports, onSports, withSessions, onWithSessions }: D
                   <ColorDot color={d.color} />
                   {d.name}
                 </span>
-                <span className={styles.body}>{sportSummary(s)}</span>
+                <span className={styles.body}>{sportSummary(s, t)}</span>
               </span>
             </label>
           )
@@ -51,10 +49,7 @@ export function DemoPicker({ sports, onSports, withSessions, onWithSessions }: D
       {sports.length > 0 && (
         <label className={styles.toggle}>
           <input type="checkbox" checked={withSessions} onChange={(e) => onWithSessions(e.target.checked)} />
-          <span>
-            Also add 10 weeks of example sessions and a goal, to see records and charts at work. They are not yours:
-            remove them from Settings › Demo.
-          </span>
+          <span>{t.forms.demo.withSessions}</span>
         </label>
       )}
     </div>

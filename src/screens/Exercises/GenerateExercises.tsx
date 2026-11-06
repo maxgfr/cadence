@@ -3,6 +3,7 @@ import { useRef, useState } from 'react'
 import { Link, useLocation } from 'wouter'
 import { useAi } from '../../app/ai.tsx'
 import { useData } from '../../app/data.tsx'
+import { useT } from '../../app/i18n.tsx'
 import { useToast } from '../../app/toast.tsx'
 import { describeAiError } from '../../core/ai/client.ts'
 import { type ExercisesAnswers, type ExercisesDraft, exercisesPrompt } from '../../core/ai/exercises.ts'
@@ -19,14 +20,12 @@ import { RadioCards } from '../../ui/components/RadioCards.tsx'
 import { Segmented } from '../../ui/components/Segmented.tsx'
 import { Sheet } from '../../ui/components/Sheet.tsx'
 import { TextArea } from '../../ui/components/TextArea.tsx'
-import { ExerciseForm, METRIC_LABEL, MUSCLE_NAMES } from '../../ui/ExerciseForm.tsx'
+import { ExerciseForm } from '../../ui/ExerciseForm.tsx'
 import { SportsPicker, sportNames } from '../../ui/SportsPicker.tsx'
 import { Screen } from '../../ui/shell/Screen.tsx'
 import { useUnits } from '../../ui/units.ts'
 import styles from '../Programs/Generate.module.css'
 import own from './GenerateExercises.module.css'
-
-const BACK = { href: '/exercises', label: 'Exercises' }
 
 /** Asks a model for exercises for the chosen sports, then lets the user pick and edit them before adding them. */
 export function GenerateExercises() {
@@ -34,6 +33,9 @@ export function GenerateExercises() {
   const ai = useAi()
   const toast = useToast()
   const units = useUnits()
+  const t = useT()
+  const x = t.exercises.ai
+  const back = { href: '/exercises', label: t.common.exercises }
   const [, navigate] = useLocation()
   const advanced = data.settings.mode === 'advanced'
 
@@ -54,14 +56,14 @@ export function GenerateExercises() {
 
   if (!ai.ready) {
     return (
-      <Screen title="Exercises with AI" back={BACK}>
+      <Screen title={x.title} back={back}>
         <EmptyState
           icon={Sparkles}
-          title="No AI model set up"
-          body="Exercises can always be created by hand. To have a library proposed for your sports, add a provider, a model and your own key; requests go straight from this device to that provider."
+          title={x.notSetUpTitle}
+          body={x.notSetUpBody}
           action={
             <Link href="/settings/ai" className={buttonClass({ variant: 'primary' })}>
-              Set up AI
+              {x.setUp}
             </Link>
           }
         />
@@ -75,7 +77,7 @@ export function GenerateExercises() {
     setError(undefined)
     const sports = sportNames(picked, other, data.disciplineIndex)
     if (sports.length === 0) {
-      setError('Pick or type at least one sport.')
+      setError(x.pickSport)
       return
     }
     setBusy(true)
@@ -113,12 +115,12 @@ export function GenerateExercises() {
 
     const line = (e: Exercise) =>
       [
-        METRIC_LABEL[e.metric],
+        t.labels.metric[e.metric],
         e.distance !== undefined
-          ? `${Math.round(toDisplayDistance(e.distance, units.distanceUnit))} ${units.distanceUnit}`
+          ? `${Math.round(toDisplayDistance(e.distance, units.distanceUnit))} ${units.distanceUnit}`
           : '',
-        e.pace ? `pace per ${e.pace === 'km' ? 'km' : '100 m'}` : '',
-        advanced && e.muscles ? e.muscles.map((m) => MUSCLE_NAMES[m]).join(', ') : '',
+        e.pace ? x.pacePer(e.pace === 'km' ? 'km' : '100 m') : '',
+        advanced && e.muscles ? e.muscles.map((m) => t.labels.muscle[m]).join(', ') : '',
       ]
         .filter(Boolean)
         .join(' · ')
@@ -128,27 +130,22 @@ export function GenerateExercises() {
       const used = new Set(chosen.map((e) => e.disciplineId))
       for (const d of draft?.disciplines ?? []) if (used.has(d.id)) await data.put('disciplines', d)
       for (const e of chosen) await data.put('exercises', e)
-      toast(`${chosen.length} ${chosen.length === 1 ? 'exercise' : 'exercises'} added`)
+      toast(x.added(chosen.length))
       navigate('/exercises')
     }
 
     return (
       <Screen
-        title="Proposed exercises"
-        subtitle={`${draft.exercises.length} from ${ai.config.modelId ?? 'the model'} · pick and edit before adding`}
-        back={BACK}
+        title={x.proposed}
+        subtitle={x.proposedSubtitle(draft.exercises.length, ai.config.modelId ?? x.theModel)}
+        back={back}
       >
-        <p className={styles.lead}>
-          Untick what you do not want; open one to rename it or change how it is measured. Nothing is in your library
-          until you add it.
-        </p>
-        {draft.skipped.length > 0 && (
-          <p className={styles.lead}>Already in your library, so left out: {draft.skipped.join(', ')}.</p>
-        )}
+        <p className={styles.lead}>{x.reviewLead}</p>
+        {draft.skipped.length > 0 && <p className={styles.lead}>{x.skipped(draft.skipped.join(', '))}</p>}
         {groups.map((g) => (
           <ListGroup
             key={g.d?.id ?? 'none'}
-            title={g.d ? (g.isNew ? `${g.d.name} (new discipline)` : g.d.name) : 'No discipline'}
+            title={g.d ? (g.isNew ? x.newDiscipline(g.d.name) : g.d.name) : t.common.noDiscipline}
           >
             {g.items.map((e) => (
               <ListRow
@@ -158,15 +155,15 @@ export function GenerateExercises() {
                 subtitle={line(e)}
                 trailing={
                   <span className={own.controls}>
-                    <IconButton label={`Edit ${e.name}`} icon={PencilLine} onClick={() => setEditing(e)} />
+                    <IconButton label={x.editOne(e.name)} icon={PencilLine} onClick={() => setEditing(e)} />
                     <label className={own.pick}>
                       <input
                         type="checkbox"
-                        aria-label={`Add ${e.name}`}
+                        aria-label={x.addOne(e.name)}
                         checked={!left.has(e.id)}
-                        onChange={(x) => {
+                        onChange={(ev) => {
                           const next = new Set(left)
-                          if (x.target.checked) next.delete(e.id)
+                          if (ev.target.checked) next.delete(e.id)
                           else next.add(e.id)
                           setLeft(next)
                         }}
@@ -180,16 +177,14 @@ export function GenerateExercises() {
         ))}
         <div className={own.footer}>
           <Button variant="primary" size="large" full loading={saving} disabled={chosen.length === 0} onClick={add}>
-            {chosen.length === 0
-              ? 'Nothing ticked'
-              : `Add ${chosen.length} ${chosen.length === 1 ? 'exercise' : 'exercises'}`}
+            {chosen.length === 0 ? x.nothingTicked : x.addN(chosen.length)}
           </Button>
           <Button variant="plain" full onClick={() => setDraft(null)}>
-            Back to the questions
+            {x.backToQuestions}
           </Button>
         </div>
 
-        <Sheet open={editing !== null} title="Edit exercise" onClose={() => setEditing(null)}>
+        <Sheet open={editing !== null} title={t.exercises.editExercise} onClose={() => setEditing(null)}>
           {editing && (
             <ExerciseForm
               key={editing.id}
@@ -197,11 +192,11 @@ export function GenerateExercises() {
               onDone={() => setEditing(null)}
               draft={{
                 disciplines: draft.disciplines,
-                names: draft.exercises.filter((x) => x.id !== editing.id).map((x) => x.name),
+                names: draft.exercises.filter((y) => y.id !== editing.id).map((y) => y.name),
                 onSave(ex, created) {
                   setDraft({
                     ...draft,
-                    exercises: draft.exercises.map((x) => (x.id === ex.id ? ex : x)),
+                    exercises: draft.exercises.map((y) => (y.id === ex.id ? ex : y)),
                     disciplines: created ? [...draft.disciplines, created] : draft.disciplines,
                   })
                   setEditing(null)
@@ -215,11 +210,7 @@ export function GenerateExercises() {
   }
 
   return (
-    <Screen
-      title="Exercises with AI"
-      subtitle={`${ai.config.modelId ?? ''} · the result is a list you pick from and edit`}
-      back={BACK}
-    >
+    <Screen title={x.title} subtitle={x.formSubtitle(ai.config.modelId ?? '')} back={back}>
       <form
         className={styles.form}
         onSubmit={(e) => {
@@ -227,54 +218,37 @@ export function GenerateExercises() {
           run()
         }}
       >
-        <p className={styles.lead}>
-          Proposes the exercises your sports need, each with its discipline and how it is measured. What you already
-          have is left out.
-        </p>
-        <SportsPicker
-          value={picked}
-          onChange={setPicked}
-          other={other}
-          onOther={setOther}
-          hint="A sport you do not have yet becomes a new discipline when you add its exercises."
-        />
+        <p className={styles.lead}>{x.formLead}</p>
+        <SportsPicker value={picked} onChange={setPicked} other={other} onOther={setOther} hint={x.sportsHint} />
         <Segmented
-          label="Level"
+          label={t.common.level}
           options={[
-            { value: 'beginner', label: 'Beginner' },
-            { value: 'intermediate', label: 'Intermediate' },
-            { value: 'advanced', label: 'Advanced' },
+            { value: 'beginner', label: x.beginner },
+            { value: 'intermediate', label: x.intermediate },
+            { value: 'advanced', label: x.advanced },
           ]}
           value={level}
           onChange={setLevel}
         />
         <RadioCards
-          label="How many"
+          label={x.howMany}
           options={[
-            {
-              value: 'essentials',
-              title: 'Essentials',
-              body: 'About 8 per sport: the main movements to start with.',
-            },
-            {
-              value: 'complete',
-              title: 'Complete',
-              body: 'About 20 to 25 per sport: accessories, technique drills, conditioning and warm-up too.',
-            },
+            { value: 'essentials', title: x.essentials, body: x.essentialsBody },
+            { value: 'complete', title: x.complete, body: x.completeBody },
           ]}
           value={size}
           onChange={setSize}
         />
         <Field
-          label="Equipment and facilities (optional)"
-          placeholder="Full gym, 25 m pool, 400 m track"
+          label={x.equipment}
+          placeholder={x.equipmentPlaceholder}
           value={equipment}
           onChange={(e) => setEquipment(e.target.value)}
         />
         {advanced && (
           <TextArea
-            label="Anything else"
-            placeholder="No overhead pressing, include mobility work…"
+            label={x.anythingElse}
+            placeholder={x.anythingElsePlaceholder}
             rows={2}
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
@@ -294,15 +268,15 @@ export function GenerateExercises() {
           loading={busy}
           icon={<Sparkles size={20} strokeWidth={1.75} aria-hidden="true" />}
         >
-          {busy ? 'Proposing exercises…' : 'Propose exercises'}
+          {busy ? x.proposing : x.propose}
         </Button>
         {busy && (
           <>
             <p className={styles.lead} role="status">
-              This often takes under a minute, several minutes with a model running on this computer.
+              {x.wait}
             </p>
             <Button variant="plain" full onClick={() => abort.current?.abort()}>
-              Stop
+              {x.stop}
             </Button>
           </>
         )}

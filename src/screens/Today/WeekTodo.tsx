@@ -1,4 +1,5 @@
 import { CheckCircle2, Circle, Play } from 'lucide-react'
+import { useT } from '../../app/i18n.tsx'
 import { formatShortDay } from '../../core/model/dates.ts'
 import type { WeekTodo } from '../../core/model/program.ts'
 import type { ProgramRef } from '../../core/model/schemas.ts'
@@ -16,13 +17,12 @@ export function WeekTodoCard({
   activeRef: ProgramRef | undefined
   onStart: (ref: ProgramRef) => void
 }) {
+  const t = useT()
   const { program, week, days, left, programLeft } = todo
   const summary = [
-    week !== undefined ? (program.weeks[week]?.name ?? `Week ${week + 1}`) : 'Each session once this week',
-    left === 0 ? 'all done this week' : `${days.length - left} of ${days.length} done`,
-    programLeft !== undefined && programLeft > 0
-      ? `${programLeft} ${programLeft === 1 ? 'session' : 'sessions'} to finish the program`
-      : '',
+    week !== undefined ? (program.weeks[week]?.name ?? t.today.week(week + 1)) : t.today.eachSessionOnce,
+    left === 0 ? t.today.allDoneThisWeek : t.today.doneOf(days.length - left, days.length),
+    programLeft !== undefined && programLeft > 0 ? t.today.toFinishProgram(programLeft) : '',
   ]
     .filter(Boolean)
     .join(' · ')
@@ -45,10 +45,10 @@ export function WeekTodoCard({
             title={day.name}
             subtitle={
               done
-                ? `Done ${formatShortDay(done.date)}`
+                ? t.today.doneOn(formatShortDay(done.date))
                 : running
-                  ? 'In progress'
-                  : `To do · ${day.blocks.length} ${day.blocks.length === 1 ? 'exercise' : 'exercises'}`
+                  ? t.today.inProgress
+                  : t.today.toDo(day.blocks.length)
             }
             {...(done ? {} : { onClick: () => onStart(ref), chevron: true })}
           />

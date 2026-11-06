@@ -7,7 +7,7 @@ and needs no account. The app starts empty; a demo (Gym, Swimming, Track and fie
 starting point. AI, to design programs and propose exercises, is optional and uses your own model and key.
 
 - App: <https://maxgfr.github.io/cadence/>
-- Interface language: English.
+- Interface languages: English, French and German (the system's by default, or chosen in *Settings*).
 
 ## Features
 

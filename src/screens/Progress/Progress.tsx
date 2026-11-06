@@ -2,9 +2,11 @@ import { Target, TrendingUp } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { Link, useLocation, useSearch } from 'wouter'
 import { useData } from '../../app/data.tsx'
+import { useT } from '../../app/i18n.tsx'
+import { formatDecimal } from '../../core/i18n/locale.ts'
 import { addDays, formatDay, formatShortDay, startOfWeek } from '../../core/model/dates.ts'
 import { programsUnderWay } from '../../core/model/program.ts'
-import type { Muscle } from '../../core/model/schemas.ts'
+import { MUSCLES } from '../../core/model/schemas.ts'
 import { formatDistance, formatTonnage } from '../../core/model/units.ts'
 import { exerciseSeries, lowerIsBetter, measureOf, trainedExercises } from '../../core/stats/metrics.ts'
 import { currentRecords, recordHistory } from '../../core/stats/records.ts'
@@ -18,45 +20,32 @@ import { ListGroup, ListRow } from '../../ui/components/List.tsx'
 import { Segmented } from '../../ui/components/Segmented.tsx'
 import { SelectField } from '../../ui/components/SelectField.tsx'
 import { Screen } from '../../ui/shell/Screen.tsx'
-import { formatMeasure, MEASURE_LABEL, useUnits } from '../../ui/units.ts'
+import { formatMeasure, useUnits } from '../../ui/units.ts'
 import { ExportCsvButton, HistoryList } from '../History/History.tsx'
 import { GoalsSection } from './Goals.tsx'
 import styles from './Progress.module.css'
-
-const MUSCLE_LABEL: Record<Muscle, string> = {
-  quads: 'Quads',
-  hamstrings: 'Hamstrings',
-  glutes: 'Glutes',
-  calves: 'Calves',
-  chest: 'Chest',
-  back: 'Back',
-  shoulders: 'Shoulders',
-  biceps: 'Biceps',
-  triceps: 'Triceps',
-  core: 'Core',
-  full_body: 'Full body',
-}
 
 type View = 'overview' | 'history'
 
 /** Progress: the charts, records and goals (Overview), and every session logged (History). */
 export function Progress() {
   const data = useData()
+  const t = useT()
   const [, navigate] = useLocation()
   const view: View = new URLSearchParams(useSearch()).get('view') === 'history' ? 'history' : 'overview'
   const done = data.sessions.filter((s) => s.status === 'done').length
   return (
     <Screen
-      title="Progress"
-      subtitle={done > 0 ? `${done} ${done === 1 ? 'session' : 'sessions'} logged` : undefined}
+      title={t.progress.title}
+      subtitle={done > 0 ? t.progress.sessionsLogged(done) : undefined}
       trailing={view === 'history' && done > 0 ? <ExportCsvButton /> : undefined}
     >
       <Segmented
-        label="View"
+        label={t.progress.view}
         hideLabel
         options={[
-          { value: 'overview', label: 'Overview' },
-          { value: 'history', label: 'History' },
+          { value: 'overview', label: t.progress.overview },
+          { value: 'history', label: t.progress.history },
         ]}
         value={view}
         onChange={(v) => navigate(v === 'history' ? '/progress?view=history' : '/progress', { replace: true })}
@@ -68,6 +57,7 @@ export function Progress() {
 
 function Overview() {
   const data = useData()
+  const t = useT()
   const units = useUnits()
   const search = useSearch()
   const params = new URLSearchParams(search)
@@ -92,18 +82,32 @@ function Overview() {
       measure: 'tonnage' | 'distance'
       value: (w: (typeof volume)[number]) => number
     }[] = []
-    const scopes = [...data.disciplines.map((d) => ({ id: d.id, name: d.name })), { id: '', name: 'No discipline' }]
+    const scopes = [
+      ...data.disciplines.map((d) => ({ id: d.id, name: d.name })),
+      { id: '', name: t.common.noDiscipline },
+    ]
     for (const sc of scopes) {
-      const t = (w: (typeof volume)[number]) => w.byDiscipline[sc.id]?.tonnage ?? 0
+      const kg = (w: (typeof volume)[number]) => w.byDiscipline[sc.id]?.tonnage ?? 0
       const m = (w: (typeof volume)[number]) => w.byDiscipline[sc.id]?.meters ?? 0
-      const hasT = volume.some((w) => t(w) > 0)
+      const hasT = volume.some((w) => kg(w) > 0)
       const hasM = volume.some((w) => m(w) > 0)
-      if (hasT) out.push({ key: `${sc.id}|t`, label: hasM ? `${sc.name}, kg` : sc.name, measure: 'tonnage', value: t })
+      if (hasT)
+        out.push({
+          key: `${sc.id}|t`,
+          label: hasM ? t.progress.seriesKg(sc.name) : sc.name,
+          measure: 'tonnage',
+          value: kg,
+        })
       if (hasM)
-        out.push({ key: `${sc.id}|m`, label: hasT ? `${sc.name}, distance` : sc.name, measure: 'distance', value: m })
+        out.push({
+          key: `${sc.id}|m`,
+          label: hasT ? t.progress.seriesDistance(sc.name) : sc.name,
+          measure: 'distance',
+          value: m,
+        })
     }
     return out
-  }, [volume, data.disciplines])
+  }, [volume, data.disciplines, t])
   const [volumeKey, setVolumeKey] = useState('')
   const vs = volumeSeries.find((x) => x.key === volumeKey) ?? volumeSeries[0]
 
@@ -112,11 +116,11 @@ function Overview() {
       <>
         <EmptyState
           icon={TrendingUp}
-          title="Nothing to chart yet"
-          body="Records, charts and your training calendar appear here after your first logged session."
+          title={t.progress.emptyTitle}
+          body={t.progress.emptyBody}
           action={
             <Link href="/" className={buttonClass({ variant: 'primary' })}>
-              Go to Today
+              {t.progress.goToToday}
             </Link>
           }
         />
@@ -144,23 +148,21 @@ function Overview() {
     .filter((a): a is { program: typeof a.program; value: number } => a.value !== undefined)
   const thisWeek = volume[volume.length - 1]
   const prior = volume.slice(-5, -1)
-  const muscles = (Object.keys(MUSCLE_LABEL) as Muscle[])
-    .map((m) => ({
-      m,
-      now: thisWeek?.setsByMuscle[m] ?? 0,
-      avg: prior.reduce((n, w) => n + (w.setsByMuscle[m] ?? 0), 0) / Math.max(1, prior.length),
-    }))
-    .filter((r) => r.now > 0 || r.avg > 0)
+  const muscles = MUSCLES.map((m) => ({
+    m,
+    now: thisWeek?.setsByMuscle[m] ?? 0,
+    avg: prior.reduce((n, w) => n + (w.setsByMuscle[m] ?? 0), 0) / Math.max(1, prior.length),
+  })).filter((r) => r.now > 0 || r.avg > 0)
 
   return (
     <>
       <section className={styles.section} aria-labelledby="calendar-title">
         <div className={styles.sectionHead}>
           <h2 id="calendar-title" className={styles.sectionTitle}>
-            Training calendar
+            {t.progress.calendar}
           </h2>
           <p className={styles.sectionMeta}>
-            {streak > 0 ? `${streak} ${streak === 1 ? 'week' : 'weeks'} in a row` : 'No session this week yet'}
+            {streak > 0 ? t.progress.weeksInRow(streak) : t.progress.noSessionThisWeek}
           </p>
         </div>
         <div className={styles.panel}>
@@ -173,11 +175,11 @@ function Overview() {
       {exercise && (
         <section className={styles.section} aria-labelledby="exercise-title">
           <h2 id="exercise-title" className={styles.sectionTitle}>
-            By exercise
+            {t.progress.byExercise}
           </h2>
           <div className={styles.panel}>
             <SelectField
-              label="Exercise"
+              label={t.common.exercise}
               hideLabel
               value={exercise.id}
               options={trained.map((e) => ({ value: e.id, label: e.name }))}
@@ -185,44 +187,43 @@ function Overview() {
             />
             <dl className={styles.figures}>
               <div>
-                <dt>{MEASURE_LABEL[kind]}</dt>
+                <dt>{t.labels.measure[kind]}</dt>
                 <dd>{bestV !== undefined ? fmt(bestV) : '–'}</dd>
               </div>
               <div>
-                <dt>Latest</dt>
+                <dt>{t.progress.latest}</dt>
                 <dd>{lastV !== undefined ? fmt(lastV) : '–'}</dd>
               </div>
               <div>
-                <dt>Sessions</dt>
+                <dt>{t.progress.sessions}</dt>
                 <dd>{series.length}</dd>
               </div>
             </dl>
             {series.length > 1 ? (
               <LineChart
-                label={`${exercise.name}, ${MEASURE_LABEL[kind].toLowerCase()} per session`}
+                label={t.progress.exerciseChart(exercise.name, t.labels.measure[kind])}
                 points={series.map((p) => ({ ...p, record: recordSessions.has(p.sessionId) }))}
                 format={fmt}
               />
             ) : (
-              <p className={styles.hint}>One more session of {exercise.name} and the trend appears here.</p>
+              <p className={styles.hint}>{t.progress.oneMore(exercise.name)}</p>
             )}
             {series.length > 1 && firstV !== undefined && lastV !== undefined && (
               <p className={styles.hint}>
-                From {fmt(firstV)} on {formatShortDay(series[0]?.date ?? '')} to {fmt(lastV)}. Orange points set a
-                record.
+                {t.progress.fromTo(fmt(firstV), formatShortDay(series[0]?.date ?? ''), fmt(lastV))}
               </p>
             )}
             <Link href={`/progress?goal=new&exercise=${exercise.id}`} className={buttonClass({ variant: 'secondary' })}>
               <Target size={18} strokeWidth={1.75} aria-hidden="true" />
-              Set a goal on {exercise.name}
+              {t.progress.setGoalOn(exercise.name)}
             </Link>
             <details className={styles.table}>
-              <summary>Show values</summary>
+              <summary>{t.progress.showValues}</summary>
               <table>
                 <thead>
                   <tr>
-                    <th scope="col">Date</th>
-                    <th scope="col">{MEASURE_LABEL[kind]}</th>
+                    <th scope="col">{t.common.date}</th>
+                    <th scope="col">{t.labels.measure[kind]}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -235,7 +236,7 @@ function Overview() {
                       </td>
                       <td>
                         {fmt(p.value)}
-                        {recordSessions.has(p.sessionId) ? ' · record' : ''}
+                        {recordSessions.has(p.sessionId) ? ` · ${t.progress.record}` : ''}
                       </td>
                     </tr>
                   ))}
@@ -249,12 +250,12 @@ function Overview() {
       {vs && (
         <section className={styles.section} aria-labelledby="volume-title">
           <h2 id="volume-title" className={styles.sectionTitle}>
-            Weekly volume
+            {t.progress.weeklyVolume}
           </h2>
           <div className={styles.panel}>
             {volumeSeries.length > 1 && volumeSeries.length <= 3 && (
               <Segmented
-                label="Volume of"
+                label={t.progress.volumeOf}
                 hideLabel
                 options={volumeSeries.map((x) => ({ value: x.key, label: x.label }))}
                 value={vs.key}
@@ -263,7 +264,7 @@ function Overview() {
             )}
             {volumeSeries.length > 3 && (
               <SelectField
-                label="Volume of"
+                label={t.progress.volumeOf}
                 hideLabel
                 value={vs.key}
                 options={volumeSeries.map((x) => ({ value: x.key, label: x.label }))}
@@ -271,7 +272,7 @@ function Overview() {
               />
             )}
             <BarChart
-              label={`Weekly ${vs.measure === 'tonnage' ? 'kilograms lifted' : 'distance'}, ${vs.label}, last 12 weeks`}
+              label={vs.measure === 'tonnage' ? t.progress.tonnageChart(vs.label) : t.progress.distanceChart(vs.label)}
               bars={volume.map((w, i) => ({
                 key: w.week,
                 label: formatShortDay(w.week),
@@ -283,10 +284,7 @@ function Overview() {
               }
             />
             <p className={styles.hint}>
-              {vs.measure === 'tonnage'
-                ? 'Weight × reps of every ticked set on loaded lifts.'
-                : 'Distance of every ticked set.'}{' '}
-              The last bar is this week so far.
+              {vs.measure === 'tonnage' ? t.progress.tonnageHint : t.progress.distanceHint} {t.progress.lastBarHint}
             </p>
           </div>
         </section>
@@ -295,30 +293,30 @@ function Overview() {
       {advanced && (muscles.length > 0 || adherence.length > 0) && (
         <section className={styles.section} aria-labelledby="load-title">
           <h2 id="load-title" className={styles.sectionTitle}>
-            Training load
+            {t.progress.trainingLoad}
           </h2>
           <div className={styles.panel}>
             {adherence.map((a) => (
               <p key={a.program.id} className={styles.adherence}>
-                <strong>{Math.round(a.value * 100)}%</strong> of planned sets done in {a.program.name}
+                <strong>{t.progress.percent(Math.round(a.value * 100))}</strong> {t.progress.adherence(a.program.name)}
               </p>
             ))}
             {muscles.length > 0 && (
               <table className={styles.muscles}>
-                <caption>Hard sets per muscle group</caption>
+                <caption>{t.progress.hardSets}</caption>
                 <thead>
                   <tr>
-                    <th scope="col">Muscle</th>
-                    <th scope="col">This week</th>
-                    <th scope="col">4-week average</th>
+                    <th scope="col">{t.progress.muscle}</th>
+                    <th scope="col">{t.progress.thisWeek}</th>
+                    <th scope="col">{t.progress.fourWeekAverage}</th>
                   </tr>
                 </thead>
                 <tbody>
                   {muscles.map((r) => (
                     <tr key={r.m}>
-                      <th scope="row">{MUSCLE_LABEL[r.m]}</th>
+                      <th scope="row">{t.labels.muscle[r.m]}</th>
                       <td>{r.now}</td>
-                      <td>{Math.round(r.avg * 10) / 10}</td>
+                      <td>{formatDecimal(r.avg, 1)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -328,7 +326,7 @@ function Overview() {
         </section>
       )}
 
-      <ListGroup title="Records">
+      <ListGroup title={t.progress.records}>
         {best.slice(0, 12).map((r) => {
           const ex = data.index.get(r.exerciseId)
           const fresh = r.date >= addDays(data.today, -7)
@@ -336,7 +334,7 @@ function Overview() {
             <ListRow
               key={r.exerciseId}
               title={ex?.name ?? r.exerciseId}
-              subtitle={`${MEASURE_LABEL[r.kind]} · ${formatDay(r.date, new Date().getFullYear())}${fresh ? ' · new this week' : ''}`}
+              subtitle={`${t.labels.measure[r.kind]} · ${formatDay(r.date, new Date().getFullYear())}${fresh ? ` · ${t.progress.newThisWeek}` : ''}`}
               trailing={<span className={styles.recordValue}>{formatMeasure(r.kind, r.value, units, ex)}</span>}
               onClick={() => setExerciseId({ id: r.exerciseId, search })}
               chevron={false}

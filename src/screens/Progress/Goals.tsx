@@ -2,6 +2,7 @@ import { Plus, Target } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { useLocation, useSearch } from 'wouter'
 import { useData } from '../../app/data.tsx'
+import { useT } from '../../app/i18n.tsx'
 import { useToast } from '../../app/toast.tsx'
 import { addDays, formatDay } from '../../core/model/dates.ts'
 import { newId } from '../../core/model/ids.ts'
@@ -14,7 +15,7 @@ import {
   toDisplayDistance,
   toDisplayWeight,
 } from '../../core/model/units.ts'
-import { type MeasureKind, measureOf, trainedExercises } from '../../core/stats/metrics.ts'
+import { measureOf, trainedExercises } from '../../core/stats/metrics.ts'
 import { type GoalProgress, goalBaseline, goalProgress } from '../../core/stats/trends.ts'
 import { LineChart } from '../../ui/charts/LineChart.tsx'
 import { Meter } from '../../ui/charts/Meter.tsx'
@@ -31,16 +32,20 @@ import styles from './Progress.module.css'
 /** A goal in one block: what, how far along, and where the trend lands by the deadline. */
 export function GoalLine({ goal, progress, onOpen }: { goal: Goal; progress: GoalProgress; onOpen?: () => void }) {
   const { index, disciplineIndex } = useData()
+  const t = useT()
   const units = useUnits()
   const f = goalFormatter(goal, index, units)
   const title = goalTitle(goal, index, units, (id) => (id ? disciplineIndex.get(id)?.name : undefined))
   let status: string
-  if (progress.achieved) status = `Reached: ${progress.current !== undefined ? f(progress.current) : ''}`
-  else if (progress.current === undefined) status = 'Nothing logged for it yet'
-  else if (progress.daysLeft < 0) status = `Deadline passed at ${f(progress.current)}`
+  if (progress.achieved) status = t.progress.reached(progress.current !== undefined ? f(progress.current) : '')
+  else if (progress.current === undefined) status = t.progress.nothingLogged
+  else if (progress.daysLeft < 0) status = t.progress.deadlinePassed(f(progress.current))
   else if (progress.projection)
-    status = `${f(progress.current)} now · trend reaches ${f(progress.projection.value)} by the deadline${progress.onTrack ? ', on track' : ''}`
-  else status = `${f(progress.current)} now · ${progress.daysLeft} days left`
+    status = (progress.onTrack ? t.progress.trendOnTrack : t.progress.trend)(
+      f(progress.current),
+      f(progress.projection.value),
+    )
+  else status = t.progress.daysLeft(f(progress.current), progress.daysLeft)
   const projected =
     progress.projection && progress.start !== undefined && progress.start !== goal.target
       ? progress.lowerIsBetter
@@ -53,7 +58,7 @@ export function GoalLine({ goal, progress, onOpen }: { goal: Goal; progress: Goa
       <Meter
         fraction={progress.fraction}
         {...(projected !== undefined ? { projected: Math.max(0, projected) } : {})}
-        label={`${title}: ${Math.round(progress.fraction * 100)}%`}
+        label={t.progress.meter(title, Math.round(progress.fraction * 100))}
       />
       <span className={styles.goalStatus}>{status}</span>
     </>
@@ -68,20 +73,11 @@ export function GoalLine({ goal, progress, onOpen }: { goal: Goal; progress: Goa
 }
 
 /** What a goal is on: one exercise's best, or, for a sport or all training, sessions or volume per week. */
-const KINDS: readonly { value: GoalKind; label: string; advanced?: boolean }[] = [
-  { value: 'exercise', label: 'An exercise' },
-  { value: 'frequency', label: 'Sessions a week' },
-  { value: 'weekly_volume', label: 'Volume a week', advanced: true },
+const KINDS: readonly { value: GoalKind; advanced?: boolean }[] = [
+  { value: 'exercise' },
+  { value: 'frequency' },
+  { value: 'weekly_volume', advanced: true },
 ]
-
-/** How an exercise goal's target reads, from what the exercise is measured by. */
-const TARGET_OF: Record<MeasureKind, string> = {
-  e1rm: 'its estimated one-rep max',
-  reps: 'the most reps in a set',
-  hold: 'the longest set',
-  best_time: 'the best time over its distance',
-  pace: 'the best pace',
-}
 
 /** A goal to start from a link: `?goal=new`, with `&exercise=<id>` to set it on that exercise. */
 function presetFrom(search: string, index: ReturnType<typeof useData>['index']): Preset | undefined {
@@ -98,6 +94,7 @@ interface Preset {
 
 export function GoalsSection() {
   const data = useData()
+  const t = useT()
   const units = useUnits()
   const search = useSearch()
   const [location, navigate] = useLocation()
@@ -114,7 +111,7 @@ export function GoalsSection() {
     <section className={styles.section} aria-labelledby="goals-title">
       <div className={styles.sectionHead}>
         <h2 id="goals-title" className={styles.sectionTitle}>
-          Goals
+          {t.progress.goals}
         </h2>
         {goals.length > 0 && (
           <Button
@@ -122,7 +119,7 @@ export function GoalsSection() {
             icon={<Plus size={18} strokeWidth={2} aria-hidden="true" />}
             onClick={() => setEditing('new')}
           >
-            Add goal
+            {t.progress.addGoal}
           </Button>
         )}
       </div>
@@ -130,11 +127,11 @@ export function GoalsSection() {
         <EmptyState
           icon={Target}
           level={3}
-          title="No goal yet"
-          body="A target with a date, on any exercise (a heavier squat, more pull-ups, a faster 100 m) or on how often you train a sport. It starts from where you are, and Cadence projects where your trend lands."
+          title={t.progress.noGoalTitle}
+          body={t.progress.noGoalBody}
           action={
             <Button variant="primary" onClick={() => setEditing('new')}>
-              Set a goal
+              {t.progress.setAGoal}
             </Button>
           }
         />
@@ -152,7 +149,7 @@ export function GoalsSection() {
                     )}
                     points={p.series}
                     format={goalFormatter(g, data.index, units)}
-                    target={{ value: g.target, label: 'Target' }}
+                    target={{ value: g.target, label: t.progress.target }}
                     {...(p.projection ? { projection: p.projection } : {})}
                     height={160}
                   />
@@ -176,8 +173,13 @@ function GoalSheet({
   preset: Preset | undefined
   onClose: () => void
 }) {
+  const t = useT()
   return (
-    <Sheet open={goal !== null} title={goal && goal !== 'new' ? 'Edit goal' : 'New goal'} onClose={onClose}>
+    <Sheet
+      open={goal !== null}
+      title={goal && goal !== 'new' ? t.progress.editGoal : t.progress.newGoal}
+      onClose={onClose}
+    >
       {goal && (
         <GoalForm
           key={goal === 'new' ? `new-${preset?.exerciseId ?? ''}` : goal.id}
@@ -192,6 +194,7 @@ function GoalSheet({
 
 function GoalForm({ goal, preset, onClose }: { goal: Goal | 'new'; preset: Preset | undefined; onClose: () => void }) {
   const data = useData()
+  const t = useT()
   const units = useUnits()
   const toast = useToast()
   const advanced = data.settings.mode === 'advanced'
@@ -254,26 +257,26 @@ function GoalForm({ goal, preset, onClose }: { goal: Goal | 'new'; preset: Prese
   const targetLabel =
     kind === 'exercise'
       ? {
-          e1rm: `Target estimated 1RM (${units.weightUnit})`,
-          reps: 'Target reps in a set',
-          hold: 'Target time held (seconds or m:ss)',
-          best_time: 'Target time (seconds or m:ss)',
-          pace: `Target pace per ${perKm ? 'km' : '100 m'} (m:ss)`,
+          e1rm: t.progress.targetE1rm(units.weightUnit),
+          reps: t.progress.targetReps,
+          hold: t.progress.targetHold,
+          best_time: t.progress.targetTime,
+          pace: perKm ? t.progress.targetPaceKm : t.progress.targetPace100,
         }[measure ?? 'e1rm']
       : kind === 'frequency'
-        ? 'Sessions per week'
+        ? t.progress.targetFrequency
         : volume === 'distance'
-          ? `Distance per week (${units.distanceUnit})`
-          : `Kilograms lifted per week (${units.weightUnit})`
+          ? t.progress.targetDistance(units.distanceUnit)
+          : t.progress.targetTonnage(units.weightUnit)
 
   function parseTarget(): number | undefined {
-    const t = target.trim()
+    const typedTarget = target.trim()
     if (measure === 'hold' || measure === 'best_time' || measure === 'pace') {
-      const s = parseTime(t)
+      const s = parseTime(typedTarget)
       if (s === undefined || s <= 0) return undefined
       return measure === 'pace' && perKm ? s / 10 : s
     }
-    const v = Number.parseFloat(t.replace(',', '.'))
+    const v = Number.parseFloat(typedTarget.replace(',', '.'))
     if (!Number.isFinite(v) || v <= 0) return undefined
     if (measure === 'e1rm') return fromDisplayWeight(v, units.weightUnit)
     if (measure === 'reps') return Math.round(v)
@@ -288,16 +291,16 @@ function GoalForm({ goal, preset, onClose }: { goal: Goal | 'new'; preset: Prese
       onSubmit={async (e) => {
         e.preventDefault()
         if (kind === 'exercise' && !exercise) {
-          setError('Pick an exercise.')
+          setError(t.progress.pickExercise)
           return
         }
         const value = parseTarget()
         if (value === undefined) {
-          setError('Enter a target value.')
+          setError(t.progress.enterTarget)
           return
         }
         if (deadline <= data.today) {
-          setError('Pick a deadline after today.')
+          setError(t.progress.pickDeadline)
           return
         }
         const next: Goal = {
@@ -310,13 +313,16 @@ function GoalForm({ goal, preset, onClose }: { goal: Goal | 'new'; preset: Prese
         }
         await data.put('goals', next)
         onClose()
-        toast(existing ? 'Goal updated' : 'Goal set')
+        toast(existing ? t.progress.goalUpdated : t.progress.goalSet)
       }}
     >
       <SelectField
-        label="Sport"
+        label={t.progress.sport}
         value={sport}
-        options={[{ value: '', label: 'All sports' }, ...data.disciplines.map((d) => ({ value: d.id, label: d.name }))]}
+        options={[
+          { value: '', label: t.progress.allSports },
+          ...data.disciplines.map((d) => ({ value: d.id, label: d.name })),
+        ]}
         onChange={(e) => {
           const next = e.target.value
           setSport(next)
@@ -329,8 +335,11 @@ function GoalForm({ goal, preset, onClose }: { goal: Goal | 'new'; preset: Prese
         }}
       />
       <Segmented
-        label="Goal on"
-        options={KINDS.filter((k) => advanced || !k.advanced || k.value === kind)}
+        label={t.progress.goalOn}
+        options={KINDS.filter((k) => advanced || !k.advanced || k.value === kind).map((k) => ({
+          value: k.value,
+          label: t.progress.kind[k.value],
+        }))}
         value={kind}
         onChange={(k) => {
           setKind(k)
@@ -341,14 +350,10 @@ function GoalForm({ goal, preset, onClose }: { goal: Goal | 'new'; preset: Prese
       {kind === 'exercise' &&
         (choices.length > 0 ? (
           <SelectField
-            label="Exercise"
+            label={t.common.exercise}
             value={exerciseId}
             options={choices.map((e) => ({ value: e.id, label: e.name }))}
-            {...(measure
-              ? {
-                  hint: `The goal is on ${TARGET_OF[measure]}, as the exercise is measured.`,
-                }
-              : {})}
+            {...(measure ? { hint: t.progress.targetHint[measure] } : {})}
             onChange={(e) => {
               setExerciseId(e.target.value)
               setTyped(null)
@@ -356,16 +361,17 @@ function GoalForm({ goal, preset, onClose }: { goal: Goal | 'new'; preset: Prese
           />
         ) : (
           <p className={styles.formNote}>
-            No exercise {sport ? `in ${data.disciplineIndex.get(sport)?.name ?? 'this sport'} ` : ''}yet. Create one
-            under Exercises first.
+            {sport
+              ? t.progress.noExerciseIn(data.disciplineIndex.get(sport)?.name ?? t.progress.thisSport)
+              : t.progress.noExercise}
           </p>
         ))}
       {kind === 'weekly_volume' && (
         <Segmented
-          label="Volume of"
+          label={t.progress.volumeOf}
           options={[
-            { value: 'tonnage', label: 'Kilograms lifted' },
-            { value: 'distance', label: 'Distance covered' },
+            { value: 'tonnage', label: t.progress.kilogramsLifted },
+            { value: 'distance', label: t.progress.distanceCovered },
           ]}
           value={volume}
           onChange={(v) => {
@@ -379,21 +385,23 @@ function GoalForm({ goal, preset, onClose }: { goal: Goal | 'new'; preset: Prese
           {baseline ? (
             <>
               <p>
-                <span className={styles.baselineLabel}>Now</span> {f(baseline.current)}
-                {baseline.basis === 'best' ? ', your best so far' : ', your average over the last 4 weeks'}
+                <span className={styles.baselineLabel}>{t.progress.now}</span>{' '}
+                {baseline.basis === 'best'
+                  ? t.progress.nowBest(f(baseline.current))
+                  : t.progress.nowAverage(f(baseline.current))}
               </p>
               {!existing && (
                 <p>
-                  <span className={styles.baselineLabel}>Suggested</span> {f(baseline.suggested)} by{' '}
-                  {formatDay(deadline > data.today ? deadline : addDays(data.today, 1), new Date().getFullYear())}: a
-                  stretch that stays within reach. Change it as you like.
+                  <span className={styles.baselineLabel}>{t.progress.suggested}</span>{' '}
+                  {t.progress.suggestion(
+                    f(baseline.suggested),
+                    formatDay(deadline > data.today ? deadline : addDays(data.today, 1), new Date().getFullYear()),
+                  )}
                 </p>
               )}
             </>
           ) : (
-            <p>
-              Nothing logged for this yet, so there is no starting point: log a session first, or set a target you know.
-            </p>
+            <p>{t.progress.noBaseline}</p>
           )}
         </div>
       )}
@@ -405,17 +413,15 @@ function GoalForm({ goal, preset, onClose }: { goal: Goal | 'new'; preset: Prese
         {...(error ? { error } : {})}
       />
       <Field
-        label="Deadline"
+        label={t.progress.deadline}
         type="date"
         value={deadline}
         min={addDays(data.today, 1)}
         onChange={(e) => setDeadline(e.target.value)}
       />
-      <p className={styles.formNote}>
-        {formatDay(deadline, new Date().getFullYear())}: progress is measured from what you log until then.
-      </p>
+      <p className={styles.formNote}>{t.progress.deadlineNote(formatDay(deadline, new Date().getFullYear()))}</p>
       <Button type="submit" variant="primary" size="large" full>
-        {existing ? 'Save goal' : 'Set goal'}
+        {existing ? t.progress.saveGoal : t.progress.setGoal}
       </Button>
       {existing && (
         <Button
@@ -424,10 +430,10 @@ function GoalForm({ goal, preset, onClose }: { goal: Goal | 'new'; preset: Prese
           onClick={async () => {
             await data.remove('goals', existing.id)
             onClose()
-            toast('Goal deleted', [{ label: 'Undo', onClick: () => data.put('goals', existing) }])
+            toast(t.progress.goalDeleted, [{ label: t.progress.undo, onClick: () => data.put('goals', existing) }])
           }}
         >
-          Delete goal
+          {t.progress.deleteGoal}
         </Button>
       )}
     </form>

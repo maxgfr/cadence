@@ -3,8 +3,10 @@ import { useEffect, useRef, useState } from 'react'
 import { useAi } from '../../app/ai.tsx'
 import { BUILD } from '../../app/buildInfo.ts'
 import { useData } from '../../app/data.tsx'
+import { useT } from '../../app/i18n.tsx'
 import { useToast } from '../../app/toast.tsx'
-import { BACKUP_VERSION, DEFAULT_SETTINGS } from '../../core/model/schemas.ts'
+import { LANGUAGE_NAMES, LOCALES } from '../../core/i18n/locale.ts'
+import { BACKUP_VERSION, DEFAULT_SETTINGS, Language } from '../../core/model/schemas.ts'
 import { BackupError, exportBackup, parseBackup, sessionsCsv } from '../../core/storage/backup.ts'
 import { Button } from '../../ui/components/Button.tsx'
 import { ListGroup, ListRow } from '../../ui/components/List.tsx'
@@ -13,16 +15,12 @@ import { Segmented } from '../../ui/components/Segmented.tsx'
 import { SelectField } from '../../ui/components/SelectField.tsx'
 import { download } from '../../ui/download.ts'
 import { Screen } from '../../ui/shell/Screen.tsx'
-import { MODE_OPTIONS } from '../Onboarding/Welcome.tsx'
+import { useModeOptions } from '../Onboarding/Welcome.tsx'
 import styles from './Settings.module.css'
 
-const REST_OPTIONS = [
-  { value: '0', label: 'Only when planned' },
-  ...[30, 45, 60, 90, 120, 150, 180, 240, 300].map((s) => ({
-    value: String(s),
-    label: s < 60 ? `${s} s` : `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`,
-  })),
-]
+const REST_SECONDS = [30, 45, 60, 90, 120, 150, 180, 240, 300]
+
+const restLabel = (s: number) => (s < 60 ? `${s} s` : `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`)
 
 function usePersisted(): [boolean | undefined, () => Promise<void>] {
   const [persisted, setPersisted] = useState<boolean>()
@@ -42,6 +40,8 @@ export function Settings() {
   const data = useData()
   const ai = useAi()
   const toast = useToast()
+  const t = useT()
+  const modeOptions = useModeOptions()
   const s = data.settings
   const file = useRef<HTMLInputElement>(null)
   const [importError, setImportError] = useState<string>()
@@ -49,15 +49,33 @@ export function Settings() {
   const [persisted, persist] = usePersisted()
 
   return (
-    <Screen title="Settings">
+    <Screen title={t.settings.title}>
+      <section className={styles.section} aria-labelledby="language-title">
+        <h2 id="language-title" className={styles.title}>
+          {t.settings.language}
+        </h2>
+        <div className={styles.panel}>
+          <SelectField
+            label={t.settings.language}
+            hideLabel
+            value={s.language}
+            options={[
+              { value: 'system', label: t.settings.languageSystem },
+              ...LOCALES.map((l) => ({ value: l, label: LANGUAGE_NAMES[l] })),
+            ]}
+            onChange={(e) => data.updateSettings({ language: Language.parse(e.target.value) })}
+          />
+        </div>
+      </section>
+
       <section className={styles.section} aria-labelledby="mode-title">
         <h2 id="mode-title" className={styles.title}>
-          Mode
+          {t.settings.mode}
         </h2>
         <RadioCards
-          label="Mode"
+          label={t.settings.mode}
           hideLabel
-          options={MODE_OPTIONS}
+          options={modeOptions}
           value={s.mode}
           onChange={(mode) => data.updateSettings({ mode })}
         />
@@ -65,12 +83,12 @@ export function Settings() {
 
       <section className={styles.section} aria-labelledby="units-title">
         <h2 id="units-title" className={styles.title}>
-          Units and display
+          {t.settings.units}
         </h2>
         <div className={styles.panel}>
           <div className={styles.pair}>
             <Segmented
-              label="Weight"
+              label={t.common.weight}
               options={[
                 { value: 'kg', label: 'kg' },
                 { value: 'lb', label: 'lb' },
@@ -79,10 +97,10 @@ export function Settings() {
               onChange={(weightUnit) => data.updateSettings({ weightUnit })}
             />
             <Segmented
-              label="Distance"
+              label={t.common.distance}
               options={[
-                { value: 'm', label: 'metres' },
-                { value: 'yd', label: 'yards' },
+                { value: 'm', label: t.settings.metres },
+                { value: 'yd', label: t.settings.yards },
               ]}
               value={s.distanceUnit}
               onChange={(distanceUnit) => data.updateSettings({ distanceUnit })}
@@ -90,28 +108,31 @@ export function Settings() {
           </div>
           <div className={styles.pair}>
             <Segmented
-              label="Week starts on"
+              label={t.settings.weekStart}
               options={[
-                { value: '1', label: 'Monday' },
-                { value: '0', label: 'Sunday' },
+                { value: '1', label: t.settings.monday },
+                { value: '0', label: t.settings.sunday },
               ]}
               value={String(s.weekStart) as '0' | '1'}
               onChange={(v) => data.updateSettings({ weekStart: v === '0' ? 0 : 1 })}
             />
             <SelectField
-              label="Rest timer"
+              label={t.settings.restTimer}
               value={String(s.defaultRest)}
-              options={REST_OPTIONS}
-              hint="Never starts on its own: you start it from an exercise. Its length when the plan gives no rest."
+              options={[
+                { value: '0', label: t.settings.restWhenPlanned },
+                ...REST_SECONDS.map((sec) => ({ value: String(sec), label: restLabel(sec) })),
+              ]}
+              hint={t.settings.restHint}
               onChange={(e) => data.updateSettings({ defaultRest: Number(e.target.value) })}
             />
           </div>
           <Segmented
-            label="Appearance"
+            label={t.settings.appearance}
             options={[
-              { value: 'system', label: 'System' },
-              { value: 'light', label: 'Light' },
-              { value: 'dark', label: 'Dark' },
+              { value: 'system', label: t.settings.themeSystem },
+              { value: 'light', label: t.settings.themeLight },
+              { value: 'dark', label: t.settings.themeDark },
             ]}
             value={s.theme}
             onChange={(theme) => data.updateSettings({ theme })}
@@ -119,29 +140,26 @@ export function Settings() {
         </div>
       </section>
 
-      <ListGroup title="Training">
+      <ListGroup title={t.settings.training}>
         <ListRow
           leading={<Sparkles size={20} strokeWidth={1.75} />}
-          title="AI program design"
-          subtitle={ai.ready ? (ai.config.modelId ?? 'On') : 'Off · optional, uses your own key'}
+          title={t.settings.aiDesign}
+          subtitle={ai.ready ? (ai.config.modelId ?? t.settings.aiOn) : t.settings.aiOff}
           href="/settings/ai"
         />
         <ListRow
           leading={<LayoutTemplate size={20} strokeWidth={1.75} />}
-          title="Demo"
-          subtitle="Gym, Swimming, Track and field: exercises and programs to start from"
+          title={t.settings.demo}
+          subtitle={t.settings.demoRow}
           href="/settings/demo"
         />
       </ListGroup>
 
-      <ListGroup
-        title="Your data"
-        footer="Everything stays in this browser on this device. Export a backup now and then: clearing site data or losing the device loses what is not exported. AI keys are never exported."
-      >
+      <ListGroup title={t.settings.yourData} footer={t.settings.yourDataFooter}>
         <ListRow
           leading={<Download size={20} strokeWidth={1.75} />}
-          title="Export backup"
-          subtitle="Disciplines, exercises, programs, sessions, goals and settings, as JSON"
+          title={t.settings.exportBackup}
+          subtitle={t.settings.exportBackupHint}
           onClick={async () => {
             const b = await exportBackup(data.store)
             download(`cadence-backup-${data.today}.json`, JSON.stringify(b, null, 2), 'application/json')
@@ -149,14 +167,14 @@ export function Settings() {
         />
         <ListRow
           leading={<Upload size={20} strokeWidth={1.75} />}
-          title="Import backup"
-          subtitle="Replaces what is on this device"
+          title={t.settings.importBackup}
+          subtitle={t.settings.importBackupHint}
           onClick={() => file.current?.click()}
         />
         <ListRow
           leading={<Database size={20} strokeWidth={1.75} />}
-          title="Export sessions as CSV"
-          subtitle="One row per set, for spreadsheets"
+          title={t.settings.exportCsv}
+          subtitle={t.settings.exportCsvHint}
           onClick={() =>
             download(
               `cadence-sessions-${data.today}.csv`,
@@ -168,8 +186,8 @@ export function Settings() {
         {persisted === false && (
           <ListRow
             leading={<ShieldCheck size={20} strokeWidth={1.75} />}
-            title="Protect storage"
-            subtitle="Asks the browser not to clear Cadence's data when space runs low"
+            title={t.settings.protect}
+            subtitle={t.settings.protectHint}
             onClick={async () => {
               await persist()
             }}
@@ -181,7 +199,7 @@ export function Settings() {
         type="file"
         accept="application/json,.json"
         className="sr-only"
-        aria-label="Backup file"
+        aria-label={t.settings.backupFile}
         tabIndex={-1}
         onChange={async (e) => {
           const f = e.target.files?.[0]
@@ -191,9 +209,9 @@ export function Settings() {
           try {
             const backup = parseBackup(await f.text())
             await data.replaceAll(backup)
-            toast(`Backup imported: ${backup.sessions.length} sessions, ${backup.programs.length} programs`)
+            toast(t.settings.imported(backup.sessions.length, backup.programs.length))
           } catch (err) {
-            setImportError(err instanceof BackupError ? err.message : 'The file could not be read.')
+            setImportError(err instanceof BackupError ? err.message : t.settings.unreadable)
           }
         }}
       />
@@ -204,21 +222,17 @@ export function Settings() {
       )}
       {!data.persistent && (
         <p className={styles.error} role="alert">
-          This browser does not allow Cadence to store data (private mode?). Nothing logged now survives a reload:
-          export before you close.
+          {t.settings.notPersistent}
         </p>
       )}
 
       <section className={styles.section} aria-labelledby="erase-title">
         <h2 id="erase-title" className={styles.title}>
-          Erase
+          {t.settings.erase}
         </h2>
         {confirmErase ? (
           <div className={styles.danger}>
-            <p>
-              Delete every program, session, goal and exercise on this device? Export a backup first if you may want
-              them back.
-            </p>
+            <p>{t.settings.eraseConfirm}</p>
             <div className={styles.row}>
               <Button
                 variant="danger"
@@ -235,37 +249,37 @@ export function Settings() {
                     goals: [],
                   })
                   setConfirmErase(false)
-                  toast('All training data erased')
+                  toast(t.settings.erased)
                 }}
               >
-                Erase everything
+                {t.settings.eraseEverything}
               </Button>
               <Button variant="plain" onClick={() => setConfirmErase(false)}>
-                Cancel
+                {t.common.cancel}
               </Button>
             </div>
           </div>
         ) : (
           <Button variant="plain" onClick={() => setConfirmErase(true)}>
-            Erase all training data…
+            {t.settings.eraseAll}
           </Button>
         )}
       </section>
 
-      <ListGroup title="About">
+      <ListGroup title={t.settings.about}>
         <ListRow
           leading={<Info size={20} strokeWidth={1.75} />}
-          title="Cadence"
-          subtitle={`Version ${BUILD.version} · ${BUILD.commit}`}
+          title={t.common.appName}
+          subtitle={t.settings.version(BUILD.version, BUILD.commit)}
         />
         <li className={styles.linkRow}>
           <a href="https://github.com/maxgfr/cadence" target="_blank" rel="noreferrer" className={styles.link}>
             <ExternalLink size={20} strokeWidth={1.75} aria-hidden="true" />
-            Source code and issues on GitHub
+            {t.settings.sourceCode}
           </a>
         </li>
       </ListGroup>
-      <p className={styles.footnote}>No account, no server, no tracking. MIT licence.</p>
+      <p className={styles.footnote}>{t.settings.footnote}</p>
     </Screen>
   )
 }

@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useLocation, useParams } from 'wouter'
 import { useData } from '../../app/data.tsx'
 import { cameFrom } from '../../app/hashLocation.ts'
+import { useT } from '../../app/i18n.tsx'
 import { useToast } from '../../app/toast.tsx'
 import { newId } from '../../core/model/ids.ts'
 import { describeBlock, emptySet } from '../../core/model/program.ts'
@@ -27,6 +28,7 @@ import { SetRow, setColumns } from './SetRow.tsx'
 export function Log() {
   const { id } = useParams<{ id: string }>()
   const data = useData()
+  const t = useT()
   const [, navigate] = useLocation()
   const stored = data.sessions.find((s) => s.id === id)
   const [session, setSession] = useState<Session | undefined>(stored)
@@ -55,9 +57,9 @@ export function Log() {
     return (
       <main className={styles.log}>
         <EmptyState
-          title="Session not found"
-          body="It may have been deleted."
-          action={<Link href="/">Go to Today</Link>}
+          title={t.log.notFoundTitle}
+          body={t.log.notFoundBody}
+          action={<Link href="/">{t.shell.goToToday}</Link>}
         />
       </main>
     )
@@ -83,13 +85,11 @@ export function Log() {
           }}
         >
           <ChevronLeft size={20} strokeWidth={2} aria-hidden="true" />
-          {from !== undefined ? 'Back' : 'Today'}
+          {from !== undefined ? t.common.back : t.shell.nav.today}
         </a>
-        <span className={styles.count}>
-          {setDone} of {setTotal} sets
-        </span>
+        <span className={styles.count}>{t.log.setsCount(setDone, setTotal)}</span>
         <Button variant="primary" onClick={() => setFinishing(true)}>
-          Finish
+          {t.log.finish}
         </Button>
       </header>
 
@@ -103,11 +103,7 @@ export function Log() {
       </div>
 
       {session.entries.length === 0 && (
-        <EmptyState
-          title="Add your first exercise"
-          body="Pick from the library; each exercise gets its own sets to tick off."
-          level={2}
-        />
+        <EmptyState title={t.log.firstExerciseTitle} body={t.log.firstExerciseBody} level={2} />
       )}
 
       <ol className={styles.entries}>
@@ -124,7 +120,9 @@ export function Log() {
                 onRemove={() => {
                   const before = session
                   update({ ...session, entries: session.entries.filter((e) => e.id !== entry.id) })
-                  toast(`${ex?.name ?? 'Exercise'} removed`, [{ label: 'Undo', onClick: () => update(before) }])
+                  toast(t.log.removed(ex?.name ?? t.common.exercise), [
+                    { label: t.log.undo, onClick: () => update(before) },
+                  ])
                 }}
                 rest={entry.planned?.rest ?? data.settings.defaultRest}
                 onRest={(seconds) => rest.start(seconds)}
@@ -141,7 +139,7 @@ export function Log() {
         icon={<Plus size={20} strokeWidth={2} aria-hidden="true" />}
         onClick={() => setPicking(true)}
       >
-        Add exercise
+        {t.log.addExercise}
       </Button>
 
       <ExercisePicker
@@ -176,7 +174,7 @@ export function Log() {
           await data.remove('sessions', session.id)
           rest.stop()
           navigate('/', { replace: true })
-          toast('Session discarded')
+          toast(t.log.discarded)
         }}
       />
 
@@ -200,18 +198,19 @@ interface EntryCardProps {
 function EntryCard({ entry, exercise, advanced, plan, onChange, onRemove, rest, onRest }: EntryCardProps) {
   const cols = setColumns(exercise, advanced)
   const units = useUnits()
+  const t = useT()
   const allDone = entry.sets.length > 0 && entry.sets.every((s) => s.done)
   const setAt = (i: number, next: SetLog) =>
     onChange((e) => ({ ...e, sets: e.sets.map((s, j) => (j === i ? next : s)) }))
   return (
-    <article className={cx(styles.entry, allDone && styles.entryDone)} aria-label={exercise?.name ?? 'Exercise'}>
+    <article className={cx(styles.entry, allDone && styles.entryDone)} aria-label={exercise?.name ?? t.common.exercise}>
       <header className={styles.entryHead}>
         <div className={styles.entryText}>
           <h2 className={styles.entryName}>
             {allDone && <Check className={styles.entryCheck} size={18} strokeWidth={2.5} aria-hidden="true" />}
-            {exercise?.name ?? 'Unknown exercise'}
+            {exercise?.name ?? t.log.unknownExercise}
           </h2>
-          {plan && <p className={styles.plan}>Plan {plan}</p>}
+          {plan && <p className={styles.plan}>{t.log.plan(plan)}</p>}
           {entry.planned?.notes && <p className={styles.plan}>{entry.planned.notes}</p>}
         </div>
         <div className={styles.entryTools}>
@@ -219,13 +218,17 @@ function EntryCard({ entry, exercise, advanced, plan, onChange, onRemove, rest, 
             <Button
               variant="plain"
               icon={<Timer size={18} strokeWidth={1.75} aria-hidden="true" />}
-              aria-label={`Rest ${formatTime(rest, false)} after ${exercise?.name ?? 'this exercise'}`}
+              aria-label={t.log.restAfter(formatTime(rest, false), exercise?.name ?? t.log.thisExercise)}
               onClick={() => onRest(rest)}
             >
-              Rest {formatTime(rest, false)}
+              {t.log.rest(formatTime(rest, false))}
             </Button>
           )}
-          <IconButton icon={Trash2} label={`Remove ${exercise?.name ?? 'exercise'}`} onClick={onRemove} />
+          <IconButton
+            icon={Trash2}
+            label={t.log.removeExercise(exercise?.name ?? t.log.exerciseLower)}
+            onClick={onRemove}
+          />
         </div>
       </header>
       <div className={styles.table}>
@@ -234,7 +237,7 @@ function EntryCard({ entry, exercise, advanced, plan, onChange, onRemove, rest, 
           aria-hidden="true"
           style={{ gridTemplateColumns: cols.template }}
         >
-          <span>Set</span>
+          <span>{t.log.set}</span>
           {cols.fields.map((f) => (
             <span key={f}>{cols.label(f, units)}</span>
           ))}
@@ -260,11 +263,11 @@ function EntryCard({ entry, exercise, advanced, plan, onChange, onRemove, rest, 
           icon={<Plus size={18} strokeWidth={2} aria-hidden="true" />}
           onClick={() => onChange((e) => ({ ...e, sets: [...e.sets, emptySet(exercise, e.sets[e.sets.length - 1])] }))}
         >
-          Add set
+          {t.log.addSet}
         </Button>
         {entry.sets.length > 1 && (
           <Button variant="plain" onClick={() => onChange((e) => ({ ...e, sets: e.sets.slice(0, -1) }))}>
-            Remove last set
+            {t.log.removeLastSet}
           </Button>
         )}
       </div>

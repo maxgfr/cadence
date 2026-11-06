@@ -2,6 +2,7 @@ import { CheckCircle2, ListChecks, Pencil, Trash2, Trophy } from 'lucide-react'
 import { useState } from 'react'
 import { useLocation, useParams, useSearch } from 'wouter'
 import { useData } from '../../app/data.tsx'
+import { useT } from '../../app/i18n.tsx'
 import { useToast } from '../../app/toast.tsx'
 import { formatDay } from '../../core/model/dates.ts'
 import { describeBlock } from '../../core/model/program.ts'
@@ -17,7 +18,7 @@ import { SelectField } from '../../ui/components/SelectField.tsx'
 import { Sheet } from '../../ui/components/Sheet.tsx'
 import { TextArea } from '../../ui/components/TextArea.tsx'
 import { Screen } from '../../ui/shell/Screen.tsx'
-import { formatMeasure, MEASURE_LABEL, useUnits } from '../../ui/units.ts'
+import { formatMeasure, useUnits } from '../../ui/units.ts'
 import { NotFound } from '../NotFound.tsx'
 import styles from './History.module.css'
 import { sessionSummary } from './summary.ts'
@@ -26,6 +27,7 @@ export function SessionDetail() {
   const { id } = useParams<{ id: string }>()
   const saved = new URLSearchParams(useSearch()).get('saved') === '1'
   const data = useData()
+  const t = useT()
   const units = useUnits()
   const toast = useToast()
   const [, navigate] = useLocation()
@@ -45,41 +47,41 @@ export function SessionDetail() {
           {formatDay(session.date, year)} · <DisciplineTag disciplineId={session.disciplineId} />
         </>
       }
-      back={{ href: '/progress?view=history', label: 'History' }}
+      back={{ href: '/progress?view=history', label: t.history.title }}
     >
       {saved && (
         <p className={styles.saved} role="status">
           <CheckCircle2 size={20} strokeWidth={2} aria-hidden="true" />
-          Session saved{records.filter((r) => r.previous !== undefined).length > 0 ? ' with new records' : ''}.
+          {records.some((r) => r.previous !== undefined) ? t.history.savedWithRecords : t.history.saved}
         </p>
       )}
       <dl className={styles.stats}>
         <div>
-          <dt>Done</dt>
+          <dt>{t.history.done}</dt>
           <dd>{sessionSummary(session, data.index, units).split(' · ')[0]}</dd>
         </div>
         {session.duration !== undefined && (
           <div>
-            <dt>Duration</dt>
-            <dd>{session.duration} min</dd>
+            <dt>{t.history.duration}</dt>
+            <dd>{t.history.minutes(session.duration)}</dd>
           </div>
         )}
         {session.rpe !== undefined && (
           <div>
-            <dt>Effort</dt>
+            <dt>{t.history.effort}</dt>
             <dd>RPE {session.rpe}</dd>
           </div>
         )}
         {advanced && adherence !== undefined && (
           <div>
-            <dt>Of the plan</dt>
-            <dd>{Math.round(adherence * 100)}%</dd>
+            <dt>{t.history.ofPlan}</dt>
+            <dd>{t.progress.percent(Math.round(adherence * 100))}</dd>
           </div>
         )}
       </dl>
 
       {records.length > 0 && (
-        <ListGroup title="Records">
+        <ListGroup title={t.progress.records}>
           {records.map((r) => {
             const ex = data.index.get(r.exerciseId)
             return (
@@ -89,8 +91,8 @@ export function SessionDetail() {
                 title={ex?.name ?? r.exerciseId}
                 subtitle={
                   r.previous !== undefined
-                    ? `${MEASURE_LABEL[r.kind]}, was ${formatMeasure(r.kind, r.previous, units, ex)}`
-                    : `${MEASURE_LABEL[r.kind]}, first one logged`
+                    ? t.history.recordWas(t.labels.measure[r.kind], formatMeasure(r.kind, r.previous, units, ex))
+                    : t.history.recordFirst(t.labels.measure[r.kind])
                 }
                 trailing={<strong>{formatMeasure(r.kind, r.value, units, ex)}</strong>}
                 href={`/progress?exercise=${r.exerciseId}`}
@@ -100,21 +102,23 @@ export function SessionDetail() {
         </ListGroup>
       )}
 
-      <ol className={styles.entries} aria-label="Exercises">
+      <ol className={styles.entries} aria-label={t.common.exercises}>
         {session.entries.map((e) => {
           const ex = data.index.get(e.exerciseId)
           const done = e.sets.filter((s) => s.done).length
           return (
             <li key={e.id} className={styles.entry}>
               <div className={styles.entryHead}>
-                <h2 className={styles.entryName}>{ex?.name ?? 'Unknown exercise'}</h2>
+                <h2 className={styles.entryName}>{ex?.name ?? t.history.unknownExercise}</h2>
                 <span className={styles.adh}>
                   {e.planned
-                    ? `${Math.min(done, e.planned.sets)} of ${e.planned.sets} planned sets`
-                    : `${done} ${done === 1 ? 'set' : 'sets'}`}
+                    ? t.history.plannedSets(Math.min(done, e.planned.sets), e.planned.sets)
+                    : t.history.sets(done)}
                 </span>
               </div>
-              {e.planned && <p className={styles.plan}>Plan {describeBlock(e.planned, ex, units, advanced)}</p>}
+              {e.planned && (
+                <p className={styles.plan}>{t.history.plan(describeBlock(e.planned, ex, units, advanced))}</p>
+              )}
               <SetsTable sets={e.sets} exercise={ex} advanced={advanced} />
             </li>
           )
@@ -129,7 +133,7 @@ export function SessionDetail() {
           icon={<Pencil size={18} strokeWidth={1.75} aria-hidden="true" />}
           onClick={() => setEditing(true)}
         >
-          Edit details
+          {t.history.editDetails}
         </Button>
         <Button
           variant="secondary"
@@ -139,7 +143,7 @@ export function SessionDetail() {
             navigate(`/log/${session.id}`)
           }}
         >
-          Edit sets
+          {t.history.editSets}
         </Button>
         <Button
           variant="danger"
@@ -147,14 +151,14 @@ export function SessionDetail() {
           onClick={async () => {
             await data.remove('sessions', session.id)
             navigate('/progress?view=history')
-            toast('Session deleted', [{ label: 'Undo', onClick: () => data.put('sessions', session) }])
+            toast(t.history.sessionDeleted, [{ label: t.history.undo, onClick: () => data.put('sessions', session) }])
           }}
         >
-          Delete
+          {t.common.delete}
         </Button>
       </div>
       <p className={styles.plan}>{sessionSummary(session, data.index, units)}</p>
-      <Sheet open={editing} title="Edit session" onClose={() => setEditing(false)}>
+      <Sheet open={editing} title={t.history.editSession} onClose={() => setEditing(false)}>
         {editing && <DetailsForm session={session} onDone={() => setEditing(false)} />}
       </Sheet>
     </Screen>
@@ -163,6 +167,7 @@ export function SessionDetail() {
 
 function DetailsForm({ session, onDone }: { session: Session; onDone: () => void }) {
   const data = useData()
+  const t = useT()
   const toast = useToast()
   const [title, setTitle] = useState(session.title)
   const [date, setDate] = useState(session.date)
@@ -177,7 +182,7 @@ function DetailsForm({ session, onDone }: { session: Session; onDone: () => void
       onSubmit={async (e) => {
         e.preventDefault()
         if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
-          setError('Pick a date.')
+          setError(t.history.pickDate)
           return
         }
         const minutes = Number.parseInt(duration, 10)
@@ -191,42 +196,51 @@ function DetailsForm({ session, onDone }: { session: Session; onDone: () => void
           ...(rpe ? { rpe: Number(rpe) } : {}),
           ...(notes.trim() ? { notes: notes.trim().slice(0, 1000) } : {}),
         })
-        toast('Session updated')
+        toast(t.history.sessionUpdated)
         onDone()
       }}
     >
-      <Field label="Name" value={title} maxLength={80} onChange={(e) => setTitle(e.target.value)} />
+      <Field label={t.common.name} value={title} maxLength={80} onChange={(e) => setTitle(e.target.value)} />
       <Field
-        label="Date"
+        label={t.common.date}
         type="date"
         value={date}
         onChange={(e) => setDate(e.target.value)}
         {...(error ? { error } : {})}
       />
       <SelectField
-        label="Discipline"
+        label={t.common.discipline}
         value={discipline}
-        options={[{ value: '', label: 'None' }, ...data.disciplines.map((d) => ({ value: d.id, label: d.name }))]}
+        options={[
+          { value: '', label: t.common.none },
+          ...data.disciplines.map((d) => ({ value: d.id, label: d.name })),
+        ]}
         onChange={(e) => setDiscipline(e.target.value)}
       />
       <Field
-        label="Duration (minutes)"
+        label={t.common.durationMinutes}
         inputMode="numeric"
         value={duration}
         onChange={(e) => setDuration(e.target.value)}
       />
       <SelectField
-        label="Effort (RPE)"
+        label={t.history.effortRpe}
         value={rpe}
         options={[
-          { value: '', label: 'Not rated' },
+          { value: '', label: t.history.notRated },
           ...Array.from({ length: 10 }, (_, i) => ({ value: String(i + 1), label: String(i + 1) })),
         ]}
         onChange={(e) => setRpe(e.target.value)}
       />
-      <TextArea label="Notes" rows={3} value={notes} maxLength={1000} onChange={(e) => setNotes(e.target.value)} />
+      <TextArea
+        label={t.common.notes}
+        rows={3}
+        value={notes}
+        maxLength={1000}
+        onChange={(e) => setNotes(e.target.value)}
+      />
       <Button type="submit" variant="primary" size="large" full>
-        Save
+        {t.common.save}
       </Button>
     </form>
   )
@@ -241,6 +255,7 @@ function SetsTable({
   exercise: Exercise | undefined
   advanced: boolean
 }) {
+  const t = useT()
   const units = useUnits()
   const metric = exercise?.metric ?? 'weight_reps'
   const cols: { key: string; label: string; value: (s: SetLog) => string }[] = []
@@ -251,23 +266,23 @@ function SetsTable({
       value: (s) => (s.weight !== undefined ? formatWeight(s.weight, units.weightUnit, false) : '–'),
     })
   if (metric === 'weight_reps' || metric === 'reps')
-    cols.push({ key: 'r', label: 'Reps', value: (s) => (s.reps !== undefined ? String(s.reps) : '–') })
+    cols.push({ key: 'r', label: t.common.reps, value: (s) => (s.reps !== undefined ? String(s.reps) : '–') })
   if (metric === 'distance_time' && exercise?.distance === undefined)
     cols.push({
       key: 'd',
-      label: 'Distance',
+      label: t.common.distance,
       value: (s) => (s.distance !== undefined ? formatDistance(s.distance, units.distanceUnit) : '–'),
     })
   if (metric === 'time' || metric === 'distance_time')
-    cols.push({ key: 't', label: 'Time', value: (s) => (s.time !== undefined ? formatTime(s.time) : '–') })
+    cols.push({ key: 't', label: t.common.time, value: (s) => (s.time !== undefined ? formatTime(s.time) : '–') })
   if (advanced || sets.some((s) => s.rpe !== undefined))
-    cols.push({ key: 'e', label: 'RPE', value: (s) => (s.rpe !== undefined ? String(s.rpe) : '–') })
+    cols.push({ key: 'e', label: t.common.rpe, value: (s) => (s.rpe !== undefined ? String(s.rpe) : '–') })
   const rows = sets.map((s, i) => ({ s, n: i + 1 }))
   return (
     <table className={styles.sets}>
       <thead>
         <tr>
-          <th scope="col">Set</th>
+          <th scope="col">{t.history.set}</th>
           {cols.map((c) => (
             <th key={c.key} scope="col">
               {c.label}
@@ -280,7 +295,7 @@ function SetsTable({
           <tr key={n} className={s.done ? undefined : styles.skipped}>
             <td>
               {n}
-              {s.done ? '' : <span className="sr-only"> (not done)</span>}
+              {s.done ? '' : <span className="sr-only">{t.history.notDone}</span>}
             </td>
             {cols.map((c) => (
               <td key={c.key}>{c.value(s)}</td>

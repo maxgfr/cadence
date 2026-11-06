@@ -40,7 +40,7 @@ Local-first and account-free: data lives on the device, exports to open JSON/CSV
 ## Capabilities and Constraints
 
 - Local-first PWA: IndexedDB is the source of truth; works fully offline once installed.
-- Interface in English only.
+- Interface in English, French and German: the system's language by default, switchable in Settings. Dates and numbers follow the language (decimal comma in French and German); the demo is loaded in it. Stored values and the CSV export do not change with the language.
 - Disciplines are the user's own (name and colour); none exists by default and nothing is pre-selected: exercises, program days and sessions have a discipline only when the user picks one (user request).
 - Defaults: metric (kg, m), week starts Monday; switchable to lb and yd in Settings. Stored values are always metric.
 - Effort scale: RPE 1–10, per set and per session, for every discipline.

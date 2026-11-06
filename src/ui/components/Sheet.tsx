@@ -1,5 +1,6 @@
 import { X } from 'lucide-react'
 import { type ReactNode, type RefObject, useEffect, useId, useRef } from 'react'
+import { useT } from '../../app/i18n.tsx'
 import { cx } from '../cx.ts'
 import { IconButton } from './IconButton.tsx'
 import styles from './Sheet.module.css'
@@ -26,6 +27,7 @@ const CONTROL = 'button:not([disabled]), [href], [tabindex]:not([tabindex="-1"])
 export function Sheet({ open, title, onClose, children, initialFocus, fill = false }: SheetProps) {
   const ref = useRef<HTMLDialogElement>(null)
   const bodyRef = useRef<HTMLDivElement>(null)
+  const t = useT()
   const id = useId()
 
   useEffect(() => {
@@ -55,7 +57,7 @@ export function Sheet({ open, title, onClose, children, initialFocus, fill = fal
           <h2 id={id} className={styles.title}>
             {title}
           </h2>
-          <IconButton icon={X} label="Close" onClick={onClose} />
+          <IconButton icon={X} label={t.common.close} onClick={onClose} />
         </div>
       )}
       <div ref={bodyRef} className={styles.body}>
