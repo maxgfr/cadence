@@ -1,3 +1,4 @@
+import { currentMessages } from '../i18n/index.ts'
 import type { ExerciseIndex } from '../library/exercises.ts'
 import { BACKUP_VERSION, Backup, DEFAULT_SETTINGS, Settings } from '../model/schemas.ts'
 import { migrateGoals, migrateV1 } from './migrate.ts'
@@ -34,23 +35,22 @@ export function parseBackup(text: string): Backup {
   try {
     raw = JSON.parse(text)
   } catch {
-    throw new BackupError('This file is not JSON.')
+    throw new BackupError(currentMessages().core.backup.notJson)
   }
   if (typeof raw !== 'object' || raw === null || (raw as { app?: unknown }).app !== 'cadence')
-    throw new BackupError('This file is not a Cadence backup.')
+    throw new BackupError(currentMessages().core.backup.notCadence)
   const version = (raw as { version?: unknown }).version
-  if (version !== BACKUP_VERSION && version !== 3 && version !== 2 && version !== 1)
-    throw new BackupError(
-      `This backup uses format version ${String(version)}, which this version of Cadence cannot read.`,
-    )
+  if (version !== BACKUP_VERSION && version !== 4 && version !== 3 && version !== 2 && version !== 1)
+    throw new BackupError(currentMessages().core.backup.version(String(version)))
   // Version 1: fixed disciplines and built-in exercises, read into today's shape.
-  // Versions 2 and 3 differ by what they cannot hold (program layouts) and the names of exercise goals.
-  if (version === 2 || version === 3) raw = { ...(raw as object), version: BACKUP_VERSION }
+  // Versions 2 to 4 differ by what they cannot hold (program layouts, the language) and the names of exercise
+  // goals; the language they lack reads as the system's.
+  if (version === 2 || version === 3 || version === 4) raw = { ...(raw as object), version: BACKUP_VERSION }
   if (version === 1) {
     try {
       raw = { ...(raw as object), version: BACKUP_VERSION, ...migrateV1(raw as Record<string, unknown[]>) }
     } catch {
-      throw new BackupError('The backup is damaged (its version 1 records could not be read).')
+      throw new BackupError(currentMessages().core.backup.damagedV1)
     }
   }
   const goals = (raw as { goals?: unknown }).goals
@@ -58,7 +58,9 @@ export function parseBackup(text: string): Backup {
   const parsed = Backup.safeParse(raw)
   if (!parsed.success) {
     const issue = parsed.error.issues[0]
-    throw new BackupError(`The backup is damaged${issue ? ` (${issue.path.join('.')}: ${issue.message})` : ''}.`)
+    throw new BackupError(
+      currentMessages().core.backup.damaged(issue ? `${issue.path.join('.')}: ${issue.message}` : ''),
+    )
   }
   return parsed.data
 }

@@ -4,6 +4,7 @@ import { AiProvider } from './app/ai.tsx'
 import { DataProvider, useData } from './app/data.tsx'
 import { DraftProvider } from './app/drafts.tsx'
 import { useHashLocation, useHashSearch } from './app/hashLocation.ts'
+import { I18nProvider } from './app/i18n.tsx'
 import { lazyChunk, ScreenBoundary } from './app/lazyChunk.tsx'
 import { useTheme } from './app/theme.ts'
 import { ToastProvider, useToast } from './app/toast.tsx'
@@ -76,14 +77,16 @@ export function App() {
   return (
     <Router hook={useHashLocation} searchHook={useHashSearch}>
       <DataProvider fallback={null}>
-        <AiProvider>
-          <DraftProvider>
-            <ToastProvider>
-              <Routes />
-              <StorageNotice />
-            </ToastProvider>
-          </DraftProvider>
-        </AiProvider>
+        <I18nProvider>
+          <AiProvider>
+            <DraftProvider>
+              <ToastProvider>
+                <Routes />
+                <StorageNotice />
+              </ToastProvider>
+            </DraftProvider>
+          </AiProvider>
+        </I18nProvider>
       </DataProvider>
     </Router>
   )

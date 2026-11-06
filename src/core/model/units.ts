@@ -1,3 +1,4 @@
+import { decimalSeparator, formatDecimal, formatInteger } from '../i18n/locale.ts'
 import type { Settings } from './schemas.ts'
 
 /** Display conversions. Storage is always kg and metres; only what the user reads and types changes. */
@@ -29,10 +30,8 @@ export function fromDisplayDistance(value: number, unit: DistanceUnit): number {
 /** Joins a value to its unit so a line never breaks between them. */
 export const NBSP = '\u00a0'
 
-const trim = (n: number, digits: number) => {
-  const s = n.toFixed(digits)
-  return s.includes('.') ? s.replace(/\.?0+$/, '') : s
-}
+/** Numbers read in the displayed language: "82.5" in English, "82,5" in French and German. */
+const trim = formatDecimal
 
 /** "82.5 kg", "182 lb". */
 export function formatWeight(kg: number, unit: WeightUnit, withUnit = true): string {
@@ -45,15 +44,14 @@ export function formatWeight(kg: number, unit: WeightUnit, withUnit = true): str
 export function formatDistance(m: number, unit: DistanceUnit): string {
   const v = toDisplayDistance(m, unit)
   if (unit === 'm' && v >= 10_000) return `${trim(v / 1000, 1)}${NBSP}km`
-  return `${Math.round(v).toLocaleString('en-US')}${NBSP}${unit}`
+  return `${formatInteger(v)}${NBSP}${unit}`
 }
 
 /** A tonnage: "12.4 t", "8,450 kg", or pounds. */
 export function formatTonnage(kg: number, unit: WeightUnit): string {
-  if (unit === 'kg')
-    return kg >= 10_000 ? `${trim(kg / 1000, 1)}${NBSP}t` : `${Math.round(kg).toLocaleString('en-US')}${NBSP}kg`
+  if (unit === 'kg') return kg >= 10_000 ? `${trim(kg / 1000, 1)}${NBSP}t` : `${formatInteger(kg)}${NBSP}kg`
   const lb = toDisplayWeight(kg, unit)
-  return lb >= 10_000 ? `${trim(lb / 1000, 1)}k${NBSP}lb` : `${Math.round(lb).toLocaleString('en-US')}${NBSP}lb`
+  return lb >= 10_000 ? `${trim(lb / 1000, 1)}k${NBSP}lb` : `${formatInteger(lb)}${NBSP}lb`
 }
 
 /**
@@ -66,7 +64,10 @@ export function formatTime(seconds: number, precise = true): string {
   const h = Math.floor(seconds / 3600)
   const m = Math.floor((seconds % 3600) / 60)
   const s = seconds % 60
-  const ss = precise && s % 1 !== 0 ? s.toFixed(1).padStart(4, '0') : String(Math.round(s)).padStart(2, '0')
+  const ss =
+    precise && s % 1 !== 0
+      ? s.toFixed(1).padStart(4, '0').replace('.', decimalSeparator())
+      : String(Math.round(s)).padStart(2, '0')
   return h > 0 ? `${h}:${String(m).padStart(2, '0')}:${ss}` : `${m}:${ss}`
 }
 
