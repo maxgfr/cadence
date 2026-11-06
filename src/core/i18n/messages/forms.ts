@@ -4,6 +4,13 @@ import { namespace, plural, pluralFr } from '../define.ts'
 export const forms = namespace(
   {
     undo: 'Undo',
+    rest: {
+      label: 'Rest between sets',
+      inherit: (time: string) => `Default (${time})`,
+      inheritFrom: (sport: string, time: string) => `As ${sport} (${time})`,
+      none: 'Only when planned',
+      hint: 'The rest timer never starts on its own: you start it from the exercise while logging.',
+    },
     repsValue: (n: number) => `${n}\u00a0reps`,
     exercise: {
       nameRequired: 'Give it a name.',
@@ -71,6 +78,13 @@ export const forms = namespace(
   },
   {
     undo: 'Annuler',
+    rest: {
+      label: 'Récup entre les séries',
+      inherit: (time: string) => `Par défaut (${time})`,
+      inheritFrom: (sport: string, time: string) => `Comme ${sport} (${time})`,
+      none: 'Seulement si prévu',
+      hint: 'Le minuteur de récup ne démarre jamais tout seul : vous le lancez depuis l’exercice pendant la séance.',
+    },
     repsValue: (n: number) => `${n}\u00a0rép.`,
     exercise: {
       nameRequired: 'Donnez-lui un nom.',
@@ -139,6 +153,13 @@ export const forms = namespace(
   },
   {
     undo: 'Rückgängig',
+    rest: {
+      label: 'Pause zwischen den Sätzen',
+      inherit: (time: string) => `Standard (${time})`,
+      inheritFrom: (sport: string, time: string) => `Wie ${sport} (${time})`,
+      none: 'Nur wenn geplant',
+      hint: 'Der Pausentimer startet nie von selbst: Du startest ihn beim Eintragen an der Übung.',
+    },
     repsValue: (n: number) => `${n}\u00a0Wdh.`,
     exercise: {
       nameRequired: 'Gib einen Namen ein.',

@@ -4,7 +4,7 @@ import { Link } from 'wouter'
 import { useData } from '../../app/data.tsx'
 import { useT } from '../../app/i18n.tsx'
 import type { Discipline, Exercise } from '../../core/model/schemas.ts'
-import { toDisplayDistance } from '../../core/model/units.ts'
+import { formatTime, toDisplayDistance } from '../../core/model/units.ts'
 import { trainedExercises } from '../../core/stats/metrics.ts'
 import { Button, buttonClass } from '../../ui/components/Button.tsx'
 import { DisciplineDot } from '../../ui/components/Discipline.tsx'
@@ -89,7 +89,12 @@ export function Exercises() {
                   key={d.id}
                   leading={<DisciplineDot disciplineId={d.id} />}
                   title={d.name}
-                  subtitle={x.inDiscipline(data.exercises.filter((e) => e.disciplineId === d.id).length)}
+                  subtitle={[
+                    x.inDiscipline(data.exercises.filter((e) => e.disciplineId === d.id).length),
+                    d.rest !== undefined && d.rest > 0 ? t.log.rest(formatTime(d.rest, false)) : null,
+                  ]
+                    .filter(Boolean)
+                    .join(' · ')}
                   onClick={() => setEditing({ kind: 'discipline', value: d })}
                   chevron
                 />

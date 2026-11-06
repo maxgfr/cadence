@@ -42,6 +42,8 @@ export const Discipline = z.object({
   id,
   name: z.string().trim().min(1).max(40),
   color: DisciplineColor,
+  /** Seconds of rest between sets for its exercises (0: the timer only when a plan gives a rest). */
+  rest: z.number().int().min(0).max(900).optional(),
   /** When it last changed on any device (ISO); what a sync keeps the newest of. Absent before version 6. */
   updatedAt: z.string().optional(),
 })
@@ -65,6 +67,8 @@ export const Exercise = z.object({
   /** Fixed distance in metres for distance events (60 m sprint, 50 m free): logged sets then only need a time. */
   distance: positive.optional(),
   notes: z.string().max(500).optional(),
+  /** Seconds of rest between sets, over its discipline's (0: the timer only when a plan gives a rest). */
+  rest: z.number().int().min(0).max(900).optional(),
   /** When it last changed on any device (ISO); what a sync keeps the newest of. Absent before version 6. */
   updatedAt: z.string().optional(),
 })
@@ -227,7 +231,10 @@ export const Settings = z.object({
   /** 1 = Monday, 0 = Sunday. */
   weekStart: z.union([z.literal(0), z.literal(1)]).default(1),
   theme: z.enum(['system', 'light', 'dark']).default('system'),
-  /** Default rest timer, seconds, when a block prescribes none. */
+  /**
+   * Rest timer, seconds, when neither the plan, the exercise nor its discipline gives one. No longer set in the
+   * interface (rests are set per discipline and exercise since version 7); kept so nothing changes until edited.
+   */
   defaultRest: z.number().int().min(0).max(900).default(90),
   onboarded: z.boolean().default(false),
   /** When it last changed on any device (ISO); what a sync keeps the newest of. Absent before version 6. */
@@ -241,9 +248,10 @@ export const DEFAULT_SETTINGS: Settings = Settings.parse({})
  * 3: programs can be a set of sessions (`layout`). 4: goals on an exercise are one kind, `exercise` (versions 2 and 3
  * had `e1rm` and `best_time`, read as `exercise`). 5: settings hold the interface language (`language`; earlier
  * versions read as `system`). 6: records carry `updatedAt` and deletions are kept as tombstones (`deleted`), so two
- * devices can be merged; earlier versions read with no date and no deletion.
+ * devices can be merged; earlier versions read with no date and no deletion. 7: disciplines and exercises carry their
+ * rest between sets (`rest`); earlier versions read with none, the settings' rest standing for all.
  */
-export const BACKUP_VERSION = 6
+export const BACKUP_VERSION = 7
 export const Backup = z.object({
   app: z.literal('cadence'),
   version: z.literal(BACKUP_VERSION),

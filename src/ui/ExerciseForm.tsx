@@ -21,6 +21,7 @@ import { Segmented } from './components/Segmented.tsx'
 import { SelectField } from './components/SelectField.tsx'
 import { ColorPicker, freeColor } from './DisciplineForm.tsx'
 import styles from './Forms.module.css'
+import { RestField } from './RestField.tsx'
 import { useUnits } from './units.ts'
 
 const NEW = '__new__'
@@ -67,6 +68,7 @@ export function ExerciseForm({ exercise, initialName = '', initialDisciplineId, 
       : '',
   )
   const [muscles, setMuscles] = useState<Muscle[]>(exercise?.muscles ?? [])
+  const [rest, setRest] = useState<number | undefined>(exercise?.rest)
   const [error, setError] = useState<string>()
   const [newError, setNewError] = useState<string>()
   const used =
@@ -124,6 +126,7 @@ export function ExerciseForm({ exercise, initialName = '', initialDisciplineId, 
           ...(muscles.length > 0 ? { muscles } : {}),
           ...(exercise?.stroke ? { stroke: exercise.stroke } : {}),
           ...(exercise?.notes ? { notes: exercise.notes } : {}),
+          ...(rest !== undefined ? { rest } : {}),
         }
         if (draft) {
           draft.onSave(next, created)
@@ -211,6 +214,16 @@ export function ExerciseForm({ exercise, initialName = '', initialDisciplineId, 
           ))}
         </fieldset>
       )}
+      <RestField
+        value={rest}
+        inherited={data.disciplineIndex.get(disciplineId)?.rest ?? data.settings.defaultRest}
+        from={
+          data.disciplineIndex.get(disciplineId)?.rest !== undefined
+            ? data.disciplineIndex.get(disciplineId)?.name
+            : undefined
+        }
+        onChange={setRest}
+      />
       <Button type="submit" variant="primary" size="large" full>
         {exercise ? t.common.save : t.forms.exercise.add}
       </Button>
