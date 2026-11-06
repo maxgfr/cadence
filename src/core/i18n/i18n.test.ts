@@ -90,7 +90,8 @@ describe('numbers and dates follow the displayed language', () => {
     setDisplayLocale('de')
     expect(formatWeight(82.5, 'kg')).toBe('82,5 kg')
     expect(formatDistance(1500, 'm')).toBe('1.500 m')
-    expect(formatDay('2026-10-12')).toBe('Mo. 12. Okt.')
+    // ICU versions differ on the comma after the weekday.
+    expect(formatDay('2026-10-12')).toMatch(/^Mo\.,? 12\. Okt\.$/)
     expect(weekdayShort(1)).toBe('Mo')
   })
 })
