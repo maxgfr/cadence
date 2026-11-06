@@ -125,11 +125,24 @@ a browser on the same computer. Ollama only answers pages it trusts: start it wi
 `http://localhost:11434/v1` and the model's name (for example `qwen2.5:7b`). Small local models may need a retry or
 two to return a complete program.
 
+## Sync two devices
+
+*Settings › Sync with another device*: one device shows a QR code (*Show a code*, on the bigger screen), the other
+scans it from Cadence (*Scan a code*) or opens its link. The two connect directly (WebRTC); public Nostr relays only
+introduce them, and that introduction is itself encrypted. Everything sent is sealed (AES-GCM, gzip) with a 256-bit key
+that exists only in the QR code, which works once, for 5 minutes. Both devices then apply the same merge: each record
+keeps its newest change, a deletion wins over older changes, settings keep the newest. Erasing or importing on one
+device deletes nothing on the other: the next sync brings its data back. *Include AI settings* sends the provider,
+model and key, encrypted, taken only by a device that has none. On iPhone, scan from Cadence itself rather than the
+Camera app: Safari and the home-screen app keep separate data.
+
 ## Privacy
 
-- No account, no server, no analytics. Training data lives in IndexedDB in this browser.
+- No account, no server, no analytics. Training data lives in IndexedDB in this browser, and goes to another of
+  your devices only during a sync you start, end-to-end encrypted.
 - AI requests go straight from the device to the provider you chose, only when you ask for them.
-- The API key and endpoint are stored on the device, apart from training data, and never included in backups. They are
+- The API key and endpoint are stored on the device, apart from training data, and never included in backups (a sync
+  can carry them to your other device, end-to-end encrypted, when you tick *Include AI settings*). They are
   encrypted at rest (AES-GCM, under a key the browser keeps and will not export), so a dump of the site's storage holds
   no key in clear text.
 - `maxgfr.github.io` is shared by every site the author publishes on GitHub Pages. If you rely on Cadence, deploy your

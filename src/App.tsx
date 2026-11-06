@@ -28,6 +28,8 @@ const GenerateExercises = lazyChunk(() =>
   import('./screens/Exercises/GenerateExercises.tsx').then((m) => m.GenerateExercises),
 )
 const Coach = lazyChunk(() => import('./screens/Coach/Coach.tsx').then((m) => m.Coach))
+// Sync carries the WebRTC and QR code libraries: loaded only when opened.
+const Sync = lazyChunk(() => import('./screens/Sync/Sync.tsx').then((m) => m.Sync))
 const AiSettings = lazyChunk(() => import('./screens/Settings/AiSettings.tsx').then((m) => m.AiSettings))
 
 function Routes() {
@@ -58,6 +60,9 @@ function Routes() {
             <Route path="/settings/ai" component={AiSettings} />
             <Route path="/coach" component={Coach} />
             <Route path="/settings/demo" component={Demo} />
+            <Route path="/settings/sync" component={Sync} />
+            {/* The QR code's link: opening it on the other device starts the sync. */}
+            <Route path="/sync" component={Sync} />
             <Route component={NotFound} />
           </Switch>
         </Suspense>

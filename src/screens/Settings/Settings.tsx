@@ -1,9 +1,20 @@
-import { Database, Download, ExternalLink, Info, LayoutTemplate, ShieldCheck, Sparkles, Upload } from 'lucide-react'
+import {
+  Database,
+  Download,
+  ExternalLink,
+  Info,
+  LayoutTemplate,
+  RefreshCw,
+  ShieldCheck,
+  Sparkles,
+  Upload,
+} from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { useAi } from '../../app/ai.tsx'
 import { BUILD } from '../../app/buildInfo.ts'
 import { useData } from '../../app/data.tsx'
 import { useT } from '../../app/i18n.tsx'
+import { lastSynced } from '../../app/sync/lastSync.ts'
 import { useToast } from '../../app/toast.tsx'
 import { LANGUAGE_NAMES, LOCALES } from '../../core/i18n/locale.ts'
 import { BACKUP_VERSION, DEFAULT_SETTINGS, Language } from '../../core/model/schemas.ts'
@@ -156,6 +167,15 @@ export function Settings() {
       </ListGroup>
 
       <ListGroup title={t.settings.yourData} footer={t.settings.yourDataFooter}>
+        <ListRow
+          leading={<RefreshCw size={20} strokeWidth={1.75} />}
+          title={t.sync.row}
+          subtitle={(() => {
+            const last = lastSynced()
+            return last ? t.sync.lastSynced(last.toLocaleString()) : t.sync.rowHint
+          })()}
+          href="/settings/sync"
+        />
         <ListRow
           leading={<Download size={20} strokeWidth={1.75} />}
           title={t.settings.exportBackup}

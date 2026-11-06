@@ -27,7 +27,8 @@ under `/cadence/`, no server.
   `demo-*` ids so it can be removed), never in defaults. Stored data of an older shape is migrated in
   `core/storage/migrate.ts`, both on load and on backup import.
 - AI is optional and never writes data: every AI result is a draft the user edits and saves. Keys and the endpoint live
-  in `llm-connect`'s `sealedStore` (database `cadence-sealed`), encrypted at rest, never in clear text, and never appear in exports. The Anthropic browser header goes to Anthropic's own host only.
+  in `llm-connect`'s `sealedStore` (database `cadence-sealed`), encrypted at rest, never in clear text, and never appear in exports; a sync sends them only when the user ticks it,
+  sealed with the pairing key. The Anthropic browser header goes to Anthropic's own host only.
 - AI and provider SDK code is loaded lazily (AI screens only); keep it out of the main chunk.
 - Models are built through `llm-connect` (`createModel` in `core/ai/client.ts` maps our catalog to its settings);
   errors are read with its `describeError`. Prompts stay in English and end with `languageRule()`, so the model writes
@@ -36,6 +37,9 @@ under `/cadence/`, no server.
   `screens/Coach/apply.ts` after the user confirms. Its conversation lives in memory; voice notes recorded offline wait
   in their own database (`cadence-voice`), never exported. The on-device speech runtime (onnxruntime, in
   `app/transcribe.worker.ts`) is cached on first use, never precached.
+- Sync (`core/sync`): every write is dated (`updatedAt`) and every deletion leaves a tombstone, through `app/data.tsx`;
+  never write around it. The merge is symmetric and deterministic. Erase and import leave no tombstones, so a sync never
+  deletes on the other device what was only reset here. Trystero and the QR code libraries load with the sync screen only.
 - Charts are hand-written SVG (`src/ui/charts`), following the dataviz rules in `DESIGN.md`. No charting library.
 - Visual rules are in `DESIGN.md`, product truth in `PRODUCT.md`. `.impeccable/` is local working output, never committed.
 - Gates are frozen: never skip, weaken or delete a test, no suppression comments.

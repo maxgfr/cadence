@@ -41,7 +41,7 @@ export function useAi(): Ai {
   return a
 }
 
-function parseConfig(raw: string | undefined): AiConfig {
+export function parseConfig(raw: string | undefined): AiConfig {
   if (!raw) return {}
   try {
     const v = JSON.parse(raw) as Record<string, unknown>
