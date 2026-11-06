@@ -97,6 +97,8 @@ const action = (p: Partial<Action>): Action => ({
   week: null,
   goals: null,
   settings: null,
+  discipline: null,
+  restSeconds: null,
   ...p,
 })
 const set = (p: Partial<NonNullable<Action['sets']>[number]>) => ({
@@ -164,7 +166,6 @@ describe('other proposals', () => {
               weightUnit: 'lb',
               distanceUnit: null,
               weekStartsOnMonday: false,
-              restSeconds: 5000,
               language: 'fr',
             },
           }),

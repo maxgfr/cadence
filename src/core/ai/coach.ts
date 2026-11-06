@@ -1,9 +1,10 @@
 import type { ModelMessage, UserContent } from 'ai'
 import { z } from 'zod'
-import { type ExerciseIndex, findExercise } from '../library/exercises.ts'
+import { type ExerciseIndex, findExercise, normalizeName } from '../library/exercises.ts'
 import { newId } from '../model/ids.ts'
 import type { UnitPrefs } from '../model/program.ts'
 import {
+  type Discipline,
   type Exercise,
   type Goal,
   Language,
@@ -47,6 +48,7 @@ export const COACH_ACTIONS = [
   'adjust_week',
   'add_goals',
   'update_settings',
+  'set_rest',
 ] as const
 
 const AiSet = z.object({
@@ -62,7 +64,6 @@ const AiSettingsPatch = z.object({
   weightUnit: z.enum(['kg', 'lb']).nullable(),
   distanceUnit: z.enum(['m', 'yd']).nullable(),
   weekStartsOnMonday: z.boolean().nullable(),
-  restSeconds: z.number().nullable().describe('Default rest timer'),
   language: Language.nullable(),
 })
 
@@ -81,6 +82,8 @@ const AiAction = z.object({
   week: AiWeek.nullable().describe('adjust_week: the new week'),
   goals: z.array(AiGoal).nullable().describe('add_goals: the goals'),
   settings: AiSettingsPatch.nullable().describe('update_settings: only what they asked to change, others null'),
+  discipline: z.string().nullable().describe('set_rest: a discipline by name, for the rest of a whole sport'),
+  restSeconds: z.number().nullable().describe('set_rest: seconds between sets; 0 for no timer'),
 })
 
 export const AiCoachReply = z.object({
@@ -108,6 +111,12 @@ export type CoachProposal = { id: string } & (
     }
   | { kind: 'add_goals'; goals: GoalProposal[] }
   | { kind: 'settings'; patch: Partial<Settings> }
+  | {
+      kind: 'rest'
+      /** The rest is set on this exercise, or on this discipline (all its exercises without their own). */
+      target: { exercise: Exercise } | { discipline: Discipline }
+      seconds: number
+    }
 )
 
 export interface CoachTurn {
@@ -165,8 +174,6 @@ function settingsFromAi(p: z.infer<typeof AiSettingsPatch>): Partial<Settings> {
   if (p.weightUnit) patch.weightUnit = p.weightUnit
   if (p.distanceUnit) patch.distanceUnit = p.distanceUnit
   if (p.weekStartsOnMonday !== null) patch.weekStart = p.weekStartsOnMonday ? 1 : 0
-  const rest = finite(p.restSeconds)
-  if (rest !== undefined && rest >= 0 && rest <= 900) patch.defaultRest = Math.round(rest)
   if (p.language) patch.language = p.language
   return patch
 }
@@ -219,6 +226,17 @@ function proposalOf(a: AiAction, c: CoachContext): CoachProposal | undefined {
       const goals = goalsFromAi({ goals: a.goals }, c.library, c.goals, c.today, c.now)
       return goals.length > 0 ? { id, kind: 'add_goals', goals } : undefined
     }
+    case 'set_rest': {
+      const seconds = finite(a.restSeconds)
+      if (seconds === undefined || seconds < 0 || seconds > 900) return undefined
+      const exercise = a.exercise?.trim() ? findExercise(c.library.exercises, a.exercise.trim()) : undefined
+      if (exercise) return { id, kind: 'rest', target: { exercise }, seconds: Math.round(seconds) }
+      const name = a.discipline?.trim()
+      const discipline = name
+        ? c.library.disciplines.find((d) => normalizeName(d.name) === normalizeName(name) || d.id === name)
+        : undefined
+      return discipline ? { id, kind: 'rest', target: { discipline }, seconds: Math.round(seconds) } : undefined
+    }
     case 'update_settings': {
       if (!a.settings) return undefined
       const patch = settingsFromAi(a.settings)
@@ -254,6 +272,7 @@ metric units (kg, metres, seconds) inside programs.
 - adjust_week: rewrite one week of one of their programs (its id and the week number), only when asked.
 - add_goals: goals, only when asked; targets from their logged bests, metric units.
 - update_settings: only the settings they asked to change.
+- set_rest: the rest between sets of one exercise (exercise) or of a whole sport (discipline), in seconds.
 
 Advice: when asked whether an exercise, a change or a plan is a good idea, give the verdict first (good, adjust it, or \
 avoid it) and the reasons from their program, the day it goes in (muscle balance, volume already planned, overlap with \

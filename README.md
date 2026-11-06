@@ -28,8 +28,8 @@ starting point. AI, to design programs and propose exercises, is optional and us
   3:00"), and a free session per discipline; the next goals. There is no "current" program: switch between programs
   during the week as you like. Starting a session while one is in progress asks whether to save or discard it.
 - **Logging**: one card per exercise, one row per set with large touch targets, values pre-filled from the plan, a
-  tick per set. No clock runs: a rest timer starts only when you tap *Rest* on an exercise (its planned rest, or the
-  length set in Settings; −15 s, +15 s, skip, vibration at the end). Finish with the duration, an effort rating
+  tick per set. No clock runs: a rest timer starts only when you tap *Rest* on an exercise (its planned rest, else the
+  exercise's own, else its sport's, set in the exercise and discipline forms; −15 s, +15 s, skip, vibration at the end). Finish with the duration, an effort rating
   (RPE 1–10) and notes.
 - **Programs**: every program you have, and two ways to write one: *a set of sessions* done in any order, again and
   again (Leg day, Upper body, Bodyweight…), or *a week-by-week plan* that progresses to an end. A full editor

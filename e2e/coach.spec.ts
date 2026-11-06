@@ -33,6 +33,8 @@ const action = (p: Record<string, unknown>) => ({
   week: null,
   goals: null,
   settings: null,
+  discipline: null,
+  restSeconds: null,
   ...p,
 })
 const set = (weight: number, reps: number) => ({ reps, weight, timeSeconds: null, distance: null, rpe: null })

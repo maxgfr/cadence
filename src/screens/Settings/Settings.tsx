@@ -29,10 +29,6 @@ import { Screen } from '../../ui/shell/Screen.tsx'
 import { useModeOptions } from '../Onboarding/Welcome.tsx'
 import styles from './Settings.module.css'
 
-const REST_SECONDS = [30, 45, 60, 90, 120, 150, 180, 240, 300]
-
-const restLabel = (s: number) => (s < 60 ? `${s} s` : `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`)
-
 function usePersisted(): [boolean | undefined, () => Promise<void>] {
   const [persisted, setPersisted] = useState<boolean>()
   useEffect(() => {
@@ -126,16 +122,6 @@ export function Settings() {
               ]}
               value={String(s.weekStart) as '0' | '1'}
               onChange={(v) => data.updateSettings({ weekStart: v === '0' ? 0 : 1 })}
-            />
-            <SelectField
-              label={t.settings.restTimer}
-              value={String(s.defaultRest)}
-              options={[
-                { value: '0', label: t.settings.restWhenPlanned },
-                ...REST_SECONDS.map((sec) => ({ value: String(sec), label: restLabel(sec) })),
-              ]}
-              hint={t.settings.restHint}
-              onChange={(e) => data.updateSettings({ defaultRest: Number(e.target.value) })}
             />
           </div>
           <Segmented

@@ -8,7 +8,7 @@ import { useT } from '../../app/i18n.tsx'
 import { lazyChunk } from '../../app/lazyChunk.tsx'
 import { useToast } from '../../app/toast.tsx'
 import { newId } from '../../core/model/ids.ts'
-import { applyLoggedSets, describeBlock, emptySet } from '../../core/model/program.ts'
+import { applyLoggedSets, describeBlock, emptySet, restFor } from '../../core/model/program.ts'
 import type { Entry, Exercise, Session, SetLog } from '../../core/model/schemas.ts'
 import { formatTime } from '../../core/model/units.ts'
 import { Button } from '../../ui/components/Button.tsx'
@@ -132,7 +132,12 @@ export function Log() {
                     { label: t.log.undo, onClick: () => update(before) },
                   ])
                 }}
-                rest={entry.planned?.rest ?? data.settings.defaultRest}
+                rest={restFor(
+                  entry.planned,
+                  ex,
+                  data.disciplineIndex.get(ex?.disciplineId ?? session.disciplineId ?? ''),
+                  data.settings.defaultRest,
+                )}
                 onRest={(seconds) => rest.start(seconds)}
               />
             </li>

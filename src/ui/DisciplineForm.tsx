@@ -9,6 +9,7 @@ import { Button } from './components/Button.tsx'
 import { ColorDot } from './components/Discipline.tsx'
 import { Field } from './components/Field.tsx'
 import styles from './Forms.module.css'
+import { RestField } from './RestField.tsx'
 
 /** The first colour no discipline uses yet. */
 export function freeColor(disciplines: readonly Discipline[]): DisciplineColor {
@@ -50,6 +51,7 @@ export function DisciplineForm({
   const t = useT()
   const [name, setName] = useState(discipline?.name ?? '')
   const [color, setColor] = useState<DisciplineColor>(discipline?.color ?? freeColor(data.disciplines))
+  const [rest, setRest] = useState<number | undefined>(discipline?.rest)
   const [error, setError] = useState<string>()
   const used = discipline
     ? data.exercises.some((e) => e.disciplineId === discipline.id) ||
@@ -71,7 +73,12 @@ export function DisciplineForm({
           setError(t.forms.discipline.nameTaken)
           return
         }
-        const next: Discipline = { id: discipline?.id ?? newId(), name: n, color }
+        const next: Discipline = {
+          id: discipline?.id ?? newId(),
+          name: n,
+          color,
+          ...(rest !== undefined ? { rest } : {}),
+        }
         await data.put('disciplines', next)
         toast(discipline ? t.forms.discipline.saved : t.forms.discipline.added(n))
         onDone(next)
@@ -86,6 +93,7 @@ export function DisciplineForm({
         {...(error ? { error } : {})}
       />
       <ColorPicker value={color} onChange={setColor} />
+      <RestField value={rest} inherited={data.settings.defaultRest} onChange={setRest} />
       <Button type="submit" variant="primary" size="large" full>
         {discipline ? t.common.save : t.forms.discipline.add}
       </Button>

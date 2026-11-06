@@ -54,13 +54,16 @@ export function useProposalText(p: CoachProposal): { title: string; lines: strin
           goalTitle(g.goal, data.index, units, (id) => (id ? data.disciplineIndex.get(id)?.name : undefined)),
         ),
       }
+    case 'rest': {
+      const name = 'exercise' in p.target ? p.target.exercise.name : p.target.discipline.name
+      return { title: x.restFor(name, p.seconds === 0 ? t.forms.rest.none : formatTime(p.seconds, false)), lines: [] }
+    }
     case 'settings': {
       const s = p.patch
       const parts = [
         s.weightUnit && x.weightUnit(s.weightUnit),
         s.distanceUnit && x.distanceUnit(s.distanceUnit),
         s.weekStart !== undefined && x.weekStart(s.weekStart === 1),
-        s.defaultRest !== undefined && x.rest(formatTime(s.defaultRest, false)),
         s.mode && x.mode(s.mode === 'advanced' ? t.welcome.advancedTitle : t.welcome.normalTitle),
         s.language && x.language(s.language === 'system' ? t.settings.languageSystem : LANGUAGE_NAMES[s.language]),
       ].filter((v): v is string => typeof v === 'string')

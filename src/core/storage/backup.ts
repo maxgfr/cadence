@@ -42,13 +42,21 @@ export function parseBackup(text: string): Backup {
   if (typeof raw !== 'object' || raw === null || (raw as { app?: unknown }).app !== 'cadence')
     throw new BackupError(currentMessages().core.backup.notCadence)
   const version = (raw as { version?: unknown }).version
-  if (version !== BACKUP_VERSION && version !== 5 && version !== 4 && version !== 3 && version !== 2 && version !== 1)
+  if (
+    version !== BACKUP_VERSION &&
+    version !== 6 &&
+    version !== 5 &&
+    version !== 4 &&
+    version !== 3 &&
+    version !== 2 &&
+    version !== 1
+  )
     throw new BackupError(currentMessages().core.backup.version(String(version)))
   // Version 1: fixed disciplines and built-in exercises, read into today's shape.
   // Versions 2 to 4 differ by what they cannot hold (program layouts, the language) and the names of exercise
   // goals; the language they lack reads as the system's.
   // Before version 6, records have no date and nothing deleted was kept: they read as such.
-  if (version === 2 || version === 3 || version === 4 || version === 5)
+  if (version === 2 || version === 3 || version === 4 || version === 5 || version === 6)
     raw = { ...(raw as object), version: BACKUP_VERSION }
   if (version === 1) {
     try {

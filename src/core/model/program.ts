@@ -2,7 +2,18 @@ import { currentMessages } from '../i18n/index.ts'
 import type { ExerciseIndex } from '../library/exercises.ts'
 import { addDays } from './dates.ts'
 import { newId } from './ids.ts'
-import type { Block, Day, Entry, Exercise, Intensity, Program, ProgramRef, Session, SetLog } from './schemas.ts'
+import type {
+  Block,
+  Day,
+  Discipline,
+  Entry,
+  Exercise,
+  Intensity,
+  Program,
+  ProgramRef,
+  Session,
+  SetLog,
+} from './schemas.ts'
 import { type DistanceUnit, formatDistance, formatTime, formatWeight, type WeightUnit } from './units.ts'
 
 export interface UnitPrefs {
@@ -335,4 +346,17 @@ export function applyLoggedSets(session: Session, exerciseId: string, sets: read
   next.push(...sets.slice(i).map((s) => ({ ...s })))
   entries[at] = { ...entry, sets: next }
   return { ...session, entries }
+}
+
+/**
+ * The rest between sets of an exercise: the plan's, else the exercise's, else its discipline's, else the settings'
+ * (what Settings used to set for everything). 0 means no timer.
+ */
+export function restFor(
+  planned: Block | undefined,
+  exercise: Exercise | undefined,
+  discipline: Pick<Discipline, 'rest'> | undefined,
+  fallback: number,
+): number {
+  return planned?.rest ?? exercise?.rest ?? discipline?.rest ?? fallback
 }

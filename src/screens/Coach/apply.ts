@@ -39,6 +39,10 @@ export function useApplyProposal() {
         case 'settings':
           await data.updateSettings(p.patch)
           return
+        case 'rest':
+          if ('exercise' in p.target) await data.put('exercises', { ...p.target.exercise, rest: p.seconds })
+          else await data.put('disciplines', { ...p.target.discipline, rest: p.seconds })
+          return
       }
     },
     [data, setDraft, navigate],
