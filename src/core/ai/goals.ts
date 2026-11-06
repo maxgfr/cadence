@@ -7,7 +7,7 @@ import { measureOf } from '../stats/metrics.ts'
 import { type AthleteLibrary, languageRule, libraryText, type PromptPair } from './program.ts'
 
 /* What a model is asked to return: every field present (nullable rather than optional), bounds applied after. */
-const AiGoal = z.object({
+export const AiGoal = z.object({
   kind: z
     .enum(GOAL_KINDS)
     .describe(

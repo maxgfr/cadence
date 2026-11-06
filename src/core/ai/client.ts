@@ -1,4 +1,4 @@
-import { generateText, type LanguageModel, NoObjectGeneratedError, Output } from 'ai'
+import { generateText, type LanguageModel, type ModelMessage, NoObjectGeneratedError, Output } from 'ai'
 import { describeError, hasProvider, type LlmSettings, loadModel, registerProvider } from 'llm-connect'
 import type { z } from 'zod'
 import { currentMessages } from '../i18n/index.ts'
@@ -77,7 +77,9 @@ export async function createModel(ref: ModelRef): Promise<LanguageModel> {
 
 export interface StructuredRequest<T> {
   system: string
+  /** One message; or a conversation in `messages` (with audio parts), which wins when given. */
   prompt: string
+  messages?: ModelMessage[]
   schema: z.ZodType<T>
   signal?: AbortSignal
 }
@@ -87,7 +89,7 @@ export async function generateStructured<T>(model: LanguageModel, req: Structure
   const res = await generateText({
     model,
     system: req.system,
-    prompt: req.prompt,
+    ...(req.messages ? { messages: req.messages } : { prompt: req.prompt }),
     output: Output.object({ schema: req.schema }),
     abortSignal: req.signal,
   })
