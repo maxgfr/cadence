@@ -1,3 +1,4 @@
+import { currentMessages } from '../i18n/index.ts'
 import type { ExerciseIndex } from '../library/exercises.ts'
 import { addDays } from './dates.ts'
 import { newId } from './ids.ts'
@@ -20,7 +21,7 @@ export function formatIntensity(i: Intensity, units: UnitPrefs): string {
     case 'pace':
       return formatTime(i.value)
     case 'pctmax':
-      return `${i.value}% max`
+      return currentMessages().core.pctMax(String(i.value))
   }
 }
 
@@ -35,7 +36,7 @@ export function describeBlock(block: Block, exercise: Exercise | undefined, unit
     volume = `${block.sets}×${formatDistance(block.distance ?? fixed ?? 0, units.distanceUnit)}`
   } else if (block.reps !== undefined) volume = `${block.sets}×${block.reps}`
   else if (block.duration !== undefined) volume = `${block.sets}×${formatTime(block.duration, false)}`
-  else volume = block.sets === 1 ? '1 rep' : `${block.sets} reps`
+  else volume = currentMessages().core.reps(block.sets)
   if (block.sets === 1 && (block.distance !== undefined || fixed !== undefined))
     volume = formatDistance(block.distance ?? fixed ?? 0, units.distanceUnit)
   const parts = [volume]
@@ -45,8 +46,9 @@ export function describeBlock(block: Block, exercise: Exercise | undefined, unit
       block.interval !== undefined
         ? ` · ${formatIntensity(block.intensity, units)}`
         : ` @${formatIntensity(block.intensity, units)}`
-  if (detail && block.rest !== undefined && block.rest > 0) parts.push(`rest ${formatTime(block.rest, false)}`)
-  if (detail && block.tempo) parts.push(`tempo ${block.tempo}`)
+  if (detail && block.rest !== undefined && block.rest > 0)
+    parts.push(currentMessages().core.rest(formatTime(block.rest, false)))
+  if (detail && block.tempo) parts.push(currentMessages().core.tempo(block.tempo))
   return parts.join(' · ')
 }
 
@@ -173,7 +175,7 @@ export function sessionFromDay(
     planned: block,
     sets: plannedSets(block, exercises.get(block.exerciseId), e1rmOf(block.exerciseId)),
   }))
-  const weekName = program.weeks[ref.week]?.name ?? `Week ${ref.week + 1}`
+  const weekName = program.weeks[ref.week]?.name ?? currentMessages().core.week(ref.week + 1)
   return {
     id: newId(),
     date,
@@ -195,7 +197,7 @@ export function freeSession(
   return {
     id: newId(),
     date,
-    title: discipline ? `${discipline.name} session` : 'Session',
+    title: discipline ? currentMessages().core.disciplineSession(discipline.name) : currentMessages().core.session,
     ...(discipline ? { disciplineId: discipline.id } : {}),
     entries: [],
     status: 'active',

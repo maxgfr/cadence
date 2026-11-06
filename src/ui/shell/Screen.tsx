@@ -2,6 +2,7 @@ import { ChevronLeft } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { useLocation } from 'wouter'
 import { cameFrom, sectionOf } from '../../app/hashLocation.ts'
+import { useT } from '../../app/i18n.tsx'
 import styles from './Screen.module.css'
 
 export interface ScreenProps {
@@ -20,6 +21,7 @@ export interface ScreenProps {
 
 function BackLink({ href, label }: { href: string; label: string }) {
   const [here, navigate] = useLocation()
+  const t = useT()
   const from = cameFrom()
   const tab = sectionOf(here)
   let go: () => void
@@ -27,7 +29,7 @@ function BackLink({ href, label }: { href: string; label: string }) {
   if (from !== undefined) {
     if (sectionOf(from) !== tab || from.split('?')[0] === here) return null
     go = () => history.back()
-    if (from !== href) text = 'Back'
+    if (from !== href) text = t.common.back
   } else {
     if (sectionOf(href) !== tab) return null
     go = () => navigate(href, { replace: true })

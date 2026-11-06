@@ -1,17 +1,7 @@
 import { useData } from '../../app/data.tsx'
+import { useT } from '../../app/i18n.tsx'
 import type { DisciplineColor } from '../../core/model/schemas.ts'
 import styles from './Discipline.module.css'
-
-export const COLOR_LABEL: Record<DisciplineColor, string> = {
-  blue: 'Blue',
-  aqua: 'Aqua',
-  violet: 'Violet',
-  orange: 'Orange',
-  magenta: 'Magenta',
-  green: 'Green',
-  yellow: 'Yellow',
-  red: 'Red',
-}
 
 /** A colour's dot, for pickers. */
 export function ColorDot({ color }: { color: DisciplineColor | undefined }) {
@@ -26,7 +16,8 @@ export function DisciplineDot({ disciplineId }: { disciplineId: string | undefin
 
 export function useDisciplineName(): (id: string | undefined) => string {
   const { disciplineIndex } = useData()
-  return (id) => (id ? (disciplineIndex.get(id)?.name ?? 'Deleted discipline') : 'No discipline')
+  const t = useT()
+  return (id) => (id ? (disciplineIndex.get(id)?.name ?? t.forms.discipline.deletedName) : t.common.noDiscipline)
 }
 
 /** Dot plus name, for lists and chips. */

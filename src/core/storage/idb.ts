@@ -1,5 +1,6 @@
 import { type DBSchema, type IDBPDatabase, openDB } from 'idb'
 import { sealedStore } from 'llm-connect'
+import { currentMessages } from '../i18n/index.ts'
 import type { Discipline, Exercise, Goal, Program, Session, Settings } from '../model/schemas.ts'
 import { dropLegacyKeys, type LegacySealed, openLegacy } from './legacy-secrets.ts'
 import { COLLECTIONS, type Store } from './store.ts'
@@ -93,7 +94,7 @@ export async function idbStore(
     /** Rejects when the value could not be encrypted and stored: it is never written in clear text. */
     async putSecret(key, value) {
       if (value === undefined || value === '') await sealed.delete(key)
-      else if (!(await sealed.set(key, value))) throw new Error('This secret could not be stored on this device.')
+      else if (!(await sealed.set(key, value))) throw new Error(currentMessages().core.secretNotStored)
       await db.delete('secrets', key)
     },
   }

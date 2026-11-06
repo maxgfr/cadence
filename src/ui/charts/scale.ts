@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { formatDecimal } from '../../core/i18n/locale.ts'
 
 /** Round tick values covering [min, max]: 1, 2, 2.5 or 5 × a power of ten. */
 export function niceTicks(min: number, max: number, count = 4): number[] {
@@ -24,12 +25,12 @@ export function linear(d0: number, d1: number, r0: number, r1: number): (v: numb
   return (v) => r0 + ((v - d0) / span) * (r1 - r0)
 }
 
-/** "1.2K", "12K" from 1,000 up. */
+/** "1.2K", "12K" from 1,000 up, with the language's decimal separator ("1,2K"). */
 export function compact(v: number): string {
   const a = Math.abs(v)
-  if (a >= 1_000_000) return `${Math.round(v / 100_000) / 10}M`
-  if (a >= 1000) return `${Math.round(v / 100) / 10}K`
-  return String(Math.round(v * 10) / 10)
+  if (a >= 1_000_000) return `${formatDecimal(Math.round(v / 100_000) / 10, 1)}M`
+  if (a >= 1000) return `${formatDecimal(Math.round(v / 100) / 10, 1)}K`
+  return formatDecimal(Math.round(v * 10) / 10, 1)
 }
 
 /** The width of an element, followed as it resizes. */

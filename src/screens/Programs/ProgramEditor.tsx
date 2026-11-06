@@ -5,6 +5,7 @@ import { useStartSession } from '../../app/actions.ts'
 import { useAi } from '../../app/ai.tsx'
 import { useData } from '../../app/data.tsx'
 import { type ProgramDraft, useDraft } from '../../app/drafts.tsx'
+import { useT } from '../../app/i18n.tsx'
 import { useToast } from '../../app/toast.tsx'
 import { newId } from '../../core/model/ids.ts'
 import { cloneWeek, describeBlock, isSessionSet, nextDay } from '../../core/model/program.ts'
@@ -35,15 +36,17 @@ export function ProgramEditor() {
 /** A program not saved yet (template, AI, blank). */
 export function DraftEditor() {
   const { draft } = useDraft()
+  const t = useT()
   if (!draft) {
+    const m = t.programs.editor
     return (
-      <Screen title="No draft" back={{ href: '/programs', label: 'Programs' }}>
+      <Screen title={m.noDraft} back={{ href: '/programs', label: t.programs.title }}>
         <EmptyState
-          title="Nothing to edit"
-          body="Drafts are kept until you save or leave them; this one is gone."
+          title={m.nothingToEdit}
+          body={m.draftGone}
           action={
             <Link href="/programs" className={buttonClass({ variant: 'primary' })}>
-              Go to Programs
+              {m.goToPrograms}
             </Link>
           }
         />
@@ -53,16 +56,11 @@ export function DraftEditor() {
   return <ProgramForm key={draft.program.id} initial={draft.program} draft={draft} saved={false} />
 }
 
-const ORIGIN_NOTE: Record<ProgramDraft['origin'], string> = {
-  new: 'A blank program: add its sessions or days and their exercises, then save.',
-  template: 'A copy of the template: change anything, then save it to your programs.',
-  ai: 'Written by your AI model. Read it through and change anything before saving: nothing is stored until you do.',
-  adjust: 'Your AI model rewrote one week from what you actually did. Check it, then save to replace the week.',
-}
-
 function ProgramForm({ initial, draft, saved }: { initial: Program; draft?: ProgramDraft; saved: boolean }) {
   const data = useData()
   const ai = useAi()
+  const t = useT()
+  const m = t.programs.editor
   const toast = useToast()
   const units = useUnits()
   const start = useStartSession()
@@ -85,11 +83,13 @@ function ProgramForm({ initial, draft, saved }: { initial: Program; draft?: Prog
   const advanced = data.settings.mode === 'advanced'
   const week = program.weeks[weekIndex] ?? program.weeks[0]
   const set = isSessionSet(program)
-  const unit = set ? 'Session' : 'Day'
+  // A set's items are sessions, a plan's are days.
+  const unitN = set ? t.programs.sessionN : t.programs.dayN
+  const unitLower = set ? m.sessionLower : m.dayLower
   const next = saved ? nextDay(program, data.sessions) : undefined
   // Exercises an AI draft introduced are not in the library until saved.
   const exName = (id: string) =>
-    data.index.get(id)?.name ?? draft?.newExercises.find((e) => e.id === id)?.name ?? 'Unknown exercise'
+    data.index.get(id)?.name ?? draft?.newExercises.find((e) => e.id === id)?.name ?? m.unknownExercise
   const exOf = (id: string) => data.index.get(id) ?? draft?.newExercises.find((e) => e.id === id)
 
   const change = (fn: (p: Program) => Program) => {
@@ -104,7 +104,7 @@ function ProgramForm({ initial, draft, saved }: { initial: Program; draft?: Prog
   async function save() {
     const final = {
       ...program,
-      name: program.name.trim() || 'Program',
+      name: program.name.trim() || t.common.program,
       // A set of sessions is the days of one week.
       weeks: set ? program.weeks.slice(0, 1) : program.weeks,
       updatedAt: new Date().toISOString(),
@@ -123,22 +123,20 @@ function ProgramForm({ initial, draft, saved }: { initial: Program; draft?: Prog
       setDraft(null)
       navigate(`/programs/${final.id}`, { replace: true })
     }
-    toast(saved ? 'Program saved' : `${final.name} saved`)
+    toast(saved ? m.programSaved : m.namedSaved(final.name))
   }
 
   return (
     <Screen
-      title={program.name || 'Program'}
-      subtitle={`${
-        set
-          ? `${program.weeks[0]?.days.length ?? 0} ${program.weeks[0]?.days.length === 1 ? 'session' : 'sessions'}, in any order`
-          : `${program.weeks.length} ${program.weeks.length === 1 ? 'week' : 'weeks'}`
-      }`}
-      back={{ href: '/programs', label: 'Programs' }}
+      title={program.name || t.common.program}
+      subtitle={
+        set ? t.programs.sessionsAnyOrder(program.weeks[0]?.days.length ?? 0) : t.programs.weeks(program.weeks.length)
+      }
+      back={{ href: '/programs', label: t.programs.title }}
     >
       {draft && (
         <div className={styles.notice} role="note">
-          <p>{ORIGIN_NOTE[draft.origin]}</p>
+          <p>{m.origin[draft.origin]}</p>
           {draft.notes.length > 0 && (
             <ul>
               {draft.notes.map((n) => (
@@ -147,32 +145,30 @@ function ProgramForm({ initial, draft, saved }: { initial: Program; draft?: Prog
             </ul>
           )}
           {draft.newExercises.length > 0 && (
-            <p className={styles.muted}>
-              New exercises added to your library on save: {draft.newExercises.map((e) => e.name).join(', ')}.
-            </p>
+            <p className={styles.muted}>{m.newExercisesOnSave(draft.newExercises.map((e) => e.name).join(', '))}</p>
           )}
         </div>
       )}
 
       <div className={styles.meta}>
         <Field
-          label="Name"
+          label={t.common.name}
           value={program.name}
           maxLength={80}
           onChange={(e) => change((p) => ({ ...p, name: e.target.value }))}
         />
         <TextArea
-          label="Goal"
+          label={m.goal}
           rows={2}
           value={program.goal}
           maxLength={300}
           onChange={(e) => change((p) => ({ ...p, goal: e.target.value }))}
         />
         <Segmented
-          label="Structure"
+          label={m.structure}
           options={[
-            { value: 'sessions', label: 'Set of sessions' },
-            { value: 'weeks', label: 'Week by week' },
+            { value: 'sessions', label: m.setOfSessions },
+            { value: 'weeks', label: m.weekByWeek },
           ]}
           value={set ? 'sessions' : 'weeks'}
           onChange={(v) => {
@@ -182,17 +178,15 @@ function ProgramForm({ initial, draft, saved }: { initial: Program; draft?: Prog
         />
         <p className={styles.muted}>
           {set
-            ? `Sessions you do in any order, again and again: Today offers the next one round, and you can pick any other.${
-                program.weeks.length > 1
-                  ? ` Only the days of ${program.weeks[0]?.name || 'week 1'} are kept as sessions when you save.`
-                  : ''
+            ? `${m.sessionsHelp}${
+                program.weeks.length > 1 ? ` ${m.onlyFirstWeekKept(program.weeks[0]?.name || m.firstWeek)}` : ''
               }`
-            : 'Weeks of days followed in order to the end of the program, each week able to progress on the last.'}
+            : m.weeksHelp}
         </p>
       </div>
 
       {!set && (
-        <section aria-label="Weeks">
+        <section aria-label={m.weeksLabel}>
           <ul className={styles.weeks}>
             {program.weeks.map((w, i) => (
               <li key={w.id}>
@@ -202,7 +196,7 @@ function ProgramForm({ initial, draft, saved }: { initial: Program; draft?: Prog
                   aria-pressed={i === weekIndex}
                   onClick={() => setWeekIndex(i)}
                 >
-                  {w.name || `Week ${i + 1}`}
+                  {w.name || t.programs.weekN(i + 1)}
                 </button>
               </li>
             ))}
@@ -217,14 +211,14 @@ function ProgramForm({ initial, draft, saved }: { initial: Program; draft?: Prog
                     weeks: [
                       ...p.weeks,
                       last
-                        ? { ...cloneWeek(last), name: `Week ${p.weeks.length + 1}` }
-                        : { id: newId(), name: `Week ${p.weeks.length + 1}`, days: [] },
+                        ? { ...cloneWeek(last), name: t.programs.weekN(p.weeks.length + 1) }
+                        : { id: newId(), name: t.programs.weekN(p.weeks.length + 1), days: [] },
                     ],
                   }))
                   setWeekIndex(program.weeks.length)
                 }}
               >
-                + Week
+                {m.addWeek}
               </button>
             </li>
           </ul>
@@ -232,11 +226,14 @@ function ProgramForm({ initial, draft, saved }: { initial: Program; draft?: Prog
       )}
 
       {week && (
-        <section aria-label={set ? 'Sessions' : week.name || `Week ${weekIndex + 1}`} className={styles.meta}>
+        <section
+          aria-label={set ? m.sessionsLabel : week.name || t.programs.weekN(weekIndex + 1)}
+          className={styles.meta}
+        >
           {!set && (
             <div className={styles.weekBar}>
               <Field
-                label="Week name"
+                label={m.weekName}
                 value={week.name ?? ''}
                 maxLength={60}
                 onChange={(e) =>
@@ -253,13 +250,16 @@ function ProgramForm({ initial, draft, saved }: { initial: Program; draft?: Prog
                   onClick={() => {
                     change((p) => {
                       const weeks = [...p.weeks]
-                      weeks.splice(weekIndex + 1, 0, { ...cloneWeek(week), name: `${week.name ?? 'Week'} (copy)` })
+                      weeks.splice(weekIndex + 1, 0, {
+                        ...cloneWeek(week),
+                        name: m.copyOf(week.name ?? m.weekFallback),
+                      })
                       return { ...p, weeks }
                     })
                     setWeekIndex(weekIndex + 1)
                   }}
                 >
-                  Duplicate week
+                  {m.duplicateWeek}
                 </Button>
                 {program.weeks.length > 1 && (
                   <Button
@@ -270,7 +270,7 @@ function ProgramForm({ initial, draft, saved }: { initial: Program; draft?: Prog
                       setWeekIndex(Math.max(0, weekIndex - 1))
                     }}
                   >
-                    Delete week
+                    {m.deleteWeek}
                   </Button>
                 )}
                 {saved && ai.ready && (
@@ -279,7 +279,7 @@ function ProgramForm({ initial, draft, saved }: { initial: Program; draft?: Prog
                     className={buttonClass({ variant: 'plain' })}
                   >
                     <Sparkles size={18} strokeWidth={1.75} aria-hidden="true" />
-                    Adjust with AI
+                    {m.adjustWithAi}
                   </Link>
                 )}
               </div>
@@ -291,18 +291,18 @@ function ProgramForm({ initial, draft, saved }: { initial: Program; draft?: Prog
               <li key={day.id} className={styles.day}>
                 <div className={styles.dayFields}>
                   <Field
-                    label={`${unit} ${d + 1}`}
+                    label={unitN(d + 1)}
                     value={day.name}
                     maxLength={60}
                     onChange={(e) => changeDay(d, (x) => ({ ...x, name: e.target.value }))}
                   />
                   <SelectField
-                    label="Discipline"
+                    label={t.common.discipline}
                     value={day.disciplineId ?? ''}
                     options={[
-                      { value: '', label: 'None' },
+                      { value: '', label: m.noDiscipline },
                       ...data.disciplines.map((x) => ({ value: x.id, label: x.name })),
-                      ...(draft?.newDisciplines ?? []).map((x) => ({ value: x.id, label: `${x.name} (new)` })),
+                      ...(draft?.newDisciplines ?? []).map((x) => ({ value: x.id, label: m.newDiscipline(x.name) })),
                     ]}
                     onChange={(e) =>
                       changeDay(d, ({ disciplineId: _old, ...x }) =>
@@ -312,7 +312,7 @@ function ProgramForm({ initial, draft, saved }: { initial: Program; draft?: Prog
                   />
                   <IconButton
                     icon={Trash2}
-                    label={`Delete ${day.name || `${unit.toLowerCase()} ${d + 1}`}`}
+                    label={m.deleteItem(day.name || unitLower(d + 1))}
                     onClick={() => changeWeek((days) => days.filter((_, i) => i !== d))}
                   />
                 </div>
@@ -340,7 +340,7 @@ function ProgramForm({ initial, draft, saved }: { initial: Program; draft?: Prog
                     icon={<Plus size={18} strokeWidth={2} aria-hidden="true" />}
                     onClick={() => setAdding(d)}
                   >
-                    Add exercise
+                    {m.addExercise}
                   </Button>
                   {saved && !dirty && day.blocks.length > 0 && (
                     <Button
@@ -349,8 +349,10 @@ function ProgramForm({ initial, draft, saved }: { initial: Program; draft?: Prog
                       onClick={() => start.fromDay(program, { programId: program.id, week: weekIndex, day: d })}
                     >
                       {next?.week === weekIndex && next.day === d
-                        ? 'Start (next up)'
-                        : `Start this ${unit.toLowerCase()}`}
+                        ? m.startNext
+                        : set
+                          ? m.startThisSession
+                          : m.startThisDay}
                     </Button>
                   )}
                 </div>
@@ -366,14 +368,14 @@ function ProgramForm({ initial, draft, saved }: { initial: Program; draft?: Prog
                 ...days,
                 {
                   id: newId(),
-                  name: `${unit} ${days.length + 1}`,
+                  name: unitN(days.length + 1),
                   ...(days[days.length - 1]?.disciplineId ? { disciplineId: days[days.length - 1]?.disciplineId } : {}),
                   blocks: [],
                 },
               ])
             }
           >
-            Add {unit.toLowerCase()}
+            {set ? m.addSession : m.addDay}
           </Button>
         </section>
       )}
@@ -382,26 +384,26 @@ function ProgramForm({ initial, draft, saved }: { initial: Program; draft?: Prog
         <div className={styles.danger}>
           {confirmDelete ? (
             <>
-              <p>Delete this program? Logged sessions stay in History.</p>
+              <p>{m.confirmDelete}</p>
               <div className={styles.dayActions}>
                 <Button
                   variant="danger"
                   onClick={async () => {
                     await data.remove('programs', program.id)
                     navigate('/programs', { replace: true })
-                    toast('Program deleted', [{ label: 'Undo', onClick: () => data.put('programs', initial) }])
+                    toast(m.programDeleted, [{ label: m.undo, onClick: () => data.put('programs', initial) }])
                   }}
                 >
-                  Delete program
+                  {m.deleteProgram}
                 </Button>
                 <Button variant="plain" onClick={() => setConfirmDelete(false)}>
-                  Keep it
+                  {m.keepIt}
                 </Button>
               </div>
             </>
           ) : (
             <Button variant="plain" onClick={() => setConfirmDelete(true)}>
-              Delete program
+              {m.deleteProgram}
             </Button>
           )}
         </div>
@@ -416,11 +418,11 @@ function ProgramForm({ initial, draft, saved }: { initial: Program; draft?: Prog
               navigate(draft.origin === 'adjust' ? `/programs/${program.id}` : '/programs', { replace: true })
             }}
           >
-            Discard
+            {m.discard}
           </Button>
         )}
         <Button variant="primary" disabled={!dirty} onClick={save}>
-          {dirty ? (draft ? 'Save program' : 'Save changes') : 'Saved'}
+          {dirty ? (draft ? m.saveProgram : m.saveChanges) : m.saved}
         </Button>
       </div>
 

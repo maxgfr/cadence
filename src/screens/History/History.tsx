@@ -2,6 +2,8 @@ import { Download, History as HistoryIcon, Plus, Trophy } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { useStartSession } from '../../app/actions.ts'
 import { useData } from '../../app/data.tsx'
+import { useLocale, useT } from '../../app/i18n.tsx'
+import { LOCALE_TAGS, type Locale } from '../../core/i18n/locale.ts'
 import { formatDay, fromIsoDate } from '../../core/model/dates.ts'
 import { recordHistory } from '../../core/stats/records.ts'
 import { sessionsCsv } from '../../core/storage/backup.ts'
@@ -18,24 +20,17 @@ import { useUnits } from '../../ui/units.ts'
 import styles from './History.module.css'
 import { sessionSummary } from './summary.ts'
 
-const MONTHS = [
-  'January',
-  'February',
-  'March',
-  'April',
-  'May',
-  'June',
-  'July',
-  'August',
-  'September',
-  'October',
-  'November',
-  'December',
-]
+/** "January 2026", "Janvier 2026", "Januar 2026": a month heading. */
+function monthTitle(d: Date, locale: Locale): string {
+  const s = d.toLocaleDateString(LOCALE_TAGS[locale], { month: 'long', year: 'numeric' })
+  return s.charAt(0).toUpperCase() + s.slice(1)
+}
 
 /** Every session, newest first, grouped by month: the History view of Progress. */
 export function HistoryList() {
   const data = useData()
+  const t = useT()
+  const locale = useLocale()
   const units = useUnits()
   const [adding, setAdding] = useState(false)
   const done = useMemo(
@@ -58,13 +53,13 @@ export function HistoryList() {
       const key = s.date.slice(0, 7)
       let g = groups[groups.length - 1]
       if (!g || g.key !== key) {
-        g = { key, title: `${MONTHS[d.getMonth()]} ${d.getFullYear()}`, items: [] }
+        g = { key, title: monthTitle(d, locale), items: [] }
         groups.push(g)
       }
       g.items.push(s)
     }
     return groups
-  }, [done])
+  }, [done, locale])
   const year = new Date().getFullYear()
 
   return (
@@ -75,17 +70,17 @@ export function HistoryList() {
           icon={<Plus size={18} strokeWidth={2} aria-hidden="true" />}
           onClick={() => setAdding(true)}
         >
-          Log a session
+          {t.history.logSession}
         </Button>
       )}
       {done.length === 0 ? (
         <EmptyState
           icon={HistoryIcon}
-          title="No session logged yet"
-          body="Every session you finish lands here, with what was planned next to what you did. Log one done earlier, or start one from Today."
+          title={t.history.emptyTitle}
+          body={t.history.emptyBody}
           action={
             <Button variant="primary" onClick={() => setAdding(true)}>
-              Log a session
+              {t.history.logSession}
             </Button>
           }
         />
@@ -104,7 +99,7 @@ export function HistoryList() {
                     prs > 0 ? (
                       <span className={styles.pr}>
                         <Trophy size={14} strokeWidth={2} aria-hidden="true" />
-                        {prs} {prs === 1 ? 'record' : 'records'}
+                        {t.history.records(prs)}
                       </span>
                     ) : undefined
                   }
@@ -115,7 +110,7 @@ export function HistoryList() {
           </ListGroup>
         ))
       )}
-      <Sheet open={adding} title="Log a session" onClose={() => setAdding(false)}>
+      <Sheet open={adding} title={t.history.logSession} onClose={() => setAdding(false)}>
         {adding && <NewSessionForm />}
       </Sheet>
     </>
@@ -125,6 +120,7 @@ export function HistoryList() {
 /** A session on any day (one done earlier, or today): its sets are logged next, then it is finished as usual. */
 function NewSessionForm() {
   const data = useData()
+  const t = useT()
   const start = useStartSession()
   const [date, setDate] = useState(data.today)
   const [sport, setSport] = useState('')
@@ -136,15 +132,18 @@ function NewSessionForm() {
         start.free(sport || undefined, /^\d{4}-\d{2}-\d{2}$/.test(date) ? date : data.today)
       }}
     >
-      <Field label="Date" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+      <Field label={t.common.date} type="date" value={date} onChange={(e) => setDate(e.target.value)} />
       <SelectField
-        label="Discipline"
+        label={t.common.discipline}
         value={sport}
-        options={[{ value: '', label: 'None' }, ...data.disciplines.map((d) => ({ value: d.id, label: d.name }))]}
+        options={[
+          { value: '', label: t.common.none },
+          ...data.disciplines.map((d) => ({ value: d.id, label: d.name })),
+        ]}
         onChange={(e) => setSport(e.target.value)}
       />
       <Button type="submit" variant="primary" size="large" full>
-        Log its sets
+        {t.history.logItsSets}
       </Button>
     </form>
   )
@@ -153,10 +152,11 @@ function NewSessionForm() {
 /** Downloads every session as CSV (shown with the History view once a session is logged). */
 export function ExportCsvButton() {
   const data = useData()
+  const t = useT()
   return (
     <IconButton
       icon={Download}
-      label="Export sessions as CSV"
+      label={t.history.exportCsv}
       onClick={() =>
         download(
           `cadence-sessions-${data.today}.csv`,

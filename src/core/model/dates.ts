@@ -1,3 +1,5 @@
+import { displayLocale, LOCALE_TAGS } from '../i18n/locale.ts'
+
 /** Calendar-day helpers on `YYYY-MM-DD` strings, in local time. Pure: the clock is always passed in. */
 
 const pad = (n: number) => String(n).padStart(2, '0')
@@ -40,19 +42,45 @@ export function startOfWeek(date: string, weekStart: 0 | 1): string {
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
-/** "Mon 14 Oct" (year added when it is not `currentYear`). */
+const formats = new Map<string, Intl.DateTimeFormat>()
+/** French and German read through `Intl`; English keeps its own short names ("Sep", not "Sept"). */
+function intl(options: Intl.DateTimeFormatOptions, key: string): Intl.DateTimeFormat {
+  const locale = displayLocale()
+  const k = `${locale}:${key}`
+  let f = formats.get(k)
+  if (!f) {
+    f = new Intl.DateTimeFormat(LOCALE_TAGS[locale], options)
+    formats.set(k, f)
+  }
+  return f
+}
+
+/** "Mon 14 Oct", "lun. 14 oct.", "Mo. 14. Okt." (year added when it is not `currentYear`). */
 export function formatDay(date: string, currentYear?: number): string {
   const d = fromIsoDate(date)
+  const withYear = currentYear !== undefined && d.getFullYear() !== currentYear
+  if (displayLocale() !== 'en')
+    return withYear
+      ? intl({ weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }, 'dayYear').format(d)
+      : intl({ weekday: 'short', day: 'numeric', month: 'short' }, 'day').format(d)
   const base = `${WEEKDAYS[d.getDay()]} ${d.getDate()} ${MONTHS[d.getMonth()]}`
-  return currentYear !== undefined && d.getFullYear() !== currentYear ? `${base} ${d.getFullYear()}` : base
+  return withYear ? `${base} ${d.getFullYear()}` : base
 }
 
 /** "14 Oct" — for axis ticks. */
 export function formatShortDay(date: string): string {
   const d = fromIsoDate(date)
+  if (displayLocale() !== 'en') return intl({ day: 'numeric', month: 'short' }, 'short').format(d)
   return `${d.getDate()} ${MONTHS[d.getMonth()]}`
 }
 
+/** A weekday's short name, 0 = Sunday: "Mon", "lun.", "Mo". */
+export function weekdayShort(dow: number): string {
+  if (displayLocale() !== 'en') return intl({ weekday: 'short' }, 'weekday').format(new Date(2024, 0, 7 + dow))
+  return WEEKDAYS[dow] ?? ''
+}
+
 export function monthLabel(date: string): string {
+  if (displayLocale() !== 'en') return intl({ month: 'short' }, 'month').format(fromIsoDate(date))
   return MONTHS[fromIsoDate(date).getMonth()] ?? ''
 }

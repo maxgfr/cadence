@@ -1,13 +1,18 @@
-import { formatDay, fromIsoDate, monthLabel } from '../../core/model/dates.ts'
+import { useT } from '../../app/i18n.tsx'
+import { formatInteger } from '../../core/i18n/locale.ts'
+import { formatDay, fromIsoDate, monthLabel, weekdayShort } from '../../core/model/dates.ts'
 import type { HeatDay } from '../../core/stats/trends.ts'
 import styles from './Chart.module.css'
 import { useWidth } from './scale.ts'
 
 const ROWS = 7
 const GAP = 3
+/** Weekdays named on the left (0 = Sunday): Monday, Wednesday, Friday. */
+const NAMED_DAYS = new Set([1, 3, 5])
 
 /** Training days as a calendar: one column per week, one cell per day, darker for longer days. */
 export function Heatmap({ days, weekStart }: { days: readonly HeatDay[]; weekStart: 0 | 1 }) {
+  const t = useT()
   const [ref, available] = useWidth<HTMLDivElement>()
   const weeks = Math.ceil(days.length / ROWS)
   const left = 28
@@ -16,7 +21,10 @@ export function Heatmap({ days, weekStart }: { days: readonly HeatDay[]; weekSta
   const topPad = 16
   const width = left + weeks * (cell + GAP)
   const height = topPad + ROWS * (cell + GAP)
-  const dayNames = weekStart === 1 ? ['Mon', '', 'Wed', '', 'Fri', '', ''] : ['', 'Mon', '', 'Wed', '', 'Fri', '']
+  const dayNames = Array.from({ length: ROWS }, (_, r) => {
+    const dow = (weekStart + r) % 7
+    return NAMED_DAYS.has(dow) ? weekdayShort(dow) : ''
+  })
   let lastMonth = ''
   const trained = days.filter((d) => d.sessions > 0).length
   return (
@@ -27,7 +35,7 @@ export function Heatmap({ days, weekStart }: { days: readonly HeatDay[]; weekSta
         height={height}
         className={styles.heat}
         role="img"
-        aria-label={`${trained} training days in the last ${weeks} weeks`}
+        aria-label={t.charts.trainingDays(trained, weeks)}
       >
         {dayNames.map((n, r) =>
           n ? (
@@ -58,10 +66,10 @@ export function Heatmap({ days, weekStart }: { days: readonly HeatDay[]; weekSta
                 className={styles[`heat${d.level}`]}
               >
                 <title>
-                  {formatDay(d.date)}:{' '}
-                  {d.sessions === 0
-                    ? 'rest'
-                    : `${d.sessions} ${d.sessions === 1 ? 'session' : 'sessions'}, ${d.minutes} min`}
+                  {t.charts.dayTitle(
+                    formatDay(d.date),
+                    d.sessions === 0 ? t.charts.rest : t.charts.day(d.sessions, formatInteger(d.minutes)),
+                  )}
                 </title>
               </rect>
             </g>
@@ -69,11 +77,11 @@ export function Heatmap({ days, weekStart }: { days: readonly HeatDay[]; weekSta
         })}
       </svg>
       <p className={styles.legend} aria-hidden="true">
-        Rest
+        {t.charts.legendRest}
         {[0, 1, 2, 3, 4].map((l) => (
           <span key={l} className={`${styles.legendCell} ${styles[`heat${l}`]}`} />
         ))}
-        Long day
+        {t.charts.legendLong}
       </p>
     </div>
   )

@@ -2,10 +2,10 @@ import { Eye, EyeOff, RefreshCw } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { z } from 'zod'
 import { useAi } from '../../app/ai.tsx'
+import { useT } from '../../app/i18n.tsx'
 import {
   type Catalog,
   CUSTOM_PROVIDER,
-  CUSTOM_PROVIDER_INFO,
   findProvider,
   loadBundledCatalog,
   refreshCatalog,
@@ -13,6 +13,7 @@ import {
   sortedProviders,
 } from '../../core/ai/catalog.ts'
 import { createModel, describeAiError, generateStructured } from '../../core/ai/client.ts'
+import { formatDecimal } from '../../core/i18n/locale.ts'
 import { Button } from '../../ui/components/Button.tsx'
 import { Field } from '../../ui/components/Field.tsx'
 import { IconButton } from '../../ui/components/IconButton.tsx'
@@ -20,14 +21,13 @@ import { SelectField } from '../../ui/components/SelectField.tsx'
 import { Screen } from '../../ui/shell/Screen.tsx'
 import styles from './Settings.module.css'
 
-/** Keys are only ever stored encrypted: when that fails, nothing is stored. */
-const NOT_STORED =
-  'This device could not store the settings encrypted (its storage may be full or blocked), so nothing was saved.'
+const ENDPOINT_EXAMPLE = 'http://localhost:11434/v1'
 
-const usd = (n: number) => (n >= 1 ? `$${Math.round(n * 100) / 100}` : `$${Math.round(n * 1000) / 1000}`)
+const usd = (n: number) => `$${formatDecimal(n, n >= 1 ? 2 : 3)}`
 
 export function AiSettings() {
   const ai = useAi()
+  const t = useT()
   const [catalog, setCatalog] = useState<Catalog>()
   const [providerId, setProviderId] = useState(ai.config.providerId ?? '')
   const [modelId, setModelId] = useState(ai.config.modelId ?? '')
@@ -57,11 +57,11 @@ export function AiSettings() {
 
   async function save(): Promise<boolean> {
     if (!providerId || !modelId.trim()) {
-      setStatus({ ok: false, text: 'Choose a provider and a model.' })
+      setStatus({ ok: false, text: t.ai.chooseProviderAndModel })
       return false
     }
     if (custom && !/^https?:\/\//.test(baseUrl.trim())) {
-      setStatus({ ok: false, text: 'Enter the endpoint address, such as http://localhost:11434/v1.' })
+      setStatus({ ok: false, text: t.ai.enterEndpoint(ENDPOINT_EXAMPLE) })
       return false
     }
     try {
@@ -70,25 +70,20 @@ export function AiSettings() {
         key,
       )
     } catch {
-      setStatus({ ok: false, text: NOT_STORED })
+      // Keys are only ever stored encrypted: when that fails, nothing is stored.
+      setStatus({ ok: false, text: t.ai.notStored })
       return false
     }
     return true
   }
 
   return (
-    <Screen
-      title="AI"
-      subtitle="Optional. Cadence works fully without it."
-      back={{ href: '/settings', label: 'Settings' }}
-    >
+    <Screen title={t.ai.title} subtitle={t.ai.subtitle} back={{ href: '/settings', label: t.settings.title }}>
       <div className={styles.privacy}>
         <p>
-          <strong>Your model, your key.</strong> AI designs programs, adjusts weeks and proposes exercises; it never
-          saves anything itself, every result is a draft you edit. Requests go straight from this device to the provider
-          you choose, with the training summary shown before you send it.
+          <strong>{t.ai.privacyLead}</strong> {t.ai.privacyBody}
         </p>
-        <p>The key stays in this browser. It is never exported in backups and never sent anywhere but that provider.</p>
+        <p>{t.ai.keyStays}</p>
       </div>
       <form
         className={styles.form}
@@ -96,19 +91,19 @@ export function AiSettings() {
           e.preventDefault()
           setBusy('save')
           setStatus(undefined)
-          if (await save()) setStatus({ ok: true, text: 'Saved.' })
+          if (await save()) setStatus({ ok: true, text: t.ai.saved })
           setBusy(null)
         }}
       >
         <SelectField
-          label="Provider"
+          label={t.ai.provider}
           value={providerId}
           options={[
-            { value: '', label: catalog ? 'Choose a provider' : 'Loading…' },
+            { value: '', label: catalog ? t.ai.chooseProvider : t.common.loading },
             ...providers.map((p) => ({ value: p.id, label: p.name })),
-            { value: CUSTOM_PROVIDER, label: CUSTOM_PROVIDER_INFO.name },
+            { value: CUSTOM_PROVIDER, label: t.ai.customProvider },
           ]}
-          hint={catalog ? `${providers.length} providers reachable from a browser, list from llm-models.` : undefined}
+          hint={catalog ? t.ai.providersHint(providers.length) : undefined}
           onChange={(e) => {
             setProviderId(e.target.value)
             const p = catalog ? findProvider(catalog, e.target.value) : undefined
@@ -119,14 +114,14 @@ export function AiSettings() {
         {custom ? (
           <>
             <Field
-              label="Endpoint address"
-              placeholder="http://localhost:11434/v1"
-              hint="Any OpenAI-compatible server: Ollama, LM Studio, a proxy. Local servers work from a browser on the same computer."
+              label={t.ai.endpoint}
+              placeholder={ENDPOINT_EXAMPLE}
+              hint={t.ai.endpointHint}
               value={baseUrl}
               onChange={(e) => setBaseUrl(e.target.value)}
             />
             <Field
-              label="Model"
+              label={t.ai.model}
               placeholder="llama3.1:8b"
               value={modelId}
               onChange={(e) => setModelId(e.target.value)}
@@ -135,18 +130,18 @@ export function AiSettings() {
         ) : (
           provider && (
             <SelectField
-              label="Model"
+              label={t.ai.model}
               value={modelId}
               options={models.map((m) => ({
                 value: m.id,
-                label: `${m.name}${m.structured ? '' : ' (no structured output)'}`,
+                label: m.structured ? m.name : t.ai.modelNoStructured(m.name),
               }))}
               hint={
                 model
                   ? [
-                      model.structured ? 'Supports structured output' : 'May not return a usable program',
-                      model.cost ? `${usd(model.cost[0])} / ${usd(model.cost[1])} per million tokens in / out` : '',
-                      model.context ? `${Math.round(model.context / 1000)}K context` : '',
+                      model.structured ? t.ai.supportsStructured : t.ai.mayNotReturn,
+                      model.cost ? t.ai.cost(usd(model.cost[0]), usd(model.cost[1])) : '',
+                      model.context ? t.ai.context(formatDecimal(Math.round(model.context / 1000), 0)) : '',
                     ]
                       .filter(Boolean)
                       .join(' · ')
@@ -158,7 +153,7 @@ export function AiSettings() {
         )}
         <div className={styles.keyRow}>
           <Field
-            label={custom ? 'API key (optional)' : 'API key'}
+            label={custom ? t.ai.apiKeyOptional : t.ai.apiKey}
             type={showKey ? 'text' : 'password'}
             autoComplete="off"
             spellCheck={false}
@@ -167,13 +162,13 @@ export function AiSettings() {
           />
           <IconButton
             icon={showKey ? EyeOff : Eye}
-            label={showKey ? 'Hide key' : 'Show key'}
+            label={showKey ? t.ai.hideKey : t.ai.showKey}
             onClick={() => setShowKey(!showKey)}
           />
         </div>
         {provider?.doc && (
           <p className={styles.muted}>
-            Keys and docs:{' '}
+            {t.ai.keysAndDocs}{' '}
             <a href={provider.doc} target="_blank" rel="noreferrer">
               {new URL(provider.doc).host}
             </a>
@@ -186,7 +181,7 @@ export function AiSettings() {
         )}
         <div className={styles.row}>
           <Button type="submit" variant="primary" loading={busy === 'save'}>
-            Save
+            {t.common.save}
           </Button>
           <Button
             variant="secondary"
@@ -197,7 +192,7 @@ export function AiSettings() {
               try {
                 if (!(await save()) || !catalog) return
                 const p = findProvider(catalog, providerId)
-                if (!p) throw new Error('Unknown provider')
+                if (!p) throw new Error(t.ai.unknownProvider)
                 const m = await createModel({
                   provider: p,
                   modelId: modelId.trim(),
@@ -209,11 +204,7 @@ export function AiSettings() {
                   prompt: 'Reply with {"ok": true}.',
                   schema: z.object({ ok: z.boolean() }),
                 })
-                setStatus(
-                  out.ok
-                    ? { ok: true, text: 'The model answered. AI program design is ready.' }
-                    : { ok: false, text: 'The model answered oddly.' },
-                )
+                setStatus(out.ok ? { ok: true, text: t.ai.modelReady } : { ok: false, text: t.ai.modelOdd })
               } catch (err) {
                 setStatus({ ok: false, text: describeAiError(err) })
               } finally {
@@ -221,7 +212,7 @@ export function AiSettings() {
               }
             }}
           >
-            Save and test
+            {t.ai.saveAndTest}
           </Button>
           {catalog && (
             <Button
@@ -232,7 +223,7 @@ export function AiSettings() {
                 setBusy('refresh')
                 try {
                   setCatalog(await refreshCatalog(catalog))
-                  setStatus({ ok: true, text: 'Model lists refreshed.' })
+                  setStatus({ ok: true, text: t.ai.modelsRefreshed })
                 } catch (err) {
                   setStatus({ ok: false, text: describeAiError(err) })
                 } finally {
@@ -240,7 +231,7 @@ export function AiSettings() {
                 }
               }}
             >
-              Refresh models
+              {t.ai.refreshModels}
             </Button>
           )}
         </div>
@@ -251,14 +242,14 @@ export function AiSettings() {
               try {
                 await ai.save({}, '')
               } catch {
-                setStatus({ ok: false, text: 'The key could not be deleted from this device. Try again.' })
+                setStatus({ ok: false, text: t.ai.keyNotDeleted })
                 return
               }
               setKey('')
-              setStatus({ ok: true, text: 'AI turned off and the key deleted from this device.' })
+              setStatus({ ok: true, text: t.ai.turnedOff })
             }}
           >
-            Turn AI off and delete the key
+            {t.ai.turnOff}
           </Button>
         )}
       </form>

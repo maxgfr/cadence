@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useT } from '../../app/i18n.tsx'
 import { daysBetween, formatShortDay } from '../../core/model/dates.ts'
 import styles from './Chart.module.css'
 import { linear, niceTicks, useWidth } from './scale.ts'
@@ -25,6 +26,7 @@ const PAD = { top: 16, right: 16, bottom: 28, left: 52 }
 
 /** One series over time: 2px line, ringed markers, records filled larger, a crosshair tooltip on hover (the values are also in each chart's table view). */
 export function LineChart({ label, points, format, target, projection, height = 220 }: LineChartProps) {
+  const t = useT()
   const [ref, width] = useWidth<HTMLDivElement>()
   const [active, setActive] = useState<number | null>(null)
   if (points.length === 0) return null
@@ -68,16 +70,16 @@ export function LineChart({ label, points, format, target, projection, height = 
           width={w}
           height={height}
           role="img"
-          aria-label={`${label}: ${points.length} values from ${format(points[0]?.value ?? 0)} to ${format(last?.value ?? 0)}`}
+          aria-label={t.charts.lineLabel(label, points.length, format(points[0]?.value ?? 0), format(last?.value ?? 0))}
           className={styles.svg}
           onPointerMove={(e) => setActive(hit(e.clientX, e.currentTarget.getBoundingClientRect()))}
           onPointerLeave={() => setActive(null)}
         >
-          {ticks.map((t) => (
-            <g key={t}>
-              <line x1={PAD.left} x2={w - PAD.right} y1={y(t)} y2={y(t)} className={styles.grid} />
-              <text x={PAD.left - 8} y={y(t)} className={styles.tick} textAnchor="end" dominantBaseline="middle">
-                {format(t)}
+          {ticks.map((tick) => (
+            <g key={tick}>
+              <line x1={PAD.left} x2={w - PAD.right} y1={y(tick)} y2={y(tick)} className={styles.grid} />
+              <text x={PAD.left - 8} y={y(tick)} className={styles.tick} textAnchor="end" dominantBaseline="middle">
+                {format(tick)}
               </text>
             </g>
           ))}
@@ -148,7 +150,7 @@ export function LineChart({ label, points, format, target, projection, height = 
           <span className={styles.tooltipValue}>{format(a.value)}</span>
           <span className={styles.tooltipLabel}>
             {formatShortDay(a.date)}
-            {a.record ? ' · record' : ''}
+            {a.record ? ` · ${t.charts.record}` : ''}
           </span>
         </div>
       )}

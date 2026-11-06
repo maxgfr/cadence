@@ -2,23 +2,25 @@ import { CalendarCheck, ClipboardList, Dumbbell, type LucideIcon, Settings, Tren
 import type { ReactNode } from 'react'
 import { Link, useLocation } from 'wouter'
 import { sectionOf } from '../../app/hashLocation.ts'
+import { useT } from '../../app/i18n.tsx'
+import type { Messages } from '../../core/i18n/index.ts'
 import { cx } from '../cx.ts'
 import styles from './Shell.module.css'
 
 interface Destination {
   href: string
-  label: string
+  label: keyof Messages['shell']['nav']
   icon: LucideIcon
   /** Shown in the sidebar only (phones reach it from Settings). */
   sidebarOnly?: boolean
 }
 
 const DESTINATIONS: readonly Destination[] = [
-  { href: '/', label: 'Today', icon: CalendarCheck },
-  { href: '/programs', label: 'Programs', icon: ClipboardList },
-  { href: '/progress', label: 'Progress', icon: TrendingUp },
-  { href: '/exercises', label: 'Exercises', icon: Dumbbell },
-  { href: '/settings', label: 'Settings', icon: Settings },
+  { href: '/', label: 'today', icon: CalendarCheck },
+  { href: '/programs', label: 'programs', icon: ClipboardList },
+  { href: '/progress', label: 'progress', icon: TrendingUp },
+  { href: '/exercises', label: 'exercises', icon: Dumbbell },
+  { href: '/settings', label: 'settings', icon: Settings },
 ]
 
 /** Routes that take the whole screen: logging a session. */
@@ -28,16 +30,17 @@ export function isFocusRoute(path: string): boolean {
 
 export function Shell({ children }: { children: ReactNode }) {
   const [location] = useLocation()
+  const t = useT()
   const focus = isFocusRoute(location)
   const current = sectionOf(location)
   return (
     <div className={cx(styles.shell, focus && styles.focus)}>
       <a className={styles.skip} href="#main">
-        Skip to content
+        {t.shell.skipToContent}
       </a>
       {!focus && (
-        <nav className={styles.nav} aria-label="Main">
-          <span className={styles.brand}>Cadence</span>
+        <nav className={styles.nav} aria-label={t.shell.mainNav}>
+          <span className={styles.brand}>{t.common.appName}</span>
           <ul className={styles.tabs}>
             {DESTINATIONS.map((d) => {
               const here = current === d.href
@@ -49,7 +52,7 @@ export function Shell({ children }: { children: ReactNode }) {
                     aria-current={here ? (location === d.href ? 'page' : 'true') : undefined}
                   >
                     <d.icon className={styles.tabIcon} size={20} strokeWidth={here ? 2.25 : 1.75} aria-hidden="true" />
-                    <span>{d.label}</span>
+                    <span>{t.shell.nav[d.label]}</span>
                   </Link>
                 </li>
               )

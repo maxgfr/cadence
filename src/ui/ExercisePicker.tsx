@@ -1,6 +1,7 @@
 import { Plus, Search } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { useData } from '../app/data.tsx'
+import { useT } from '../app/i18n.tsx'
 import type { Exercise } from '../core/model/schemas.ts'
 import { Button } from './components/Button.tsx'
 import { DisciplineDot } from './components/Discipline.tsx'
@@ -18,8 +19,9 @@ export interface ExercisePickerProps {
 }
 
 /** Search your exercises and pick one, or create it on the spot (it is then picked). */
-export function ExercisePicker({ open, onClose, onPick, disciplineId, title = 'Add exercise' }: ExercisePickerProps) {
+export function ExercisePicker({ open, onClose, onPick, disciplineId, title }: ExercisePickerProps) {
   const { exercises, disciplines } = useData()
+  const t = useT()
   const [query, setQuery] = useState('')
   const [creating, setCreating] = useState(false)
   const groups = useMemo(() => {
@@ -30,7 +32,7 @@ export function ExercisePicker({ open, onClose, onPick, disciplineId, title = 'A
       ...disciplines.filter((d) => d.id === disciplineId),
       ...disciplines.filter((d) => d.id !== disciplineId),
     ].map((d) => ({ id: d.id as string | undefined, name: d.name }))
-    order.push({ id: undefined, name: 'No discipline' })
+    order.push({ id: undefined, name: t.common.noDiscipline })
     return order
       .map((g) => ({
         ...g,
@@ -39,7 +41,7 @@ export function ExercisePicker({ open, onClose, onPick, disciplineId, title = 'A
         ),
       }))
       .filter((g) => g.items.length > 0)
-  }, [exercises, disciplines, query, disciplineId])
+  }, [exercises, disciplines, query, disciplineId, t])
 
   const close = () => {
     setQuery('')
@@ -48,7 +50,7 @@ export function ExercisePicker({ open, onClose, onPick, disciplineId, title = 'A
   }
 
   return (
-    <Sheet open={open} title={creating ? 'New exercise' : title} onClose={close}>
+    <Sheet open={open} title={creating ? t.forms.picker.newExercise : (title ?? t.forms.picker.title)} onClose={close}>
       {creating ? (
         <ExerciseForm
           exercise={null}
@@ -66,8 +68,8 @@ export function ExercisePicker({ open, onClose, onPick, disciplineId, title = 'A
             <Search size={18} strokeWidth={1.75} aria-hidden="true" />
             <input
               type="search"
-              aria-label="Search exercises"
-              placeholder="Search exercises"
+              aria-label={t.forms.picker.search}
+              placeholder={t.forms.picker.search}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               className={styles.input}
@@ -80,16 +82,12 @@ export function ExercisePicker({ open, onClose, onPick, disciplineId, title = 'A
             icon={<Plus size={18} strokeWidth={2} aria-hidden="true" />}
             onClick={() => setCreating(true)}
           >
-            {query.trim() ? `Create “${query.trim()}”` : 'Create an exercise'}
+            {query.trim() ? t.forms.picker.createNamed(query.trim()) : t.forms.picker.create}
           </Button>
           <div className={styles.results}>
-            {exercises.length === 0 && (
-              <p className={styles.none}>
-                Your library is empty: create your first exercise, or load the demo from Settings.
-              </p>
-            )}
+            {exercises.length === 0 && <p className={styles.none}>{t.forms.picker.libraryEmpty}</p>}
             {exercises.length > 0 && groups.length === 0 && (
-              <p className={styles.none}>No exercise matches “{query.trim()}”.</p>
+              <p className={styles.none}>{t.forms.picker.noMatch(query.trim())}</p>
             )}
             {groups.map((g) => (
               <section key={g.id ?? 'none'} aria-label={g.name}>

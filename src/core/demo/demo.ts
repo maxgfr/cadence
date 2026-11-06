@@ -1,6 +1,13 @@
 import { addDays } from '../model/dates.ts'
 import type { Discipline, Exercise, Goal, Program, Session, SetLog } from '../model/schemas.ts'
-import { DEMO_DISCIPLINES, DEMO_EXERCISE_IDS, DEMO_EXERCISES, type DemoSport, demoExercise } from './catalog.ts'
+import {
+  DEMO_DISCIPLINES,
+  DEMO_EXERCISE_IDS,
+  DEMO_EXERCISES,
+  type DemoSport,
+  demoExercise,
+  demoText,
+} from './catalog.ts'
 import { instantiate, TEMPLATES } from './programs.ts'
 
 export interface DemoData {
@@ -25,6 +32,7 @@ const wobble = (n: number) => Math.sin(n * 12.9898) * 0.5
 /**
  * The demo for the chosen sports: their disciplines, exercises and programs, and optionally example sessions and
  * goals. An exercise a chosen program needs from a sport not chosen comes along, in the program's own discipline.
+ * Everything is written in the displayed language.
  */
 export function buildDemo({ sports, withSessions, today, now = new Date() }: DemoOptions): DemoData {
   const chosen = new Set(sports)
@@ -47,6 +55,7 @@ export function buildDemo({ sports, withSessions, today, now = new Date() }: Dem
 }
 
 function addHistory(data: DemoData, sports: ReadonlySet<DemoSport>, today: string, now: Date): void {
+  const { days } = demoText()
   const done = (p: Omit<SetLog, 'done'>): SetLog => ({ ...p, done: true })
   const session = (
     id: string,
@@ -64,7 +73,7 @@ function addHistory(data: DemoData, sports: ReadonlySet<DemoSport>, today: strin
       session(
         `demo-session-gym-${w}`,
         monday,
-        'Full body A',
+        days.fullBodyA,
         'gym',
         [
           {
@@ -90,7 +99,7 @@ function addHistory(data: DemoData, sports: ReadonlySet<DemoSport>, today: strin
       session(
         `demo-session-swim-${w}`,
         addDays(monday, 2),
-        'Aerobic base',
+        days.aerobicBase,
         'swim',
         [
           {
@@ -118,7 +127,7 @@ function addHistory(data: DemoData, sports: ReadonlySet<DemoSport>, today: strin
       session(
         `demo-session-track-${w}`,
         addDays(monday, 4),
-        'Max velocity',
+        days.maxVelocity,
         'track',
         [
           {

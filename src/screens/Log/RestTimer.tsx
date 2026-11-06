@@ -1,5 +1,6 @@
 import { Minus, Plus, X } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useT } from '../../app/i18n.tsx'
 import { formatTime } from '../../core/model/units.ts'
 import styles from './Log.module.css'
 
@@ -30,12 +31,13 @@ export function useRestTimer(): RestTimerState {
 
 /** The rest between sets: a bar pinned to the bottom, counting down, with a buzz when it ends. */
 export function RestTimer({ timer }: { timer: RestTimerState }) {
+  const t = useT()
   const [, tick] = useState(0)
   const buzzed = useRef<number | null>(null)
   useEffect(() => {
     if (timer.endsAt === null) return
-    const t = setInterval(() => tick((n) => n + 1), 250)
-    return () => clearInterval(t)
+    const id = setInterval(() => tick((n) => n + 1), 250)
+    return () => clearInterval(id)
   }, [timer.endsAt])
   // Read at render: a rest started a moment ago shows its full length at once.
   const now = Date.now()
@@ -44,30 +46,40 @@ export function RestTimer({ timer }: { timer: RestTimerState }) {
     if (timer.endsAt !== null && left === 0 && buzzed.current !== timer.endsAt) {
       buzzed.current = timer.endsAt
       navigator.vibrate?.([200, 100, 200])
-      const t = setTimeout(timer.stop, 4000)
-      return () => clearTimeout(t)
+      const id = setTimeout(timer.stop, 4000)
+      return () => clearTimeout(id)
     }
   }, [left, timer.endsAt, timer.stop])
   if (timer.endsAt === null) return null
   const fraction = timer.total > 0 ? left / timer.total : 0
   return (
-    <section className={styles.rest} aria-label="Rest timer">
+    <section className={styles.rest} aria-label={t.log.restTimer}>
       <div className={styles.restBar} style={{ transform: `scaleX(${fraction})` }} aria-hidden="true" />
       <p className={styles.restText} role="timer" aria-live={left === 0 ? 'assertive' : 'off'}>
-        {left === 0 ? 'Rest over, go' : <>Rest {formatTime(left, false)}</>}
+        {left === 0 ? t.log.restOver : t.log.rest(formatTime(left, false))}
       </p>
       <div className={styles.restActions}>
-        <button type="button" className={styles.restButton} onClick={() => timer.add(-15)} aria-label="15 seconds less">
+        <button
+          type="button"
+          className={styles.restButton}
+          onClick={() => timer.add(-15)}
+          aria-label={t.log.secondsLess(15)}
+        >
           <Minus size={18} strokeWidth={2} aria-hidden="true" />
           15
         </button>
-        <button type="button" className={styles.restButton} onClick={() => timer.add(15)} aria-label="15 seconds more">
+        <button
+          type="button"
+          className={styles.restButton}
+          onClick={() => timer.add(15)}
+          aria-label={t.log.secondsMore(15)}
+        >
           <Plus size={18} strokeWidth={2} aria-hidden="true" />
           15
         </button>
-        <button type="button" className={styles.restButton} onClick={timer.stop} aria-label="Skip rest">
+        <button type="button" className={styles.restButton} onClick={timer.stop} aria-label={t.log.skipRest}>
           <X size={18} strokeWidth={2} aria-hidden="true" />
-          Skip
+          {t.log.skip}
         </button>
       </div>
     </section>

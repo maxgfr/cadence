@@ -14,7 +14,12 @@ under `/cadence/`, no server.
 ## Rules
 
 - `src/core/**` is pure TypeScript: no React, no DOM. Tested with `bun test`; the UI is tested with Playwright.
-- The UI is in English only. Every stored value is metric (kg, m, s); units are a display concern (`core/model/units.ts`).
+- The UI is in English, French and German. Every visible string comes from `src/core/i18n/messages` (one namespace per
+  file, `namespace(en, fr, de)`): English is the source, French and German must be complete (the type check and
+  `i18n.test.ts` fail otherwise). Components read them with `useT()`; core code with `currentMessages()`. Numbers and
+  dates go through `core/model/units.ts`, `core/model/dates.ts` and `core/i18n/locale.ts`, never `toFixed` or
+  `toLocaleString` in a component.
+- Every stored value is metric (kg, m, s); units are a display concern (`core/model/units.ts`).
 - Data shapes live in `src/core/model/schemas.ts` (zod). A change to a stored shape needs a new `BACKUP_VERSION` and a
   migration; never change what an existing backup means.
 - Normal and Advanced modes only show or hide fields: the data model is the same, and switching never drops data.

@@ -1,4 +1,6 @@
 import { Check } from 'lucide-react'
+import { useT } from '../../app/i18n.tsx'
+import { currentMessages, decimalSeparator, formatDecimal } from '../../core/i18n/index.ts'
 import type { UnitPrefs } from '../../core/model/program.ts'
 import type { Block, Exercise, SetLog } from '../../core/model/schemas.ts'
 import {
@@ -38,25 +40,27 @@ export function setColumns(exercise: Exercise | undefined, advanced: boolean): C
   return {
     fields,
     template: `2rem ${fields.map((f) => (f === 'rpe' ? 'minmax(3.5rem, 0.7fr)' : 'minmax(4rem, 1fr)')).join(' ')} var(--hit-large)`,
-    label: (f, units) =>
-      ({
+    label: (f, units) => {
+      const col = currentMessages().log.column
+      return {
         weight: units.weightUnit,
-        reps: 'Reps',
-        distance: units.distanceUnit === 'm' ? 'Metres' : 'Yards',
-        time: 'Time',
-        rpe: 'RPE',
-      })[f],
+        reps: col.reps,
+        distance: units.distanceUnit === 'm' ? col.metres : col.yards,
+        time: col.time,
+        rpe: col.rpe,
+      }[f]
+    },
   }
 }
 
-const trimNum = (v: number, digits = 1) => String(Math.round(v * 10 ** digits) / 10 ** digits)
-/** Seconds as typed back: "7.12", "1:05.3", "12:30". */
+const trimNum = (v: number, digits = 1) => formatDecimal(v, digits)
+/** Seconds as typed back: "7.12", "1:05.3", "12:30" (decimal comma in French and German). */
 const clock = (v: number) => {
   if (v < 60) return trimNum(v, 2)
   const h = Math.floor(v / 3600)
   const m = Math.floor((v % 3600) / 60)
   const s = v % 60
-  const ss = s % 1 === 0 ? String(s).padStart(2, '0') : s.toFixed(1).padStart(4, '0')
+  const ss = s % 1 === 0 ? String(s).padStart(2, '0') : s.toFixed(1).padStart(4, '0').replace('.', decimalSeparator())
   return h > 0 ? `${h}:${String(m).padStart(2, '0')}:${ss}` : `${m}:${ss}`
 }
 
@@ -71,9 +75,10 @@ interface SetRowProps {
 
 export function SetRow({ index, set, exercise, columns, planned, onChange }: SetRowProps) {
   const units = useUnits()
-  const name = exercise?.name ?? 'Exercise'
+  const t = useT()
+  const name = exercise?.name ?? t.common.exercise
   const field = (f: SetField) => {
-    const label = `${name}, set ${index + 1}, ${columns.label(f, units)}`
+    const label = t.log.setField(name, index + 1, columns.label(f, units))
     const common = { className: styles.cell, 'aria-label': label }
     switch (f) {
       case 'weight':
@@ -143,7 +148,7 @@ export function SetRow({ index, set, exercise, columns, planned, onChange }: Set
           type="button"
           className={styles.tick}
           aria-pressed={set.done}
-          aria-label={`${name}, set ${index + 1} done`}
+          aria-label={t.log.setDone(name, index + 1)}
           onClick={() => onChange({ ...set, done: !set.done })}
         >
           <Check size={22} strokeWidth={2.5} aria-hidden="true" />

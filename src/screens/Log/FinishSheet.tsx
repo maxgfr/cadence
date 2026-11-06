@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useT } from '../../app/i18n.tsx'
 import type { Session } from '../../core/model/schemas.ts'
 import { Button } from '../../ui/components/Button.tsx'
 import { Field } from '../../ui/components/Field.tsx'
@@ -6,16 +7,6 @@ import { Sheet } from '../../ui/components/Sheet.tsx'
 import { TextArea } from '../../ui/components/TextArea.tsx'
 import { cx } from '../../ui/cx.ts'
 import styles from './Log.module.css'
-
-const RPE_HINT: Record<number, string> = {
-  1: 'Very easy',
-  3: 'Easy',
-  5: 'Moderate',
-  7: 'Hard',
-  8: 'Very hard',
-  9: 'Near max',
-  10: 'Max effort',
-}
 
 interface FinishSheetProps {
   open: boolean
@@ -28,6 +19,8 @@ interface FinishSheetProps {
 
 /** End of session: how long, how hard, anything to remember. */
 export function FinishSheet({ open, session, elapsedMinutes, onClose, onSave, onDiscard }: FinishSheetProps) {
+  const t = useT()
+  const hints: Readonly<Record<number, string>> = t.log.rpeHint
   const [duration, setDuration] = useState('')
   const [rpe, setRpe] = useState<number | undefined>(session.rpe)
   const [notes, setNotes] = useState(session.notes ?? '')
@@ -46,7 +39,7 @@ export function FinishSheet({ open, session, elapsedMinutes, onClose, onSave, on
   const minutes = Number.parseInt(duration, 10)
 
   return (
-    <Sheet open={open} title="Finish session" onClose={onClose}>
+    <Sheet open={open} title={t.log.finishTitle} onClose={onClose}>
       <form
         className={styles.finish}
         onSubmit={async (e) => {
@@ -63,22 +56,18 @@ export function FinishSheet({ open, session, elapsedMinutes, onClose, onSave, on
           }
         }}
       >
-        <p className={styles.finishSummary}>
-          {doneSets === 0
-            ? 'No set is ticked yet: only ticked sets count in your stats.'
-            : `${doneSets} ${doneSets === 1 ? 'set' : 'sets'} done.`}
-        </p>
+        <p className={styles.finishSummary}>{doneSets === 0 ? t.log.noneTicked : t.log.setsDone(doneSets)}</p>
         <Field
-          label="Duration (minutes)"
+          label={t.common.durationMinutes}
           inputMode="numeric"
           value={duration}
           onChange={(e) => setDuration(e.target.value.replace(/[^\d]/g, ''))}
         />
         <fieldset className={styles.rpe}>
           <legend className={styles.rpeLegend}>
-            How hard was it?{' '}
+            {t.log.howHard}{' '}
             <span className={styles.rpeValue}>
-              {rpe ? `RPE ${rpe} · ${RPE_HINT[rpe] ?? RPE_HINT[rpe - 1] ?? ''}` : 'Optional'}
+              {rpe ? t.log.rpeValue(rpe, hints[rpe] ?? hints[rpe - 1] ?? '') : t.log.optional}
             </span>
           </legend>
           <div className={styles.rpeScale}>
@@ -88,7 +77,7 @@ export function FinishSheet({ open, session, elapsedMinutes, onClose, onSave, on
                 type="button"
                 className={cx(styles.rpeButton, rpe === v && styles.rpeOn)}
                 aria-pressed={rpe === v}
-                aria-label={`RPE ${v}${RPE_HINT[v] ? `, ${RPE_HINT[v]}` : ''}`}
+                aria-label={t.log.rpeOption(v, hints[v] ?? '')}
                 onClick={() => setRpe(rpe === v ? undefined : v)}
               >
                 {v}
@@ -96,23 +85,29 @@ export function FinishSheet({ open, session, elapsedMinutes, onClose, onSave, on
             ))}
           </div>
         </fieldset>
-        <TextArea label="Notes" value={notes} onChange={(e) => setNotes(e.target.value)} maxLength={1000} rows={3} />
+        <TextArea
+          label={t.common.notes}
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+          maxLength={1000}
+          rows={3}
+        />
         <Button type="submit" variant="primary" size="large" full loading={busy}>
-          Save session
+          {t.log.saveSession}
         </Button>
         {confirmDiscard ? (
           <div className={styles.discard}>
-            <p>Delete this session and everything logged in it?</p>
+            <p>{t.log.confirmDelete}</p>
             <Button variant="danger" onClick={onDiscard}>
-              Delete session
+              {t.log.deleteSession}
             </Button>
             <Button variant="plain" onClick={() => setConfirmDiscard(false)}>
-              Keep it
+              {t.log.keepIt}
             </Button>
           </div>
         ) : (
           <Button variant="plain" full onClick={() => setConfirmDiscard(true)}>
-            Discard session
+            {t.log.discardSession}
           </Button>
         )}
       </form>

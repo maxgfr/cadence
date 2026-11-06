@@ -1,3 +1,4 @@
+import { currentMessages } from '../../core/i18n/index.ts'
 import type { ExerciseIndex } from '../../core/library/exercises.ts'
 import type { UnitPrefs } from '../../core/model/program.ts'
 import type { Session } from '../../core/model/schemas.ts'
@@ -6,6 +7,7 @@ import { doneSets } from '../../core/stats/metrics.ts'
 
 /** "12 sets · 4.2 t · 45 min": what a session amounted to, in one line. */
 export function sessionSummary(s: Session, index: ExerciseIndex, units: UnitPrefs): string {
+  const t = currentMessages().history
   let sets = 0
   let tonnage = 0
   let meters = 0
@@ -18,10 +20,10 @@ export function sessionSummary(s: Session, index: ExerciseIndex, units: UnitPref
       if (ex?.metric === 'distance_time') meters += set.distance ?? ex.distance ?? 0
     }
   }
-  const parts = [`${sets}${NBSP}${sets === 1 ? 'set' : 'sets'}`]
+  const parts = [t.summarySets(sets)]
   if (tonnage > 0) parts.push(formatTonnage(tonnage, units.weightUnit))
   if (meters > 0) parts.push(formatDistance(meters, units.distanceUnit))
-  if (s.duration) parts.push(`${s.duration}${NBSP}min`)
+  if (s.duration) parts.push(t.summaryMinutes(s.duration))
   if (s.rpe) parts.push(`RPE${NBSP}${s.rpe}`)
   return parts.join(' · ')
 }

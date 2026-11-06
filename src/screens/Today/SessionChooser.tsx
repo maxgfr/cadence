@@ -1,4 +1,5 @@
 import { useData } from '../../app/data.tsx'
+import { useT } from '../../app/i18n.tsx'
 import { startOfWeek } from '../../core/model/dates.ts'
 import { choosableDays, dayAt, isSessionSet, nextDay, programsUnderWay } from '../../core/model/program.ts'
 import type { Program, ProgramRef } from '../../core/model/schemas.ts'
@@ -36,6 +37,7 @@ export function SessionList({
   onPick: (program: Program, ref: ProgramRef) => void
 }) {
   const groups = useChoosableSessions()
+  const t = useT()
   return groups.map(({ program, refs, next }) => (
     <ListGroup key={program.id} title={program.name}>
       {refs.map((ref) => {
@@ -47,9 +49,9 @@ export function SessionList({
             leading={<DisciplineDot disciplineId={day.disciplineId} />}
             title={day.name}
             subtitle={[
-              isSessionSet(program) ? '' : (program.weeks[ref.week]?.name ?? `Week ${ref.week + 1}`),
-              `${day.blocks.length} ${day.blocks.length === 1 ? 'exercise' : 'exercises'}`,
-              sameRef(activeRef, ref) ? 'in progress' : sameRef(next, ref) ? 'next up' : '',
+              isSessionSet(program) ? '' : (program.weeks[ref.week]?.name ?? t.today.week(ref.week + 1)),
+              t.today.exercises(day.blocks.length),
+              sameRef(activeRef, ref) ? t.today.inProgressLower : sameRef(next, ref) ? t.today.nextUp : '',
             ]
               .filter(Boolean)
               .join(' · ')}

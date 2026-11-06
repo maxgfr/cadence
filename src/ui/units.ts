@@ -1,4 +1,5 @@
 import { useData } from '../app/data.tsx'
+import { currentMessages } from '../core/i18n/index.ts'
 import type { UnitPrefs } from '../core/model/program.ts'
 import type { Exercise } from '../core/model/schemas.ts'
 import { formatPace100, formatTime, formatWeight, NBSP } from '../core/model/units.ts'
@@ -15,7 +16,7 @@ export function formatMeasure(kind: MeasureKind, value: number, units: UnitPrefs
     case 'e1rm':
       return formatWeight(value, units.weightUnit)
     case 'reps':
-      return `${Math.round(value)}${NBSP}reps`
+      return currentMessages().forms.repsValue(Math.round(value))
     case 'hold':
       return formatTime(value, false)
     case 'best_time':
@@ -24,12 +25,4 @@ export function formatMeasure(kind: MeasureKind, value: number, units: UnitPrefs
       if (exercise?.pace === 'km') return `${formatTime(value * 10, false)}${NBSP}/km`
       return formatPace100(value, units.distanceUnit)
   }
-}
-
-export const MEASURE_LABEL: Record<MeasureKind, string> = {
-  e1rm: 'Estimated 1RM',
-  reps: 'Most reps',
-  hold: 'Longest hold',
-  best_time: 'Best time',
-  pace: 'Best pace',
 }

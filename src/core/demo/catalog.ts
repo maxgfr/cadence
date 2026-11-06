@@ -1,96 +1,116 @@
+import { currentMessages, type Messages } from '../i18n/index.ts'
 import type { Discipline, Exercise } from '../model/schemas.ts'
 
 /**
  * Demo content: three sports a new user can load as a starting point. Ids are stable (`demo-*` for disciplines,
- * readable slugs for exercises) so loading twice changes nothing and the demo can be removed again.
+ * readable slugs for exercises) so loading twice changes nothing and the demo can be removed again. Names are read in
+ * the displayed language each time they are used, so the demo is written in the language it is loaded in.
  */
 
 export const DEMO_SPORTS = ['gym', 'swim', 'track'] as const
 export type DemoSport = (typeof DEMO_SPORTS)[number]
 
+/** The demo's texts in the displayed language. */
+export const demoText = (): Messages['demo'] => currentMessages().demo
+
+/** Each sport's discipline: a fresh record on every read, named in the displayed language. */
 export const DEMO_DISCIPLINES: Readonly<Record<DemoSport, Discipline>> = {
-  gym: { id: 'demo-gym', name: 'Gym', color: 'blue' },
-  swim: { id: 'demo-swim', name: 'Swimming', color: 'aqua' },
-  track: { id: 'demo-track', name: 'Track and field', color: 'violet' },
+  get gym(): Discipline {
+    return { id: 'demo-gym', name: demoText().disciplines.gym, color: 'blue' }
+  },
+  get swim(): Discipline {
+    return { id: 'demo-swim', name: demoText().disciplines.swim, color: 'aqua' }
+  },
+  get track(): Discipline {
+    return { id: 'demo-track', name: demoText().disciplines.track, color: 'violet' }
+  },
 }
 
+type DemoExerciseId = keyof Messages['demo']['exercises']
 type DemoExercise = Omit<Exercise, 'disciplineId'> & { sport: DemoSport }
+type Spec = Omit<DemoExercise, 'sport' | 'name' | 'id'> & { id: DemoExerciseId }
 
-const gym = (e: Omit<DemoExercise, 'sport'>): DemoExercise => ({ ...e, sport: 'gym' })
-const swim = (e: Omit<DemoExercise, 'sport' | 'metric'>): DemoExercise => ({
-  ...e,
-  metric: 'distance_time',
-  pace: '100m',
-  sport: 'swim',
-})
-const track = (e: Omit<DemoExercise, 'sport'>): DemoExercise => ({ ...e, sport: 'track' })
+/** A demo exercise whose name follows the displayed language (`demoExercise` copies it as it reads then). */
+const make =
+  (sport: DemoSport) =>
+  ({ id, ...rest }: Spec): DemoExercise => ({
+    id,
+    get name() {
+      return demoText().exercises[id]
+    },
+    ...rest,
+    sport,
+  })
+
+const gym = make('gym')
+const swimming = make('swim')
+const swim = (e: Omit<Spec, 'metric'>): DemoExercise => swimming({ ...e, metric: 'distance_time', pace: '100m' })
+const track = make('track')
 
 export const DEMO_EXERCISES: readonly DemoExercise[] = [
   // Gym: main lifts.
-  gym({ id: 'back-squat', name: 'Back squat', metric: 'weight_reps', muscles: ['quads', 'glutes'] }),
-  gym({ id: 'front-squat', name: 'Front squat', metric: 'weight_reps', muscles: ['quads', 'core'] }),
-  gym({ id: 'deadlift', name: 'Deadlift', metric: 'weight_reps', muscles: ['hamstrings', 'glutes', 'back'] }),
-  gym({ id: 'romanian-deadlift', name: 'Romanian deadlift', metric: 'weight_reps', muscles: ['hamstrings', 'glutes'] }),
-  gym({ id: 'bench-press', name: 'Bench press', metric: 'weight_reps', muscles: ['chest', 'triceps', 'shoulders'] }),
-  gym({ id: 'overhead-press', name: 'Overhead press', metric: 'weight_reps', muscles: ['shoulders', 'triceps'] }),
-  gym({ id: 'barbell-row', name: 'Barbell row', metric: 'weight_reps', muscles: ['back', 'biceps'] }),
-  gym({ id: 'power-clean', name: 'Power clean', metric: 'weight_reps', muscles: ['full_body'] }),
-  gym({ id: 'hip-thrust', name: 'Hip thrust', metric: 'weight_reps', muscles: ['glutes', 'hamstrings'] }),
+  gym({ id: 'back-squat', metric: 'weight_reps', muscles: ['quads', 'glutes'] }),
+  gym({ id: 'front-squat', metric: 'weight_reps', muscles: ['quads', 'core'] }),
+  gym({ id: 'deadlift', metric: 'weight_reps', muscles: ['hamstrings', 'glutes', 'back'] }),
+  gym({ id: 'romanian-deadlift', metric: 'weight_reps', muscles: ['hamstrings', 'glutes'] }),
+  gym({ id: 'bench-press', metric: 'weight_reps', muscles: ['chest', 'triceps', 'shoulders'] }),
+  gym({ id: 'overhead-press', metric: 'weight_reps', muscles: ['shoulders', 'triceps'] }),
+  gym({ id: 'barbell-row', metric: 'weight_reps', muscles: ['back', 'biceps'] }),
+  gym({ id: 'power-clean', metric: 'weight_reps', muscles: ['full_body'] }),
+  gym({ id: 'hip-thrust', metric: 'weight_reps', muscles: ['glutes', 'hamstrings'] }),
   // Gym: accessories.
-  gym({ id: 'pull-up', name: 'Pull-up', metric: 'reps', muscles: ['back', 'biceps'] }),
-  gym({ id: 'push-up', name: 'Push-up', metric: 'reps', muscles: ['chest', 'triceps'] }),
-  gym({ id: 'dip', name: 'Dip', metric: 'reps', muscles: ['chest', 'triceps'] }),
-  gym({ id: 'lat-pulldown', name: 'Lat pulldown', metric: 'weight_reps', muscles: ['back', 'biceps'] }),
-  gym({ id: 'dumbbell-row', name: 'Dumbbell row', metric: 'weight_reps', muscles: ['back', 'biceps'] }),
+  gym({ id: 'pull-up', metric: 'reps', muscles: ['back', 'biceps'] }),
+  gym({ id: 'push-up', metric: 'reps', muscles: ['chest', 'triceps'] }),
+  gym({ id: 'dip', metric: 'reps', muscles: ['chest', 'triceps'] }),
+  gym({ id: 'lat-pulldown', metric: 'weight_reps', muscles: ['back', 'biceps'] }),
+  gym({ id: 'dumbbell-row', metric: 'weight_reps', muscles: ['back', 'biceps'] }),
   gym({
     id: 'incline-db-press',
-    name: 'Incline dumbbell press',
     metric: 'weight_reps',
     muscles: ['chest', 'shoulders'],
   }),
   gym({
     id: 'bulgarian-split-squat',
-    name: 'Bulgarian split squat',
     metric: 'weight_reps',
     muscles: ['quads', 'glutes'],
   }),
-  gym({ id: 'walking-lunge', name: 'Walking lunge', metric: 'weight_reps', muscles: ['quads', 'glutes'] }),
-  gym({ id: 'leg-curl', name: 'Leg curl', metric: 'weight_reps', muscles: ['hamstrings'] }),
-  gym({ id: 'nordic-curl', name: 'Nordic curl', metric: 'reps', muscles: ['hamstrings'] }),
-  gym({ id: 'calf-raise', name: 'Calf raise', metric: 'weight_reps', muscles: ['calves'] }),
-  gym({ id: 'biceps-curl', name: 'Biceps curl', metric: 'weight_reps', muscles: ['biceps'] }),
-  gym({ id: 'triceps-extension', name: 'Triceps extension', metric: 'weight_reps', muscles: ['triceps'] }),
-  gym({ id: 'lateral-raise', name: 'Lateral raise', metric: 'weight_reps', muscles: ['shoulders'] }),
-  gym({ id: 'face-pull', name: 'Face pull', metric: 'weight_reps', muscles: ['shoulders', 'back'] }),
-  gym({ id: 'plank', name: 'Plank', metric: 'time', muscles: ['core'] }),
-  gym({ id: 'hanging-leg-raise', name: 'Hanging leg raise', metric: 'reps', muscles: ['core'] }),
+  gym({ id: 'walking-lunge', metric: 'weight_reps', muscles: ['quads', 'glutes'] }),
+  gym({ id: 'leg-curl', metric: 'weight_reps', muscles: ['hamstrings'] }),
+  gym({ id: 'nordic-curl', metric: 'reps', muscles: ['hamstrings'] }),
+  gym({ id: 'calf-raise', metric: 'weight_reps', muscles: ['calves'] }),
+  gym({ id: 'biceps-curl', metric: 'weight_reps', muscles: ['biceps'] }),
+  gym({ id: 'triceps-extension', metric: 'weight_reps', muscles: ['triceps'] }),
+  gym({ id: 'lateral-raise', metric: 'weight_reps', muscles: ['shoulders'] }),
+  gym({ id: 'face-pull', metric: 'weight_reps', muscles: ['shoulders', 'back'] }),
+  gym({ id: 'plank', metric: 'time', muscles: ['core'] }),
+  gym({ id: 'hanging-leg-raise', metric: 'reps', muscles: ['core'] }),
   // Swimming: strokes as distance sets, then drills.
-  swim({ id: 'swim-free', name: 'Freestyle', stroke: 'free' }),
-  swim({ id: 'swim-back', name: 'Backstroke', stroke: 'back' }),
-  swim({ id: 'swim-breast', name: 'Breaststroke', stroke: 'breast' }),
-  swim({ id: 'swim-fly', name: 'Butterfly', stroke: 'fly' }),
-  swim({ id: 'swim-im', name: 'Individual medley', stroke: 'im' }),
-  swim({ id: 'swim-kick', name: 'Kick set', stroke: 'kick' }),
-  swim({ id: 'swim-pull', name: 'Pull buoy', stroke: 'free' }),
-  swim({ id: 'drill-catch-up', name: 'Catch-up drill', stroke: 'drill' }),
-  swim({ id: 'drill-fingertip', name: 'Fingertip drag drill', stroke: 'drill' }),
-  swim({ id: 'drill-single-arm', name: 'Single-arm drill', stroke: 'drill' }),
+  swim({ id: 'swim-free', stroke: 'free' }),
+  swim({ id: 'swim-back', stroke: 'back' }),
+  swim({ id: 'swim-breast', stroke: 'breast' }),
+  swim({ id: 'swim-fly', stroke: 'fly' }),
+  swim({ id: 'swim-im', stroke: 'im' }),
+  swim({ id: 'swim-kick', stroke: 'kick' }),
+  swim({ id: 'swim-pull', stroke: 'free' }),
+  swim({ id: 'drill-catch-up', stroke: 'drill' }),
+  swim({ id: 'drill-fingertip', stroke: 'drill' }),
+  swim({ id: 'drill-single-arm', stroke: 'drill' }),
   // Track and field: fixed-distance sprints, open runs and drills, plyometrics.
-  track({ id: 'sprint-30', name: '30 m sprint', metric: 'distance_time', distance: 30 }),
-  track({ id: 'sprint-60', name: '60 m sprint', metric: 'distance_time', distance: 60 }),
-  track({ id: 'sprint-100', name: '100 m sprint', metric: 'distance_time', distance: 100 }),
-  track({ id: 'sprint-200', name: '200 m sprint', metric: 'distance_time', distance: 200 }),
-  track({ id: 'sprint-400', name: '400 m sprint', metric: 'distance_time', distance: 400 }),
-  track({ id: 'flying-30', name: 'Flying 30 m', metric: 'distance_time', distance: 30 }),
-  track({ id: 'block-start', name: 'Block start (10 m)', metric: 'distance_time', distance: 10 }),
-  track({ id: 'tempo-run', name: 'Tempo run', metric: 'distance_time', pace: 'km' }),
-  track({ id: 'easy-run', name: 'Easy run', metric: 'distance_time', pace: 'km' }),
-  track({ id: 'a-skip', name: 'A-skips', metric: 'distance_time', pace: 'km' }),
-  track({ id: 'bounding', name: 'Bounding', metric: 'distance_time', pace: 'km' }),
-  track({ id: 'box-jump', name: 'Box jump', metric: 'reps', muscles: ['quads', 'glutes'] }),
-  track({ id: 'broad-jump', name: 'Broad jump', metric: 'reps', muscles: ['quads', 'glutes'] }),
-  track({ id: 'hurdle-hop', name: 'Hurdle hops', metric: 'reps', muscles: ['calves', 'quads'] }),
-  track({ id: 'depth-jump', name: 'Depth jump', metric: 'reps', muscles: ['quads', 'calves'] }),
+  track({ id: 'sprint-30', metric: 'distance_time', distance: 30 }),
+  track({ id: 'sprint-60', metric: 'distance_time', distance: 60 }),
+  track({ id: 'sprint-100', metric: 'distance_time', distance: 100 }),
+  track({ id: 'sprint-200', metric: 'distance_time', distance: 200 }),
+  track({ id: 'sprint-400', metric: 'distance_time', distance: 400 }),
+  track({ id: 'flying-30', metric: 'distance_time', distance: 30 }),
+  track({ id: 'block-start', metric: 'distance_time', distance: 10 }),
+  track({ id: 'tempo-run', metric: 'distance_time', pace: 'km' }),
+  track({ id: 'easy-run', metric: 'distance_time', pace: 'km' }),
+  track({ id: 'a-skip', metric: 'distance_time', pace: 'km' }),
+  track({ id: 'bounding', metric: 'distance_time', pace: 'km' }),
+  track({ id: 'box-jump', metric: 'reps', muscles: ['quads', 'glutes'] }),
+  track({ id: 'broad-jump', metric: 'reps', muscles: ['quads', 'glutes'] }),
+  track({ id: 'hurdle-hop', metric: 'reps', muscles: ['calves', 'quads'] }),
+  track({ id: 'depth-jump', metric: 'reps', muscles: ['quads', 'calves'] }),
 ]
 
 export const DEMO_EXERCISE_IDS: ReadonlySet<string> = new Set(DEMO_EXERCISES.map((e) => e.id))

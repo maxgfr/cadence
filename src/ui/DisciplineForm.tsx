@@ -1,11 +1,12 @@
 import { useId, useState } from 'react'
 import { useData } from '../app/data.tsx'
+import { useT } from '../app/i18n.tsx'
 import { useToast } from '../app/toast.tsx'
 import { normalizeName } from '../core/library/exercises.ts'
 import { newId } from '../core/model/ids.ts'
 import { DISCIPLINE_COLORS, type Discipline, type DisciplineColor } from '../core/model/schemas.ts'
 import { Button } from './components/Button.tsx'
-import { COLOR_LABEL, ColorDot } from './components/Discipline.tsx'
+import { ColorDot } from './components/Discipline.tsx'
 import { Field } from './components/Field.tsx'
 import styles from './Forms.module.css'
 
@@ -21,14 +22,15 @@ export function freeColor(disciplines: readonly Discipline[]): DisciplineColor {
 
 export function ColorPicker({ value, onChange }: { value: DisciplineColor; onChange: (c: DisciplineColor) => void }) {
   const group = useId()
+  const t = useT()
   return (
     <fieldset className={styles.colors}>
-      <legend className={styles.legend}>Colour</legend>
+      <legend className={styles.legend}>{t.forms.discipline.colour}</legend>
       {DISCIPLINE_COLORS.map((c) => (
-        <label key={c} className={styles.color} title={COLOR_LABEL[c]}>
+        <label key={c} className={styles.color} title={t.labels.color[c]}>
           <input type="radio" name={group} value={c} checked={value === c} onChange={() => onChange(c)} />
           <ColorDot color={c} />
-          <span className="sr-only">{COLOR_LABEL[c]}</span>
+          <span className="sr-only">{t.labels.color[c]}</span>
         </label>
       ))}
     </fieldset>
@@ -45,6 +47,7 @@ export function DisciplineForm({
 }) {
   const data = useData()
   const toast = useToast()
+  const t = useT()
   const [name, setName] = useState(discipline?.name ?? '')
   const [color, setColor] = useState<DisciplineColor>(discipline?.color ?? freeColor(data.disciplines))
   const [error, setError] = useState<string>()
@@ -61,30 +64,30 @@ export function DisciplineForm({
         e.preventDefault()
         const n = name.trim()
         if (!n) {
-          setError('Give it a name, such as Gym, Swimming or Climbing.')
+          setError(t.forms.discipline.nameRequired)
           return
         }
         if (data.disciplines.some((d) => d.id !== discipline?.id && normalizeName(d.name) === normalizeName(n))) {
-          setError('You already have a discipline with this name.')
+          setError(t.forms.discipline.nameTaken)
           return
         }
         const next: Discipline = { id: discipline?.id ?? newId(), name: n, color }
         await data.put('disciplines', next)
-        toast(discipline ? 'Discipline saved' : `${n} added`)
+        toast(discipline ? t.forms.discipline.saved : t.forms.discipline.added(n))
         onDone(next)
       }}
     >
       <Field
-        label="Name"
+        label={t.common.name}
         value={name}
         maxLength={40}
-        placeholder="Gym, Swimming, Climbing…"
+        placeholder={t.forms.discipline.placeholder}
         onChange={(e) => setName(e.target.value)}
         {...(error ? { error } : {})}
       />
       <ColorPicker value={color} onChange={setColor} />
       <Button type="submit" variant="primary" size="large" full>
-        {discipline ? 'Save' : 'Add discipline'}
+        {discipline ? t.common.save : t.forms.discipline.add}
       </Button>
       {discipline && !used && (
         <Button
@@ -92,16 +95,16 @@ export function DisciplineForm({
           full
           onClick={async () => {
             await data.remove('disciplines', discipline.id)
-            toast(`${discipline.name} deleted`, [{ label: 'Undo', onClick: () => data.put('disciplines', discipline) }])
+            toast(t.forms.discipline.deleted(discipline.name), [
+              { label: t.forms.undo, onClick: () => data.put('disciplines', discipline) },
+            ])
             onDone()
           }}
         >
-          Delete discipline
+          {t.forms.discipline.delete}
         </Button>
       )}
-      {discipline && used && (
-        <p className={styles.note}>Exercises, sessions or programs use it, so it cannot be deleted.</p>
-      )}
+      {discipline && used && <p className={styles.note}>{t.forms.discipline.inUse}</p>}
     </form>
   )
 }

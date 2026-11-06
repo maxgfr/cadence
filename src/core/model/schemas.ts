@@ -200,8 +200,13 @@ export type Goal = z.infer<typeof Goal>
 export const Mode = z.enum(['normal', 'advanced'])
 export type Mode = z.infer<typeof Mode>
 
+/** The interface language: one of ours, or what the system prefers. */
+export const Language = z.enum(['system', 'en', 'fr', 'de'])
+export type Language = z.infer<typeof Language>
+
 export const Settings = z.object({
   mode: Mode.default('normal'),
+  language: Language.default('system'),
   weightUnit: z.enum(['kg', 'lb']).default('kg'),
   distanceUnit: z.enum(['m', 'yd']).default('m'),
   /** 1 = Monday, 0 = Sunday. */
@@ -217,9 +222,10 @@ export const DEFAULT_SETTINGS: Settings = Settings.parse({})
 
 /**
  * 3: programs can be a set of sessions (`layout`). 4: goals on an exercise are one kind, `exercise` (versions 2 and 3
- * had `e1rm` and `best_time`, read as `exercise`).
+ * had `e1rm` and `best_time`, read as `exercise`). 5: settings hold the interface language (`language`; earlier
+ * versions read as `system`).
  */
-export const BACKUP_VERSION = 4
+export const BACKUP_VERSION = 5
 export const Backup = z.object({
   app: z.literal('cadence'),
   version: z.literal(BACKUP_VERSION),

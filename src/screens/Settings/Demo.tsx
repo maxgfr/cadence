@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useData } from '../../app/data.tsx'
+import { useT } from '../../app/i18n.tsx'
 import { useToast } from '../../app/toast.tsx'
 import type { DemoSport } from '../../core/demo/catalog.ts'
 import { demoRemoval } from '../../core/demo/demo.ts'
@@ -12,6 +13,8 @@ import styles from './Settings.module.css'
 export function Demo() {
   const data = useData()
   const toast = useToast()
+  const t = useT()
+  const d = t.settings.demoPage
   const [sports, setSports] = useState<DemoSport[]>([])
   const [withSessions, setWithSessions] = useState(false)
   const [busy, setBusy] = useState(false)
@@ -19,11 +22,7 @@ export function Demo() {
   const removal = demoRemoval(data)
   const demoCount = Object.values(removal).reduce((n, ids) => n + ids.length, 0)
   return (
-    <Screen
-      title="Demo"
-      subtitle="Ready-made disciplines, exercises and programs to start from. Everything stays editable."
-      back={{ href: '/settings', label: 'Settings' }}
-    >
+    <Screen title={t.settings.demo} subtitle={d.subtitle} back={{ href: '/settings', label: t.settings.title }}>
       <DemoPicker sports={sports} onSports={setSports} withSessions={withSessions} onWithSessions={setWithSessions} />
       <Button
         variant="primary"
@@ -36,44 +35,48 @@ export function Demo() {
           await data.loadDemo(sports, withSessions)
           setBusy(false)
           setSports([])
-          toast('Demo loaded: find it in Exercises and Programs')
+          toast(d.loaded)
         }}
       >
-        {sports.length === 0 ? 'Pick at least one sport' : 'Load the demo'}
+        {sports.length === 0 ? d.pickSport : d.load}
       </Button>
-      <p className={styles.muted}>Loading again never overwrites what you changed: only what is missing is added.</p>
+      <p className={styles.muted}>{d.loadAgain}</p>
       {demoCount > 0 && (
         <section className={styles.section} aria-labelledby="remove-title">
           <h2 id="remove-title" className={styles.title}>
-            Remove the demo
+            {d.remove}
           </h2>
           <p className={styles.muted}>
-            {removal.programs.length} programs, {removal.sessions.length} example sessions, {removal.goals.length}{' '}
-            goals, {removal.exercises.length} exercises and {removal.disciplines.length} disciplines. Exercises and
-            disciplines your own sessions or programs use are kept.
+            {d.contents(
+              removal.programs.length,
+              removal.sessions.length,
+              removal.goals.length,
+              removal.exercises.length,
+              removal.disciplines.length,
+            )}
           </p>
           {confirm ? (
             <div className={styles.danger}>
-              <p>Remove all of it?</p>
+              <p>{d.removeConfirm}</p>
               <div className={styles.row}>
                 <Button
                   variant="danger"
                   onClick={async () => {
                     await data.removeDemo()
                     setConfirm(false)
-                    toast('Demo removed')
+                    toast(d.removed)
                   }}
                 >
-                  Remove the demo
+                  {d.remove}
                 </Button>
                 <Button variant="plain" onClick={() => setConfirm(false)}>
-                  Keep it
+                  {d.keep}
                 </Button>
               </div>
             </div>
           ) : (
             <Button variant="plain" onClick={() => setConfirm(true)}>
-              Remove the demo…
+              {d.removeEllipsis}
             </Button>
           )}
         </section>

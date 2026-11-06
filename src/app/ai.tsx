@@ -1,5 +1,6 @@
 import type { LanguageModel } from 'ai'
 import { createContext, type ReactNode, useCallback, useContext, useEffect, useMemo, useState } from 'react'
+import { currentMessages } from '../core/i18n/index.ts'
 import { useData } from './data.tsx'
 
 /** Device-only AI settings; stored encrypted with the key in the secrets store, never exported. */
@@ -76,12 +77,10 @@ export function AiProvider({ children }: { children: ReactNode }) {
       import('../core/ai/client.ts'),
       import('../core/ai/catalog.ts'),
     ])
-    if (!config.providerId || !config.modelId)
-      throw new AiConfigError('Choose a provider and a model in Settings › AI.')
+    if (!config.providerId || !config.modelId) throw new AiConfigError(currentMessages().ai.errors.notSetUp)
     const catalog = await loadBundledCatalog()
     const provider = findProvider(catalog, config.providerId)
-    if (!provider)
-      throw new AiConfigError('The chosen provider is no longer in the catalog. Choose another in Settings › AI.')
+    if (!provider) throw new AiConfigError(currentMessages().ai.errors.providerGone)
     return createModel({
       provider,
       modelId: config.modelId,

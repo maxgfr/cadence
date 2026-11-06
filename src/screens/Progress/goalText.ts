@@ -1,3 +1,5 @@
+import { currentMessages } from '../../core/i18n/index.ts'
+import { formatDecimal } from '../../core/i18n/locale.ts'
 import type { ExerciseIndex } from '../../core/library/exercises.ts'
 import { formatDay } from '../../core/model/dates.ts'
 import type { UnitPrefs } from '../../core/model/program.ts'
@@ -17,37 +19,42 @@ export function goalFormatter(goal: Goal, index: ExerciseIndex, units: UnitPrefs
         ? (v) => formatDistance(v, units.distanceUnit)
         : (v) => formatTonnage(v, units.weightUnit)
     case 'frequency':
-      return (v) => `${Math.round(v * 10) / 10} / week`
+      return (v) => currentMessages().progress.perWeek(formatDecimal(v, 1))
   }
 }
 
+/** "Squat: estimated 1RM 120 kg by Mon 14 Dec", in the displayed language. */
 export function goalTitle(
   goal: Goal,
   index: ExerciseIndex,
   units: UnitPrefs,
   disciplineName: (id: string | undefined) => string | undefined,
 ): string {
+  const t = currentMessages()
   const ex = goal.exerciseId ? index.get(goal.exerciseId) : undefined
   const f = goalFormatter(goal, index, units)
-  const by = `by ${formatDay(goal.deadline, new Date().getFullYear())}`
+  const date = formatDay(goal.deadline, new Date().getFullYear())
   const scope = disciplineName(goal.disciplineId)
   switch (goal.kind) {
     case 'exercise': {
-      const name = ex?.name ?? 'Exercise'
+      const name = ex?.name ?? t.common.exercise
+      const target = f(goal.target)
       switch (ex ? measureOf(ex) : 'e1rm') {
         case 'e1rm':
-          return `${name}: estimated 1RM ${f(goal.target)} ${by}`
+          return t.progress.goalE1rm(name, target, date)
         case 'reps':
-          return `${name}: ${f(goal.target)} in a set ${by}`
+          return t.progress.goalReps(name, target, date)
         case 'hold':
-          return `${name}: hold ${f(goal.target)} ${by}`
+          return t.progress.goalHold(name, target, date)
         default:
-          return `${name}: ${f(goal.target)} or faster ${by}`
+          return t.progress.goalFaster(name, target, date)
       }
     }
     case 'weekly_volume':
-      return `${scope ? `${scope}: ` : ''}${f(goal.target)} a week ${by}`
-    case 'frequency':
-      return `${Math.round(goal.target)} ${scope ? `${scope} ` : ''}sessions a week ${by}`
+      return scope ? t.progress.goalVolumeIn(scope, f(goal.target), date) : t.progress.goalVolume(f(goal.target), date)
+    case 'frequency': {
+      const n = Math.round(goal.target)
+      return scope ? t.progress.goalFrequencyIn(scope, n, date) : t.progress.goalFrequency(n, date)
+    }
   }
 }

@@ -1,11 +1,14 @@
 import { ChevronRight } from 'lucide-react'
 import { useState } from 'react'
 import { useData } from '../../app/data.tsx'
+import { useT } from '../../app/i18n.tsx'
+import { formatDecimal } from '../../core/i18n/locale.ts'
 import type { Block, IntensityKind } from '../../core/model/schemas.ts'
 import {
   formatTime,
   fromDisplayDistance,
   fromDisplayWeight,
+  NBSP,
   parseTime,
   toDisplayDistance,
   toDisplayWeight,
@@ -27,8 +30,9 @@ interface BlockSheetProps {
 
 /** Edits one planned block. Normal mode shows volume only; Advanced adds intensity, rest, interval and tempo. */
 export function BlockSheet({ block, onClose, onSave, onDelete }: BlockSheetProps) {
+  const t = useT()
   return (
-    <Sheet open={block !== null} title="Planned exercise" onClose={onClose}>
+    <Sheet open={block !== null} title={t.programs.block.title} onClose={onClose}>
       {block && <BlockForm key={block.id} block={block} onSave={onSave} onDelete={onDelete} />}
     </Sheet>
   )
@@ -39,12 +43,14 @@ const num = (t: string) => {
   return Number.isFinite(v) && v > 0 ? v : undefined
 }
 const str = (v: number | undefined, digits = 1) =>
-  v === undefined ? '' : String(Math.round(v * 10 ** digits) / 10 ** digits)
-const clock = (v: number | undefined) => (v === undefined ? '' : formatTime(v, v < 60).replace(' s', ''))
+  v === undefined ? '' : formatDecimal(Math.round(v * 10 ** digits) / 10 ** digits, digits)
+const clock = (v: number | undefined) => (v === undefined ? '' : formatTime(v, v < 60).replace(`${NBSP}s`, ''))
 
 function BlockForm({ block, onSave, onDelete }: { block: Block; onSave: (b: Block) => void; onDelete: () => void }) {
   const data = useData()
   const units = useUnits()
+  const t = useT()
+  const m = t.programs.block
   const advanced = data.settings.mode === 'advanced'
   const [exerciseId, setExerciseId] = useState(block.exerciseId)
   const [picking, setPicking] = useState(false)
@@ -106,25 +112,25 @@ function BlockForm({ block, onSave, onDelete }: { block: Block; onSave: (b: Bloc
       }}
     >
       <div className={styles.exerciseField}>
-        <span className={styles.muted}>Exercise</span>
+        <span className={styles.muted}>{t.common.exercise}</span>
         <button type="button" className={styles.exerciseButton} onClick={() => setPicking(true)}>
-          {ex?.name ?? 'Choose an exercise'}
+          {ex?.name ?? m.chooseExercise}
           <ChevronRight size={18} strokeWidth={2} aria-hidden="true" />
         </button>
       </div>
       <div className={styles.pair}>
         <Field
-          label={metric === 'distance_time' || metric === 'time' ? 'Repetitions' : 'Sets'}
+          label={metric === 'distance_time' || metric === 'time' ? m.repetitions : t.common.sets}
           inputMode="numeric"
           value={sets}
           onChange={(e) => setSets(e.target.value)}
         />
         {showReps && (
-          <Field label="Reps per set" inputMode="numeric" value={reps} onChange={(e) => setReps(e.target.value)} />
+          <Field label={m.repsPerSet} inputMode="numeric" value={reps} onChange={(e) => setReps(e.target.value)} />
         )}
         {showDistance && (
           <Field
-            label={`Distance (${units.distanceUnit})`}
+            label={m.distanceIn(units.distanceUnit)}
             inputMode="decimal"
             value={distance}
             onChange={(e) => setDistance(e.target.value)}
@@ -132,7 +138,7 @@ function BlockForm({ block, onSave, onDelete }: { block: Block; onSave: (b: Bloc
         )}
         {showDuration && (
           <Field
-            label="Time per set (s or m:ss)"
+            label={m.timePerSet}
             inputMode="decimal"
             value={duration}
             onChange={(e) => setDuration(e.target.value)}
@@ -141,8 +147,8 @@ function BlockForm({ block, onSave, onDelete }: { block: Block; onSave: (b: Bloc
       </div>
       {ex?.metric === 'distance_time' && (
         <Field
-          label="Send-off interval (m:ss)"
-          hint="Start each repetition on this clock, rest included."
+          label={m.sendOff}
+          hint={m.sendOffHint}
           inputMode="decimal"
           value={interval}
           onChange={(e) => setSendOff(e.target.value)}
@@ -152,15 +158,15 @@ function BlockForm({ block, onSave, onDelete }: { block: Block; onSave: (b: Bloc
         <>
           <div className={styles.pair}>
             <SelectField
-              label="Intensity"
+              label={m.intensity}
               value={kind}
               options={[
-                { value: '', label: 'None' },
-                { value: 'pct1rm', label: '% of 1RM' },
-                { value: 'rpe', label: 'RPE' },
-                { value: 'kg', label: `Load (${units.weightUnit})` },
-                { value: 'pctmax', label: '% of best effort' },
-                { value: 'pace', label: 'Time per repetition' },
+                { value: '', label: m.intensityNone },
+                { value: 'pct1rm', label: m.pct1rm },
+                { value: 'rpe', label: m.rpe },
+                { value: 'kg', label: m.loadIn(units.weightUnit) },
+                { value: 'pctmax', label: m.pctmax },
+                { value: 'pace', label: m.pace },
               ]}
               onChange={(e) => setKind(e.target.value as IntensityKind | '')}
             />
@@ -168,12 +174,12 @@ function BlockForm({ block, onSave, onDelete }: { block: Block; onSave: (b: Bloc
               <Field
                 label={
                   kind === 'pace'
-                    ? 'Time (m:ss)'
+                    ? m.paceValue
                     : kind === 'rpe'
-                      ? 'RPE (1–10)'
+                      ? m.rpeValue
                       : kind === 'kg'
                         ? units.weightUnit
-                        : 'Percent'
+                        : m.percent
                 }
                 inputMode="decimal"
                 value={intensity}
@@ -182,24 +188,24 @@ function BlockForm({ block, onSave, onDelete }: { block: Block; onSave: (b: Bloc
             )}
           </div>
           <div className={styles.pair}>
-            <Field label="Rest (m:ss)" inputMode="decimal" value={rest} onChange={(e) => setRest(e.target.value)} />
+            <Field label={m.rest} inputMode="decimal" value={rest} onChange={(e) => setRest(e.target.value)} />
             {metric === 'weight_reps' && (
-              <Field label="Tempo" placeholder="3-1-1-0" value={tempo} onChange={(e) => setTempo(e.target.value)} />
+              <Field label={m.tempo} placeholder="3-1-1-0" value={tempo} onChange={(e) => setTempo(e.target.value)} />
             )}
           </div>
         </>
       )}
-      <Field label="Notes" value={notes} onChange={(e) => setNotes(e.target.value)} maxLength={300} />
+      <Field label={t.common.notes} value={notes} onChange={(e) => setNotes(e.target.value)} maxLength={300} />
       <Button type="submit" variant="primary" size="large" full>
-        Done
+        {t.common.done}
       </Button>
       <Button variant="danger" full onClick={onDelete}>
-        Remove from the plan
+        {m.removeFromPlan}
       </Button>
       <ExercisePicker
         open={picking}
         disciplineId={ex?.disciplineId}
-        title="Change exercise"
+        title={m.changeExercise}
         onClose={() => setPicking(false)}
         onPick={(e) => {
           setExerciseId(e.id)

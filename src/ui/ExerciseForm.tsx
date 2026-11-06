@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useData } from '../app/data.tsx'
+import { useT } from '../app/i18n.tsx'
 import { useToast } from '../app/toast.tsx'
 import { normalizeName, usualMetric } from '../core/library/exercises.ts'
 import { newId } from '../core/model/ids.ts'
@@ -7,6 +8,7 @@ import {
   type Discipline,
   type DisciplineColor,
   type Exercise,
+  METRICS,
   type Metric,
   MUSCLES,
   type Muscle,
@@ -20,36 +22,6 @@ import { SelectField } from './components/SelectField.tsx'
 import { ColorPicker, freeColor } from './DisciplineForm.tsx'
 import styles from './Forms.module.css'
 import { useUnits } from './units.ts'
-
-export const METRIC_LABEL: Record<Metric, string> = {
-  weight_reps: 'Load × reps',
-  reps: 'Reps (bodyweight)',
-  time: 'Time held',
-  distance_time: 'Distance and time',
-}
-
-/** What each way of measuring logs per set, with examples and the record it keeps. */
-export const METRIC_HELP: Record<Metric, string> = {
-  weight_reps: 'Each set logs a load and reps: squat, bench press, curl. Record: estimated one-rep max.',
-  reps: 'Each set logs reps, no load: push-ups, pull-ups, jumps. Record: most reps in a set.',
-  time: 'Each set logs how long it lasted: plank, wall sit, dead hang. Record: longest set.',
-  distance_time:
-    'Each set logs a distance and its time: swims, runs, sprints. Record: best time over a fixed distance, or best pace.',
-}
-
-export const MUSCLE_NAMES: Record<Muscle, string> = {
-  quads: 'Quads',
-  hamstrings: 'Hamstrings',
-  glutes: 'Glutes',
-  calves: 'Calves',
-  chest: 'Chest',
-  back: 'Back',
-  shoulders: 'Shoulders',
-  biceps: 'Biceps',
-  triceps: 'Triceps',
-  core: 'Core',
-  full_body: 'Full body',
-}
 
 const NEW = '__new__'
 
@@ -76,6 +48,7 @@ export function ExerciseForm({ exercise, initialName = '', initialDisciplineId, 
   const disciplines = [...data.disciplines, ...(draft?.disciplines ?? [])]
   const units = useUnits()
   const toast = useToast()
+  const t = useT()
   const [name, setName] = useState(exercise?.name ?? initialName)
   const [disciplineId, setDisciplineId] = useState(
     exercise ? (exercise.disciplineId ?? '') : (initialDisciplineId ?? ''),
@@ -114,7 +87,7 @@ export function ExerciseForm({ exercise, initialName = '', initialDisciplineId, 
         e.preventDefault()
         const n = name.trim()
         if (!n) {
-          setError('Give it a name.')
+          setError(t.forms.exercise.nameRequired)
           return
         }
         const taken = [
@@ -122,7 +95,7 @@ export function ExerciseForm({ exercise, initialName = '', initialDisciplineId, 
           ...(draft?.names ?? []),
         ]
         if (taken.some((x) => normalizeName(x) === normalizeName(n))) {
-          setError('An exercise with this name already exists.')
+          setError(t.forms.exercise.nameTaken)
           return
         }
         let did = disciplineId
@@ -130,7 +103,7 @@ export function ExerciseForm({ exercise, initialName = '', initialDisciplineId, 
         if (disciplineId === NEW) {
           const dn = newName.trim()
           if (!dn) {
-            setNewError('Name the new discipline.')
+            setNewError(t.forms.exercise.newDisciplineRequired)
             return
           }
           const existing = disciplines.find((x) => normalizeName(x.name) === normalizeName(dn))
@@ -157,35 +130,35 @@ export function ExerciseForm({ exercise, initialName = '', initialDisciplineId, 
           return
         }
         await data.put('exercises', next)
-        toast(exercise ? 'Exercise saved' : `${n} added`)
+        toast(exercise ? t.forms.exercise.saved : t.forms.exercise.added(n))
         onDone(next)
       }}
     >
       <Field
-        label="Name"
+        label={t.common.name}
         value={name}
         maxLength={80}
         onChange={(e) => setName(e.target.value)}
         {...(error ? { error } : {})}
       />
       <SelectField
-        label="Discipline"
+        label={t.common.discipline}
         value={disciplineId}
         options={[
-          { value: '', label: 'No discipline' },
+          { value: '', label: t.common.noDiscipline },
           ...disciplines.map((x) => ({
             value: x.id,
-            label: draft?.disciplines.includes(x) ? `${x.name} (new)` : x.name,
+            label: draft?.disciplines.includes(x) ? t.forms.exercise.draftDiscipline(x.name) : x.name,
           })),
-          { value: NEW, label: 'New discipline…' },
+          { value: NEW, label: t.forms.exercise.newDisciplineOption },
         ]}
         onChange={(e) => setDisciplineId(e.target.value)}
       />
       {disciplineId === NEW && (
         <div className={styles.inset}>
           <Field
-            label="New discipline"
-            placeholder="Gym, Swimming, Climbing…"
+            label={t.forms.exercise.newDiscipline}
+            placeholder={t.forms.discipline.placeholder}
             value={newName}
             maxLength={40}
             onChange={(e) => setNewName(e.target.value)}
@@ -195,27 +168,27 @@ export function ExerciseForm({ exercise, initialName = '', initialDisciplineId, 
         </div>
       )}
       <SelectField
-        label="Measured by"
+        label={t.forms.exercise.measuredBy}
         value={metric}
-        options={(Object.keys(METRIC_LABEL) as Metric[]).map((m) => ({ value: m, label: METRIC_LABEL[m] }))}
+        options={METRICS.map((m) => ({ value: m, label: t.labels.metric[m] }))}
         onChange={(e) => setMetric(e.target.value as Metric)}
-        hint={`${METRIC_HELP[metric]}${used ? ' Changing it changes how the sets already logged are read.' : ''}`}
+        hint={used ? `${t.labels.metricHelp[metric]} ${t.forms.exercise.metricChanged}` : t.labels.metricHelp[metric]}
       />
       {metric === 'distance_time' && (
         <>
           <Field
-            label={`Fixed distance (${units.distanceUnit}, optional)`}
-            hint="For a set distance such as a 150 m sprint: sets then only need a time, and records are best times."
+            label={t.forms.exercise.fixedDistance(units.distanceUnit)}
+            hint={t.forms.exercise.fixedDistanceHint}
             inputMode="decimal"
             value={distance}
             onChange={(e) => setDistance(e.target.value)}
           />
           {!fixed && (
             <Segmented
-              label="Pace shown"
+              label={t.forms.exercise.paceShown}
               options={[
-                { value: '100m', label: 'per 100 m' },
-                { value: 'km', label: 'per km' },
+                { value: '100m', label: t.forms.exercise.per100m },
+                { value: 'km', label: t.forms.exercise.perKm },
               ]}
               value={pace}
               onChange={setPace}
@@ -225,7 +198,7 @@ export function ExerciseForm({ exercise, initialName = '', initialDisciplineId, 
       )}
       {data.settings.mode === 'advanced' && metric !== 'distance_time' && (
         <fieldset className={styles.checks}>
-          <legend className={styles.legend}>Muscles worked</legend>
+          <legend className={styles.legend}>{t.forms.exercise.muscles}</legend>
           {MUSCLES.map((m) => (
             <label key={m}>
               <input
@@ -233,13 +206,13 @@ export function ExerciseForm({ exercise, initialName = '', initialDisciplineId, 
                 checked={muscles.includes(m)}
                 onChange={(e) => setMuscles(e.target.checked ? [...muscles, m] : muscles.filter((x) => x !== m))}
               />
-              {MUSCLE_NAMES[m]}
+              {t.labels.muscle[m]}
             </label>
           ))}
         </fieldset>
       )}
       <Button type="submit" variant="primary" size="large" full>
-        {exercise ? 'Save' : 'Add exercise'}
+        {exercise ? t.common.save : t.forms.exercise.add}
       </Button>
       {exercise && !used && !draft && (
         <Button
@@ -247,16 +220,16 @@ export function ExerciseForm({ exercise, initialName = '', initialDisciplineId, 
           full
           onClick={async () => {
             await data.remove('exercises', exercise.id)
-            toast(`${exercise.name} deleted`, [{ label: 'Undo', onClick: () => data.put('exercises', exercise) }])
+            toast(t.forms.exercise.deleted(exercise.name), [
+              { label: t.forms.undo, onClick: () => data.put('exercises', exercise) },
+            ])
             onDone()
           }}
         >
-          Delete exercise
+          {t.forms.exercise.delete}
         </Button>
       )}
-      {exercise && used && (
-        <p className={styles.note}>Used in a session, a program or a goal, so it cannot be deleted.</p>
-      )}
+      {exercise && used && <p className={styles.note}>{t.forms.exercise.inUse}</p>}
     </form>
   )
 }
