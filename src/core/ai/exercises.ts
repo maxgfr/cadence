@@ -2,11 +2,11 @@ import { z } from 'zod'
 import { normalizeName } from '../library/exercises.ts'
 import { newId } from '../model/ids.ts'
 import { type Discipline, Exercise, Metric, Muscle, PaceUnit } from '../model/schemas.ts'
-import { type AthleteLibrary, disciplineResolver, type PromptPair } from './program.ts'
+import { type AthleteLibrary, disciplineResolver, languageRule, type PromptPair } from './program.ts'
 
 /* What a model is asked to return: every field present (nullable rather than optional), bounds applied after. */
 const AiExercise = z.object({
-  name: z.string().describe('The usual English name, without the discipline in it'),
+  name: z.string().describe("The usual name in the athlete's language, without the discipline in it"),
   discipline: z.string().nullable().describe("One of the athlete's disciplines by name, or the sport it belongs to"),
   metric: Metric.describe(
     'weight_reps for loaded lifts, reps for bodyweight reps, time for holds and timed work, distance_time for swims, runs and sprints',
@@ -99,7 +99,7 @@ others. You build a self-coached athlete's exercise library: the exercises they 
 set by set.
 
 Rules:
-- One entry per exercise, named as athletes usually write it, in English. No variants that differ only by load or \
+- One entry per exercise, named as athletes usually write it in their language. No variants that differ only by load or \
 reps; a fixed-distance event (60 m, 100 m, 50 m freestyle) is its own exercise.
 - Give each exercise the discipline it belongs to: one of the athlete's disciplines by name, or the sport's name.
 - How it is measured: weight_reps for anything loaded, reps for bodyweight repetitions, time for holds and timed \
@@ -125,6 +125,7 @@ export function exercisesPrompt(a: ExercisesAnswers, library: AthleteLibrary): P
   return {
     system: [
       SYSTEM,
+      languageRule(),
       '',
       `The athlete's disciplines: ${library.disciplines.length > 0 ? library.disciplines.map((d) => d.name).join(', ') : 'none yet'}.`,
       `Exercises they already have: ${has.length > 0 ? has.join('; ') : 'none'}.`,

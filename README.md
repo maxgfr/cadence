@@ -93,6 +93,10 @@ Cadence works fully without AI. With a model set up under *Settings › AI* it c
 - **Propose exercises** for your disciplines or sports you name (level, essentials or a complete library, equipment),
   each with its discipline, how it is measured, a fixed distance or a pace unit, and the muscles worked. Exercises you
   already have are left out; you untick and edit the list before adding it to your library.
+- **Suggest goals** from your own training (*Progress › Suggest with AI*, with an optional focus): each with a reason,
+  ticked or unticked before any is added.
+
+The model writes names, goals and notes in the interface language (English, French or German).
 
 Programs are checked against the program schema and open as a draft in the editor; nothing is saved until you save
 it. Exercises and disciplines the model names that you do not have yet are added only when you save.
@@ -100,7 +104,10 @@ it. Exercises and disciplines the model names that you do not have yet are added
 Providers and models come from [`llm-models`](https://github.com/maxgfr/llm-models): `bun run catalog` lists every
 provider and model and keeps only the providers a web page can call directly (checked with a real CORS preflight from
 the app's origin). *Refresh models* in the settings reloads the model lists in the browser through
-`llm-models/browser`. A custom OpenAI-compatible endpoint covers Ollama, LM Studio or a proxy; local servers work from
+`llm-models/browser`. A model newer than the list can be typed in by its id (*Model not listed?*), and in Advanced mode
+any provider's address can be replaced by a proxy or gateway that speaks the same API. Models are built and called
+through [`llm-connect`](https://github.com/maxgfr/llm-models/tree/main/packages/llm-connect), which applies each
+provider's browser rules and reads its errors. A custom OpenAI-compatible endpoint covers Ollama, LM Studio or a proxy; local servers work from
 a browser on the same computer. Ollama only answers pages it trusts: start it with
 `OLLAMA_ORIGINS=https://maxgfr.github.io ollama serve` to use it from the deployed app, then enter
 `http://localhost:11434/v1` and the model's name (for example `qwen2.5:7b`). Small local models may need a retry or

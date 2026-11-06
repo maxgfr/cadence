@@ -20,6 +20,8 @@ export const CatalogModel = z.object({
   /** USD per million tokens, input then output. */
   cost: z.tuple([z.number(), z.number()]).optional(),
   released: z.string().optional(),
+  /** It hears audio in a message (a voice note goes to it as is, without a transcription first). */
+  audio: z.boolean().optional(),
 })
 export type CatalogModel = z.infer<typeof CatalogModel>
 
@@ -127,6 +129,8 @@ export interface ModelInfoLike {
   cost?: { input: number; output: number }
   capabilities?: { structured_output?: boolean; tool_call?: boolean }
   release_date?: string
+  /** What the model reads besides text (`image`, `pdf`, `audio`, `video`). */
+  modalities?: { input?: readonly string[] }
 }
 
 /**
@@ -165,5 +169,6 @@ export function toCatalogModel(m: ModelInfoLike): CatalogModel {
   if (m.context_length) out.context = m.context_length
   if (m.cost) out.cost = [m.cost.input, m.cost.output]
   if (m.release_date) out.released = m.release_date
+  if (m.modalities?.input?.includes('audio')) out.audio = true
   return out
 }

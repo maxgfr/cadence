@@ -7,8 +7,8 @@ const RELOADED = 'cadence:chunk-reload'
  * A lazily loaded screen. After a new version is deployed, a page opened before it asks for chunk files that no
  * longer exist: the first such failure reloads the page onto the new version, once.
  */
-export function lazyChunk<T extends ComponentType<object>>(load: () => Promise<T>) {
-  return lazy(async () => {
+export function lazyChunk<P extends object>(load: () => Promise<ComponentType<P>>) {
+  return lazy<ComponentType<P>>(async () => {
     try {
       const c = await load()
       try {

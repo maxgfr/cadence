@@ -1,7 +1,8 @@
 import type { LanguageModel } from 'ai'
-import type { Program, ProgramLayout } from '../model/schemas.ts'
+import type { Goal, Program, ProgramLayout } from '../model/schemas.ts'
 import { generateStructured } from './client.ts'
 import { AiExercises, type ExercisesDraft, exercisesFromAi } from './exercises.ts'
+import { AiGoals, type GoalProposal, goalsFromAi } from './goals.ts'
 import {
   AiProgram,
   AiWeek,
@@ -46,4 +47,17 @@ export async function generateExercisesDraft(
 ): Promise<ExercisesDraft> {
   const ai = await generateStructured(model, { ...pair, schema: AiExercises, ...(signal ? { signal } : {}) })
   return exercisesFromAi(ai, library)
+}
+
+/** Proposes goals from the athlete's own training; the result is a list they pick from (nothing is stored here). */
+export async function generateGoalsDraft(
+  model: LanguageModel,
+  pair: PromptPair,
+  library: AthleteLibrary,
+  existing: readonly Goal[],
+  today: string,
+  signal?: AbortSignal,
+): Promise<GoalProposal[]> {
+  const ai = await generateStructured(model, { ...pair, schema: AiGoals, ...(signal ? { signal } : {}) })
+  return goalsFromAi(ai, library, existing, today)
 }
