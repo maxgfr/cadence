@@ -42,6 +42,8 @@ export const Discipline = z.object({
   id,
   name: z.string().trim().min(1).max(40),
   color: DisciplineColor,
+  /** When it last changed on any device (ISO); what a sync keeps the newest of. Absent before version 6. */
+  updatedAt: z.string().optional(),
 })
 export type Discipline = z.infer<typeof Discipline>
 const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'expected YYYY-MM-DD')
@@ -63,6 +65,8 @@ export const Exercise = z.object({
   /** Fixed distance in metres for distance events (60 m sprint, 50 m free): logged sets then only need a time. */
   distance: positive.optional(),
   notes: z.string().max(500).optional(),
+  /** When it last changed on any device (ISO); what a sync keeps the newest of. Absent before version 6. */
+  updatedAt: z.string().optional(),
 })
 export type Exercise = z.infer<typeof Exercise>
 
@@ -171,6 +175,8 @@ export const Session = z.object({
   duration: nonNegative.optional(),
   rpe: z.number().min(1).max(10).optional(),
   notes: z.string().max(1000).optional(),
+  /** When it last changed on any device (ISO); what a sync keeps the newest of. Absent before version 6. */
+  updatedAt: z.string().optional(),
 })
 export type Session = z.infer<typeof Session>
 
@@ -194,8 +200,17 @@ export const Goal = z.object({
   deadline: isoDate,
   createdAt: z.string(),
   achievedAt: z.string().optional(),
+  /** When it last changed on any device (ISO); what a sync keeps the newest of. Absent before version 6. */
+  updatedAt: z.string().optional(),
 })
 export type Goal = z.infer<typeof Goal>
+
+/** The collections a record can be deleted from. */
+export const COLLECTION_NAMES = ['disciplines', 'exercises', 'programs', 'sessions', 'goals'] as const
+
+/** A record deleted on a device: kept so a sync deletes it on the other device too, unless changed there since. */
+export const Deleted = z.object({ collection: z.enum(COLLECTION_NAMES), id, deletedAt: z.string() })
+export type Deleted = z.infer<typeof Deleted>
 
 export const Mode = z.enum(['normal', 'advanced'])
 export type Mode = z.infer<typeof Mode>
@@ -215,6 +230,8 @@ export const Settings = z.object({
   /** Default rest timer, seconds, when a block prescribes none. */
   defaultRest: z.number().int().min(0).max(900).default(90),
   onboarded: z.boolean().default(false),
+  /** When it last changed on any device (ISO); what a sync keeps the newest of. Absent before version 6. */
+  updatedAt: z.string().optional(),
 })
 export type Settings = z.infer<typeof Settings>
 
@@ -223,9 +240,10 @@ export const DEFAULT_SETTINGS: Settings = Settings.parse({})
 /**
  * 3: programs can be a set of sessions (`layout`). 4: goals on an exercise are one kind, `exercise` (versions 2 and 3
  * had `e1rm` and `best_time`, read as `exercise`). 5: settings hold the interface language (`language`; earlier
- * versions read as `system`).
+ * versions read as `system`). 6: records carry `updatedAt` and deletions are kept as tombstones (`deleted`), so two
+ * devices can be merged; earlier versions read with no date and no deletion.
  */
-export const BACKUP_VERSION = 5
+export const BACKUP_VERSION = 6
 export const Backup = z.object({
   app: z.literal('cadence'),
   version: z.literal(BACKUP_VERSION),
@@ -236,5 +254,6 @@ export const Backup = z.object({
   programs: z.array(Program),
   sessions: z.array(Session),
   goals: z.array(Goal),
+  deleted: z.array(Deleted).default([]),
 })
 export type Backup = z.infer<typeof Backup>

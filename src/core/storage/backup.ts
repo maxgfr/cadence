@@ -6,13 +6,14 @@ import type { Store } from './store.ts'
 
 /** Everything but secrets, as one JSON document. */
 export async function exportBackup(store: Store, now: Date = new Date()): Promise<Backup> {
-  const [disciplines, exercises, programs, sessions, goals, settings] = await Promise.all([
+  const [disciplines, exercises, programs, sessions, goals, settings, deleted] = await Promise.all([
     store.all('disciplines'),
     store.all('exercises'),
     store.all('programs'),
     store.all('sessions'),
     store.all('goals'),
     store.getSettings(),
+    store.tombstones(),
   ])
   return {
     app: 'cadence',
@@ -24,6 +25,7 @@ export async function exportBackup(store: Store, now: Date = new Date()): Promis
     programs,
     sessions,
     goals,
+    deleted,
   }
 }
 
@@ -40,12 +42,14 @@ export function parseBackup(text: string): Backup {
   if (typeof raw !== 'object' || raw === null || (raw as { app?: unknown }).app !== 'cadence')
     throw new BackupError(currentMessages().core.backup.notCadence)
   const version = (raw as { version?: unknown }).version
-  if (version !== BACKUP_VERSION && version !== 4 && version !== 3 && version !== 2 && version !== 1)
+  if (version !== BACKUP_VERSION && version !== 5 && version !== 4 && version !== 3 && version !== 2 && version !== 1)
     throw new BackupError(currentMessages().core.backup.version(String(version)))
   // Version 1: fixed disciplines and built-in exercises, read into today's shape.
   // Versions 2 to 4 differ by what they cannot hold (program layouts, the language) and the names of exercise
   // goals; the language they lack reads as the system's.
-  if (version === 2 || version === 3 || version === 4) raw = { ...(raw as object), version: BACKUP_VERSION }
+  // Before version 6, records have no date and nothing deleted was kept: they read as such.
+  if (version === 2 || version === 3 || version === 4 || version === 5)
+    raw = { ...(raw as object), version: BACKUP_VERSION }
   if (version === 1) {
     try {
       raw = { ...(raw as object), version: BACKUP_VERSION, ...migrateV1(raw as Record<string, unknown[]>) }

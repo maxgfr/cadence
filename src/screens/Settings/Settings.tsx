@@ -247,6 +247,8 @@ export function Settings() {
                     programs: [],
                     sessions: [],
                     goals: [],
+                    // Nothing is kept as deleted: a sync brings back what another device has rather than erase it there.
+                    deleted: [],
                   })
                   setConfirmErase(false)
                   toast(t.settings.erased)

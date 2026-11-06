@@ -157,9 +157,11 @@ export function DataProvider({ children, fallback }: { children: ReactNode; fall
   }, [setLoaded])
 
   const put = useCallback(
-    async <C extends CollectionName>(name: C, value: Collections[C]) => {
+    async <C extends CollectionName>(name: C, given: Collections[C]) => {
       const loaded = current.current
       if (!loaded) return
+      // Every change is dated: a sync keeps the newest of each record.
+      const value = { ...given, updatedAt: new Date().toISOString() }
       await write(() => loaded.store.put(name, value))
       setLoaded((l) => {
         if (!l) return l
@@ -177,6 +179,8 @@ export function DataProvider({ children, fallback }: { children: ReactNode; fall
       const loaded = current.current
       if (!loaded) return
       await write(() => loaded.store.remove(name, id))
+      // Kept as deleted, so a sync deletes it on the other device too (unless changed there since).
+      await write(() => loaded.store.putTombstone({ collection: name, id, deletedAt: new Date().toISOString() }))
       setLoaded((l) =>
         l ? { ...l, [name]: (l[name as ListKey] as unknown as { id: string }[]).filter((x) => x.id !== id) } : l,
       )
@@ -188,7 +192,7 @@ export function DataProvider({ children, fallback }: { children: ReactNode; fall
     async (patch: Partial<Settings>) => {
       const loaded = current.current
       if (!loaded) return
-      const next = Settings.parse({ ...loaded.settings, ...patch })
+      const next = Settings.parse({ ...loaded.settings, ...patch, updatedAt: new Date().toISOString() })
       await write(() => loaded.store.putSettings(next))
       setLoaded((l) => (l ? { ...l, settings: next } : l))
     },
@@ -244,7 +248,11 @@ export function DataProvider({ children, fallback }: { children: ReactNode; fall
     const next = { ...loaded }
     for (const key of ['disciplines', 'exercises', 'programs', 'sessions', 'goals'] as const) {
       const ids = new Set(gone[key])
-      for (const id of ids) await write(() => loaded.store.remove(key, id))
+      const deletedAt = new Date().toISOString()
+      for (const id of ids) {
+        await write(() => loaded.store.remove(key, id))
+        await write(() => loaded.store.putTombstone({ collection: key, id, deletedAt }))
+      }
       ;(next as Record<ListKey, unknown[]>)[key] = (loaded[key] as { id: string }[]).filter((x) => !ids.has(x.id))
     }
     setLoaded(next)

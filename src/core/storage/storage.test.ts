@@ -116,7 +116,7 @@ describe('parseBackup', () => {
     await store.put('programs', instantiate(must(TEMPLATES[0]), new Set(['gym'] as const)))
     const b = parseBackup(JSON.stringify({ ...(await exportBackup(store)), version: 2 }))
     expect(b.programs).toHaveLength(1)
-    expect(b.version).toBe(5)
+    expect(b.version).toBe(6)
     expect(b.programs.every((p) => p.layout === undefined)).toBe(true)
   })
 })
@@ -126,7 +126,7 @@ test('a version 4 backup reads with the language of the system', async () => {
   const v4 = { ...(await exportBackup(store)), version: 4 } as Record<string, unknown>
   const { language: _, ...settings } = v4.settings as Record<string, unknown>
   const b = parseBackup(JSON.stringify({ ...v4, settings }))
-  expect(b.version).toBe(5)
+  expect(b.version).toBe(6)
   expect(b.settings.language).toBe('system')
 })
 
@@ -178,7 +178,7 @@ describe('version 1 backups', () => {
       ],
     }
     const b = parseBackup(JSON.stringify(v1))
-    expect(b.version).toBe(5)
+    expect(b.version).toBe(6)
     expect(b.disciplines.map((d) => d.name).sort()).toEqual(['Gym', 'Swimming', 'Track and field'])
     expect(b.exercises.find((e) => e.id === 'my-run')).toMatchObject({ disciplineId: 'demo-track', pace: 'km' })
     expect(b.exercises.find((e) => e.id === 'back-squat')?.disciplineId).toBe('demo-gym')
