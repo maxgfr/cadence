@@ -428,6 +428,7 @@ function ProgramForm({ initial, draft, saved }: { initial: Program; draft?: Prog
 
       <BlockSheet
         block={editing?.block ?? null}
+        where={editing ? { day: week?.days[editing.day]?.name ?? '', program: program.name } : undefined}
         onClose={() => setEditing(null)}
         onSave={(b) => {
           if (editing) changeDay(editing.day, (x) => ({ ...x, blocks: x.blocks.map((y) => (y.id === b.id ? b : y)) }))

@@ -22,7 +22,9 @@ const currentSearch = () => hash().split('?')[1] ?? ''
 
 /** The tab a path belongs to: its first segment ("/programs/abc" → "/programs", "/" → "/"). */
 export function sectionOf(path: string): string {
-  return `/${path.split('?')[0]?.split('/')[1] ?? ''}`
+  const section = `/${path.split('?')[0]?.split('/')[1] ?? ''}`
+  // The coach is opened from Today and goes back there.
+  return section === '/coach' ? '/' : section
 }
 
 /**

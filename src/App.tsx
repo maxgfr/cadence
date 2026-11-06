@@ -1,6 +1,7 @@
 import { Suspense, useEffect, useRef } from 'react'
 import { Redirect, Route, Router, Switch } from 'wouter'
 import { AiProvider } from './app/ai.tsx'
+import { CoachProvider } from './app/coach.tsx'
 import { DataProvider, useData } from './app/data.tsx'
 import { DraftProvider } from './app/drafts.tsx'
 import { useHashLocation, useHashSearch } from './app/hashLocation.ts'
@@ -26,6 +27,7 @@ const Generate = lazyChunk(() => import('./screens/Programs/Generate.tsx').then(
 const GenerateExercises = lazyChunk(() =>
   import('./screens/Exercises/GenerateExercises.tsx').then((m) => m.GenerateExercises),
 )
+const Coach = lazyChunk(() => import('./screens/Coach/Coach.tsx').then((m) => m.Coach))
 const AiSettings = lazyChunk(() => import('./screens/Settings/AiSettings.tsx').then((m) => m.AiSettings))
 
 function Routes() {
@@ -54,6 +56,7 @@ function Routes() {
             <Route path="/exercises/generate" component={GenerateExercises} />
             <Route path="/settings" component={Settings} />
             <Route path="/settings/ai" component={AiSettings} />
+            <Route path="/coach" component={Coach} />
             <Route path="/settings/demo" component={Demo} />
             <Route component={NotFound} />
           </Switch>
@@ -83,10 +86,12 @@ export function App() {
         <I18nProvider>
           <AiProvider>
             <DraftProvider>
-              <ToastProvider>
-                <Routes />
-                <StorageNotice />
-              </ToastProvider>
+              <CoachProvider>
+                <ToastProvider>
+                  <Routes />
+                  <StorageNotice />
+                </ToastProvider>
+              </CoachProvider>
             </DraftProvider>
           </AiProvider>
         </I18nProvider>

@@ -100,7 +100,12 @@ export type CoachProposal = { id: string } & (
       sets: SetLog[]
     }
   | { kind: 'add_exercises'; draft: ExercisesDraft }
-  | { kind: 'program'; draft: Draft; origin: 'ai' | 'adjust' }
+  | {
+      kind: 'program'
+      draft: Draft
+      origin: 'ai' | 'adjust' /** The week rewritten, 1 for the first (adjust). */
+      week?: number
+    }
   | { kind: 'add_goals'; goals: GoalProposal[] }
   | { kind: 'settings'; patch: Partial<Settings> }
 )
@@ -203,7 +208,8 @@ function proposalOf(a: AiAction, c: CoachContext): CoachProposal | undefined {
       const index = Math.round(finite(a.weekNumber) ?? 0) - 1
       if (!program || !a.week || index < 0 || index >= program.weeks.length) return undefined
       try {
-        return { id, kind: 'program', origin: 'adjust', draft: draftWeekFromAi(a.week, program, index, c.library) }
+        const draft = draftWeekFromAi(a.week, program, index, c.library)
+        return { id, kind: 'program', origin: 'adjust', draft, week: index + 1 }
       } catch {
         return undefined
       }

@@ -1,0 +1,46 @@
+import { useCallback } from 'react'
+import { useLocation } from 'wouter'
+import { useData } from '../../app/data.tsx'
+import { useDraft } from '../../app/drafts.tsx'
+import type { CoachProposal } from '../../core/ai/coach.ts'
+import { applyLoggedSets, freeSession } from '../../core/model/program.ts'
+
+/**
+ * Applies one proposal the athlete confirmed: the only place the coach's work reaches their data. A program opens as
+ * a draft in the editor, saved only from there.
+ */
+export function useApplyProposal() {
+  const data = useData()
+  const { setDraft } = useDraft()
+  const [, navigate] = useLocation()
+  return useCallback(
+    async (p: CoachProposal) => {
+      switch (p.kind) {
+        case 'log_sets': {
+          if (p.isNew) await data.put('exercises', p.exercise)
+          const discipline = p.exercise.disciplineId ? data.disciplineIndex.get(p.exercise.disciplineId) : undefined
+          const session = data.sessions.find((s) => s.status === 'active') ?? freeSession(discipline, data.today)
+          await data.put('sessions', applyLoggedSets(session, p.exercise.id, p.sets))
+          return
+        }
+        case 'add_exercises': {
+          const used = new Set(p.draft.exercises.map((e) => e.disciplineId))
+          for (const d of p.draft.disciplines) if (used.has(d.id)) await data.put('disciplines', d)
+          for (const e of p.draft.exercises) await data.put('exercises', e)
+          return
+        }
+        case 'program':
+          setDraft({ ...p.draft, origin: p.origin })
+          navigate('/programs/draft')
+          return
+        case 'add_goals':
+          for (const g of p.goals) await data.put('goals', g.goal)
+          return
+        case 'settings':
+          await data.updateSettings(p.patch)
+          return
+      }
+    },
+    [data, setDraft, navigate],
+  )
+}

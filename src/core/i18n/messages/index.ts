@@ -1,5 +1,6 @@
 import { ai } from './ai.ts'
 import { charts } from './charts.ts'
+import { coach } from './coach.ts'
 import { common } from './common.ts'
 import { core } from './core.ts'
 import { demo } from './demo.ts'
@@ -19,6 +20,7 @@ import { welcome } from './welcome.ts'
 export const namespaces = {
   ai,
   charts,
+  coach,
   common,
   core,
   demo,

@@ -1,6 +1,9 @@
 import type { VitePWAOptions } from 'vite-plugin-pwa'
 
-/** Service worker, precache and manifest. Nothing from the network is cached at runtime: no API responses. */
+/**
+ * Service worker, precache and manifest. Only the app's own files are cached, never an API response: the precache,
+ * plus the speech runtime when first used.
+ */
 export function pwaOptions(base: string): Partial<VitePWAOptions> {
   return {
     registerType: 'autoUpdate',
@@ -26,11 +29,20 @@ export function pwaOptions(base: string): Partial<VitePWAOptions> {
     },
     workbox: {
       globPatterns: ['**/*.{js,css,html,svg,png,ico,woff2,json}'],
-      globIgnores: ['**/apple-splash-*.png'],
+      globIgnores: ['**/apple-splash-*.png', '**/transcribe.worker-*.js'],
       maximumFileSizeToCacheInBytes: 6 * 1024 * 1024,
       navigateFallback: 'index.html',
       cleanupOutdatedCaches: true,
-      runtimeCaching: [],
+      // The on-device speech model's runtime (onnxruntime WebAssembly, an app file of ~30 MB): too big to precache
+      // for everyone, so it is kept the first time a voice note is transcribed on the device, then works offline.
+      runtimeCaching: [
+        {
+          urlPattern: ({ url, sameOrigin }) =>
+            sameOrigin && /\/assets\/(ort-wasm[^/]*\.wasm|transcribe\.worker-[^/]*\.js)$/.test(url.pathname),
+          handler: 'CacheFirst',
+          options: { cacheName: 'cadence-speech-runtime', expiration: { maxEntries: 4 } },
+        },
+      ],
     },
   }
 }

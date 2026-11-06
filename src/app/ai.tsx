@@ -1,5 +1,6 @@
 import type { LanguageModel } from 'ai'
 import { createContext, type ReactNode, useCallback, useContext, useEffect, useMemo, useState } from 'react'
+import type { ModelRef } from '../core/ai/client.ts'
 import { currentMessages } from '../core/i18n/index.ts'
 import { useData } from './data.tsx'
 
@@ -9,6 +10,11 @@ export interface AiConfig {
   modelId?: string
   /** Overrides the provider's address; required for the custom endpoint. */
   baseUrl?: string
+  /**
+   * How voice notes become words when the model does not hear audio: the provider's transcription model (default),
+   * or a model run on this device (downloaded once, works offline, nothing leaves the device).
+   */
+  voice?: 'provider' | 'device'
 }
 
 const CONFIG_KEY = 'ai.config'
@@ -23,6 +29,8 @@ interface Ai {
   getKey(): Promise<string>
   /** Builds the configured model; loads the AI code on first use. */
   model(): Promise<LanguageModel>
+  /** The configured provider, model and key, for voice notes (transcription, audio support). */
+  modelRef(): Promise<ModelRef>
 }
 
 const AiContext = createContext<Ai | null>(null)
@@ -41,6 +49,7 @@ function parseConfig(raw: string | undefined): AiConfig {
     if (typeof v.providerId === 'string' && v.providerId) out.providerId = v.providerId
     if (typeof v.modelId === 'string' && v.modelId) out.modelId = v.modelId
     if (typeof v.baseUrl === 'string' && v.baseUrl) out.baseUrl = v.baseUrl
+    if (v.voice === 'provider' || v.voice === 'device') out.voice = v.voice
     return out
   } catch {
     return {}
@@ -72,8 +81,8 @@ export function AiProvider({ children }: { children: ReactNode }) {
 
   const getKey = useCallback(async () => (await store.getSecret(KEY_KEY)) ?? '', [store])
 
-  const model = useCallback(async () => {
-    const [{ createModel, AiConfigError }, { loadBundledCatalog, findProvider }] = await Promise.all([
+  const modelRef = useCallback(async (): Promise<ModelRef> => {
+    const [{ AiConfigError }, { loadBundledCatalog, findProvider }] = await Promise.all([
       import('../core/ai/client.ts'),
       import('../core/ai/catalog.ts'),
     ])
@@ -81,18 +90,23 @@ export function AiProvider({ children }: { children: ReactNode }) {
     const catalog = await loadBundledCatalog()
     const provider = findProvider(catalog, config.providerId)
     if (!provider) throw new AiConfigError(currentMessages().ai.errors.providerGone)
-    return createModel({
+    return {
       provider,
       modelId: config.modelId,
       apiKey: await getKey(),
       ...(config.baseUrl ? { baseUrl: config.baseUrl } : {}),
-    })
+    }
   }, [config, getKey])
+
+  const model = useCallback(async () => {
+    const { createModel } = await import('../core/ai/client.ts')
+    return createModel(await modelRef())
+  }, [modelRef])
 
   const value = useMemo<Ai>(() => {
     const ready = Boolean(config.providerId && config.modelId && (hasKey || config.providerId === 'custom'))
-    return { config, hasKey, ready, save, getKey, model }
-  }, [config, hasKey, save, getKey, model])
+    return { config, hasKey, ready, save, getKey, model, modelRef }
+  }, [config, hasKey, save, getKey, model, modelRef])
 
   return <AiContext.Provider value={value}>{children}</AiContext.Provider>
 }

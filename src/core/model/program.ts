@@ -311,3 +311,28 @@ export function cloneWeek(week: Program['weeks'][number]): Program['weeks'][numb
     days: week.days.map((d) => ({ ...d, id: newId(), blocks: d.blocks.map((b) => ({ ...b, id: newId() })) })),
   }
 }
+
+/**
+ * Sets said aloud, into the session: they fill the exercise's planned sets not done yet, in order (the plan's
+ * distance kept when the athlete gave none), then are added after them. An exercise not in the session gets its entry.
+ */
+export function applyLoggedSets(session: Session, exerciseId: string, sets: readonly SetLog[]): Session {
+  const at = session.entries.findLastIndex((e) => e.exerciseId === exerciseId)
+  if (at === -1)
+    return { ...session, entries: [...session.entries, { id: newId(), exerciseId, sets: sets.map((s) => ({ ...s })) }] }
+  const entries = [...session.entries]
+  const entry = entries[at]
+  if (!entry) return session
+  const next = entry.sets.map((s) => ({ ...s }))
+  let i = 0
+  for (const [k, s] of next.entries()) {
+    const said = sets[i]
+    if (!said) break
+    if (s.done) continue
+    next[k] = { ...(s.distance !== undefined ? { distance: s.distance } : {}), ...said, done: true }
+    i++
+  }
+  next.push(...sets.slice(i).map((s) => ({ ...s })))
+  entries[at] = { ...entry, sets: next }
+  return { ...session, entries }
+}

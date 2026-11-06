@@ -1,4 +1,4 @@
-import { ClipboardList, Play, Plus, Target } from 'lucide-react'
+import { ClipboardList, MessageCircle, Play, Plus, Target } from 'lucide-react'
 import { useState } from 'react'
 import { Link, useLocation } from 'wouter'
 import { useStartSession } from '../../app/actions.ts'
@@ -54,7 +54,18 @@ export function Today() {
   }
 
   return (
-    <Screen title={t.today.title} subtitle={formatDay(data.today)}>
+    <Screen
+      title={t.today.title}
+      subtitle={formatDay(data.today)}
+      trailing={
+        ai.ready ? (
+          <Link href="/coach" className={buttonClass({ variant: 'secondary' })}>
+            <MessageCircle size={18} strokeWidth={2} aria-hidden="true" />
+            {t.coach.open}
+          </Link>
+        ) : undefined
+      }
+    >
       {active && (
         <section className={styles.hero} aria-labelledby="active-title">
           <h2 id="active-title" className={styles.heroTitle}>
@@ -83,6 +94,9 @@ export function Today() {
             <div className={styles.actions}>
               <Link href="/settings/demo" className={buttonClass({ variant: 'primary' })}>
                 {t.today.loadDemo}
+              </Link>
+              <Link href={ai.ready ? '/coach' : '/settings/ai'} className={buttonClass({ variant: 'secondary' })}>
+                {t.coach.setUpWithCoach}
               </Link>
               <Link href="/exercises" className={buttonClass({ variant: 'secondary' })}>
                 {t.today.createExercises}

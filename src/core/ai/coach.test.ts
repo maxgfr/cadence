@@ -1,10 +1,64 @@
 import { afterEach, describe, expect, test } from 'bun:test'
 import { MockLanguageModelV4 } from 'ai/test'
 import { setDisplayLocale } from '../i18n/locale.ts'
+import { applyLoggedSets } from '../model/program.ts'
 import { DEFAULT_SETTINGS, type Session } from '../model/schemas.ts'
 import { ATHLETE, GYM, IDX } from '../testkit.test.ts'
 import { type AiCoachReply, type CoachContext, coachFromAi, coachSystem, sessionText, setsFromAi } from './coach.ts'
 import { generateCoachTurn } from './features.ts'
+import { encodeWav } from './wav.ts'
+
+describe('sets said aloud, into the session', () => {
+  const planned: Session = {
+    id: 's',
+    date: '2026-11-06',
+    title: 'Swim',
+    entries: [
+      {
+        id: 'e',
+        exerciseId: 'free',
+        sets: [
+          { distance: 50, time: 40, done: true },
+          { distance: 50, done: false },
+          { distance: 50, done: false },
+        ],
+      },
+    ],
+    status: 'active',
+  }
+
+  test('they fill the planned sets not done yet, keep the planned distance, then are added after', () => {
+    const next = applyLoggedSets(planned, 'free', [
+      { time: 41, done: true },
+      { time: 42, done: true },
+      { time: 43, done: true },
+    ])
+    expect(next.entries[0]?.sets).toEqual([
+      { distance: 50, time: 40, done: true },
+      { distance: 50, time: 41, done: true },
+      { distance: 50, time: 42, done: true },
+      { time: 43, done: true },
+    ])
+    expect(planned.entries[0]?.sets[1]?.done).toBe(false)
+  })
+
+  test('an exercise not in the session gets its own entry', () => {
+    const next = applyLoggedSets(planned, 'kick', [{ distance: 100, done: true }])
+    expect(next.entries.map((e) => e.exerciseId)).toEqual(['free', 'kick'])
+  })
+})
+
+describe('WAV', () => {
+  test('a RIFF header, 16-bit samples, clipped', () => {
+    const wav = encodeWav(new Float32Array([0, 1, -1, 2]), 16_000)
+    const view = new DataView(wav.buffer)
+    expect(new TextDecoder().decode(wav.slice(0, 4))).toBe('RIFF')
+    expect(new TextDecoder().decode(wav.slice(8, 12))).toBe('WAVE')
+    expect(view.getUint32(24, true)).toBe(16_000)
+    expect(wav.byteLength).toBe(44 + 8)
+    expect([0, 1, 2, 3].map((i) => view.getInt16(44 + i * 2, true))).toEqual([0, 32767, -32768, 32767])
+  })
+})
 
 afterEach(() => setDisplayLocale('en'))
 

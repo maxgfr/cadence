@@ -32,6 +32,10 @@ under `/cadence/`, no server.
 - Models are built through `llm-connect` (`createModel` in `core/ai/client.ts` maps our catalog to its settings);
   errors are read with its `describeError`. Prompts stay in English and end with `languageRule()`, so the model writes
   in the interface language.
+- The coach (`core/ai/coach.ts`) only proposes: a model's actions become `CoachProposal`s, applied one by one by
+  `screens/Coach/apply.ts` after the user confirms. Its conversation lives in memory; voice notes recorded offline wait
+  in their own database (`cadence-voice`), never exported. The on-device speech runtime (onnxruntime, in
+  `app/transcribe.worker.ts`) is cached on first use, never precached.
 - Charts are hand-written SVG (`src/ui/charts`), following the dataviz rules in `DESIGN.md`. No charting library.
 - Visual rules are in `DESIGN.md`, product truth in `PRODUCT.md`. `.impeccable/` is local working output, never committed.
 - Gates are frozen: never skip, weaken or delete a test, no suppression comments.
