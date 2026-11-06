@@ -2,6 +2,7 @@ import { Eye, EyeOff, RefreshCw } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { z } from 'zod'
 import { useAi } from '../../app/ai.tsx'
+import { useData } from '../../app/data.tsx'
 import { useT } from '../../app/i18n.tsx'
 import {
   type Catalog,
@@ -54,6 +55,10 @@ export function AiSettings() {
   const models = provider ? sortedModels(provider) : []
   const model = models.find((m) => m.id === modelId)
   const custom = providerId === CUSTOM_PROVIDER
+  // A model the list does not have (newer than the catalog, or typed before) is edited as text, never lost.
+  const [typing, setTyping] = useState(false)
+  const typedModel = typing || (modelId.trim() !== '' && models.length > 0 && !model)
+  const advanced = useData().settings.mode === 'advanced'
 
   async function save(): Promise<boolean> {
     if (!providerId || !modelId.trim()) {
@@ -108,6 +113,9 @@ export function AiSettings() {
             setProviderId(e.target.value)
             const p = catalog ? findProvider(catalog, e.target.value) : undefined
             setModelId(p ? (sortedModels(p)[0]?.id ?? '') : '')
+            // Another provider: its own address, its own list.
+            setBaseUrl('')
+            setTyping(false)
             setStatus(undefined)
           }}
         />
@@ -129,26 +137,61 @@ export function AiSettings() {
           </>
         ) : (
           provider && (
-            <SelectField
-              label={t.ai.model}
-              value={modelId}
-              options={models.map((m) => ({
-                value: m.id,
-                label: m.structured ? m.name : t.ai.modelNoStructured(m.name),
-              }))}
-              hint={
-                model
-                  ? [
-                      model.structured ? t.ai.supportsStructured : t.ai.mayNotReturn,
-                      model.cost ? t.ai.cost(usd(model.cost[0]), usd(model.cost[1])) : '',
-                      model.context ? t.ai.context(formatDecimal(Math.round(model.context / 1000), 0)) : '',
-                    ]
-                      .filter(Boolean)
-                      .join(' · ')
-                  : undefined
-              }
-              onChange={(e) => setModelId(e.target.value)}
-            />
+            <>
+              {typedModel ? (
+                <Field
+                  label={t.ai.modelId}
+                  hint={t.ai.modelIdHint(provider.name)}
+                  autoComplete="off"
+                  spellCheck={false}
+                  value={modelId}
+                  onChange={(e) => setModelId(e.target.value)}
+                />
+              ) : (
+                <SelectField
+                  label={t.ai.model}
+                  value={modelId}
+                  options={models.map((m) => ({
+                    value: m.id,
+                    label: m.structured ? m.name : t.ai.modelNoStructured(m.name),
+                  }))}
+                  hint={
+                    model
+                      ? [
+                          model.structured ? t.ai.supportsStructured : t.ai.mayNotReturn,
+                          model.audio ? t.ai.hearsAudio : '',
+                          model.cost ? t.ai.cost(usd(model.cost[0]), usd(model.cost[1])) : '',
+                          model.context ? t.ai.context(formatDecimal(Math.round(model.context / 1000), 0)) : '',
+                        ]
+                          .filter(Boolean)
+                          .join(' · ')
+                      : undefined
+                  }
+                  onChange={(e) => setModelId(e.target.value)}
+                />
+              )}
+              <Button
+                variant="plain"
+                onClick={() => {
+                  if (typedModel) setModelId(models[0]?.id ?? '')
+                  setTyping(!typedModel)
+                }}
+              >
+                {typedModel ? t.ai.modelFromList : t.ai.modelNotListed}
+              </Button>
+              {(advanced || baseUrl.trim() !== '') && (
+                <Field
+                  label={t.ai.address}
+                  placeholder={provider.api ?? ''}
+                  hint={t.ai.addressHint(provider.name)}
+                  inputMode="url"
+                  autoComplete="off"
+                  spellCheck={false}
+                  value={baseUrl}
+                  onChange={(e) => setBaseUrl(e.target.value)}
+                />
+              )}
+            </>
           )
         )}
         <div className={styles.keyRow}>

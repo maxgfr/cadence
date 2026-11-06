@@ -1,4 +1,6 @@
+import { languageName } from 'llm-connect'
 import { z } from 'zod'
+import { displayLocale, type Locale } from '../i18n/locale.ts'
 import { type ExerciseIndex, findExercise, normalizeName } from '../library/exercises.ts'
 import { addDays, daysBetween, startOfWeek } from '../model/dates.ts'
 import { newId } from '../model/ids.ts'
@@ -283,6 +285,14 @@ export function draftWeekFromAi(
 
 // ——— Prompts ———
 
+/**
+ * What the model writes goes straight into the athlete's app: names, goals and notes in the language they read it
+ * in (the prompts themselves stay in English, which every model follows best).
+ */
+export function languageRule(locale: Locale = displayLocale()): string {
+  return `Write every name, goal and note in ${languageName(locale)}, as athletes who speak it write them.`
+}
+
 const SYSTEM = `You are an experienced coach across sports: strength training, swimming, track and field, running and \
 others. You write safe, progressive, realistic programs that a self-coached athlete can follow without supervision.
 
@@ -304,7 +314,7 @@ recovery rest (2 to 8 minutes).
 - Every week has the same number of training days, one per session the athlete can do.`
 
 /** The athlete's disciplines, then one exercise per line: `id | name | discipline | measured by | fixed distance`. */
-function libraryText({ exercises, disciplines }: AthleteLibrary): string {
+export function libraryText({ exercises, disciplines }: AthleteLibrary): string {
   const name = (id: string | undefined) => disciplines.find((d) => d.id === id)?.name ?? '-'
   return [
     `Disciplines: ${disciplines.length > 0 ? disciplines.map((d) => d.name).join(', ') : 'none yet'}`,
@@ -372,7 +382,7 @@ export function scratchPrompt(a: ScratchAnswers, library: AthleteLibrary, today:
   if (a.intensityStyle)
     lines.push(`Prescribe strength intensity as ${a.intensityStyle === 'pct1rm' ? '% of 1RM' : 'RPE'}.`)
   if (a.notes?.trim()) lines.push(`Other notes: ${a.notes.trim()}`)
-  return { system: `${SYSTEM}\n\n${libraryText(library)}`, prompt: lines.join('\n') }
+  return { system: `${SYSTEM}\n${languageRule()}\n\n${libraryText(library)}`, prompt: lines.join('\n') }
 }
 
 export interface ContextInput {
@@ -497,7 +507,7 @@ export interface ContextAnswers {
 
 export function contextPrompt(a: ContextAnswers, context: string, library: AthleteLibrary): PromptPair {
   return {
-    system: `${SYSTEM}\n\n${libraryText(library)}`,
+    system: `${SYSTEM}\n${languageRule()}\n\n${libraryText(library)}`,
     prompt: [
       ...shapeLines(a.shape),
       "Base it on the athlete's own training history below.",
@@ -531,7 +541,7 @@ export function adjustWeekPrompt(
         .join('\n')
     : '(none)'
   return {
-    system: `${SYSTEM}\n\n${libraryText(library)}`,
+    system: `${SYSTEM}\n${languageRule()}\n\n${libraryText(library)}`,
     prompt: [
       `The athlete follows "${program.name}" (goal: ${program.goal || 'not stated'}).`,
       `Rewrite week ${index + 1} so it fits what they actually did: if sets were missed or the effort was higher`,

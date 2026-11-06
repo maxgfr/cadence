@@ -29,6 +29,9 @@ under `/cadence/`, no server.
 - AI is optional and never writes data: every AI result is a draft the user edits and saves. Keys and the endpoint live
   in `llm-connect`'s `sealedStore` (database `cadence-sealed`), encrypted at rest, never in clear text, and never appear in exports. The Anthropic browser header goes to Anthropic's own host only.
 - AI and provider SDK code is loaded lazily (AI screens only); keep it out of the main chunk.
+- Models are built through `llm-connect` (`createModel` in `core/ai/client.ts` maps our catalog to its settings);
+  errors are read with its `describeError`. Prompts stay in English and end with `languageRule()`, so the model writes
+  in the interface language.
 - Charts are hand-written SVG (`src/ui/charts`), following the dataviz rules in `DESIGN.md`. No charting library.
 - Visual rules are in `DESIGN.md`, product truth in `PRODUCT.md`. `.impeccable/` is local working output, never committed.
 - Gates are frozen: never skip, weaken or delete a test, no suppression comments.

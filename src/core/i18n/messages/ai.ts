@@ -23,6 +23,14 @@ export const ai = namespace(
     endpointHint:
       'Any OpenAI-compatible server: Ollama, LM Studio, a proxy. Local servers work from a browser on the same computer.',
     model: 'Model',
+    modelId: 'Model id',
+    modelNotListed: 'Model not listed? Enter its id',
+    modelFromList: 'Pick from the list',
+    modelIdHint: (provider: string) => `The id ${provider}’s API expects, as its documentation writes it.`,
+    hearsAudio: 'Hears audio',
+    address: 'Address (optional)',
+    addressHint: (provider: string) =>
+      `Leave empty to call ${provider} directly. A proxy or gateway that speaks the same API goes here.`,
     modelNoStructured: (name: string) => `${name} (no structured output)`,
     supportsStructured: 'Supports structured output',
     mayNotReturn: 'May not return a usable program',
@@ -54,6 +62,8 @@ export const ai = namespace(
       quota: 'The provider says the quota or rate limit is reached. Try again later.',
       unreachable: 'The provider could not be reached from this browser (offline, blocked, or the address is wrong).',
       unknownModel: (detail: string) => `The provider does not know this model. ${detail}`,
+      busy: 'The provider is overloaded right now. Try again in a moment.',
+      tooLong: 'The request is too long for this model. Pick a model with a larger context.',
     },
   },
   {
@@ -76,6 +86,15 @@ export const ai = namespace(
     endpointHint:
       'Tout serveur compatible OpenAI : Ollama, LM Studio, un proxy. Les serveurs locaux fonctionnent depuis un navigateur sur le même ordinateur.',
     model: 'Modèle',
+    modelId: 'Identifiant du modèle',
+    modelNotListed: 'Modèle absent de la liste ? Saisissez son identifiant',
+    modelFromList: 'Choisir dans la liste',
+    modelIdHint: (provider: string) =>
+      `L’identifiant attendu par l’API de ${provider}, tel que sa documentation l’écrit.`,
+    hearsAudio: 'Comprend l’audio',
+    address: 'Adresse (facultatif)',
+    addressHint: (provider: string) =>
+      `Laissez vide pour appeler ${provider} directement. Un proxy ou une passerelle qui parle la même API se met ici.`,
     modelNoStructured: (name: string) => `${name} (pas de sortie structurée)`,
     supportsStructured: 'Prend en charge la sortie structurée',
     mayNotReturn: 'Risque de ne pas renvoyer de programme utilisable',
@@ -108,6 +127,8 @@ export const ai = namespace(
       unreachable:
         'Impossible de joindre le fournisseur depuis ce navigateur (hors ligne, bloqué, ou adresse erronée).',
       unknownModel: (detail: string) => `Le fournisseur ne connaît pas ce modèle. ${detail}`,
+      busy: 'Le fournisseur est surchargé pour le moment. Réessayez dans un instant.',
+      tooLong: 'La demande est trop longue pour ce modèle. Choisissez un modèle avec plus de contexte.',
     },
   },
   {
@@ -131,6 +152,14 @@ export const ai = namespace(
     endpointHint:
       'Jeder OpenAI-kompatible Server: Ollama, LM Studio, ein Proxy. Lokale Server funktionieren aus einem Browser auf demselben Computer.',
     model: 'Modell',
+    modelId: 'Modell-ID',
+    modelNotListed: 'Modell nicht in der Liste? ID eingeben',
+    modelFromList: 'Aus der Liste wählen',
+    modelIdHint: (provider: string) => `Die ID, die die API von ${provider} erwartet, wie in ihrer Doku angegeben.`,
+    hearsAudio: 'Versteht Audio',
+    address: 'Adresse (optional)',
+    addressHint: (provider: string) =>
+      `Leer lassen, um ${provider} direkt aufzurufen. Ein Proxy oder Gateway mit derselben API gehört hierher.`,
     modelNoStructured: (name: string) => `${name} (keine strukturierte Ausgabe)`,
     supportsStructured: 'Unterstützt strukturierte Ausgabe',
     mayNotReturn: 'Liefert eventuell kein brauchbares Programm',
@@ -163,6 +192,8 @@ export const ai = namespace(
       unreachable:
         'Der Anbieter ist von diesem Browser aus nicht erreichbar (offline, blockiert oder falsche Adresse).',
       unknownModel: (detail: string) => `Der Anbieter kennt dieses Modell nicht. ${detail}`,
+      busy: 'Der Anbieter ist gerade überlastet. Versuch es gleich noch einmal.',
+      tooLong: 'Die Anfrage ist für dieses Modell zu lang. Wähle ein Modell mit größerem Kontext.',
     },
   },
 )

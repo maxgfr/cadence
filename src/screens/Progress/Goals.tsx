@@ -1,8 +1,10 @@
-import { Plus, Target } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { Plus, Sparkles, Target } from 'lucide-react'
+import { Suspense, useMemo, useState } from 'react'
 import { useLocation, useSearch } from 'wouter'
+import { useAi } from '../../app/ai.tsx'
 import { useData } from '../../app/data.tsx'
 import { useT } from '../../app/i18n.tsx'
+import { lazyChunk } from '../../app/lazyChunk.tsx'
 import { useToast } from '../../app/toast.tsx'
 import { addDays, formatDay } from '../../core/model/dates.ts'
 import { newId } from '../../core/model/ids.ts'
@@ -28,6 +30,9 @@ import { Sheet } from '../../ui/components/Sheet.tsx'
 import { useUnits } from '../../ui/units.ts'
 import { goalFormatter, goalTitle } from './goalText.ts'
 import styles from './Progress.module.css'
+
+// Goals proposed by AI carry the provider SDKs: loaded only when asked for.
+const GoalSuggestions = lazyChunk(() => import('./GoalSuggestions.tsx').then((m) => m.GoalSuggestions))
 
 /** A goal in one block: what, how far along, and where the trend lands by the deadline. */
 export function GoalLine({ goal, progress, onOpen }: { goal: Goal; progress: GoalProgress; onOpen?: () => void }) {
@@ -100,6 +105,8 @@ export function GoalsSection() {
   const [location, navigate] = useLocation()
   const fromLink = presetFrom(search, data.index)
   const [editing, setEditing] = useState<Goal | 'new' | null>(null)
+  const [suggesting, setSuggesting] = useState(false)
+  const ai = useAi()
   const open = fromLink ? 'new' : editing
   const close = () => {
     setEditing(null)
@@ -113,14 +120,27 @@ export function GoalsSection() {
         <h2 id="goals-title" className={styles.sectionTitle}>
           {t.progress.goals}
         </h2>
-        {goals.length > 0 && (
-          <Button
-            variant="plain"
-            icon={<Plus size={18} strokeWidth={2} aria-hidden="true" />}
-            onClick={() => setEditing('new')}
-          >
-            {t.progress.addGoal}
-          </Button>
+        {(goals.length > 0 || ai.ready) && (
+          <span className={styles.sectionActions}>
+            {ai.ready && (
+              <Button
+                variant="plain"
+                icon={<Sparkles size={18} strokeWidth={2} aria-hidden="true" />}
+                onClick={() => setSuggesting(true)}
+              >
+                {t.progress.suggest.button}
+              </Button>
+            )}
+            {goals.length > 0 && (
+              <Button
+                variant="plain"
+                icon={<Plus size={18} strokeWidth={2} aria-hidden="true" />}
+                onClick={() => setEditing('new')}
+              >
+                {t.progress.addGoal}
+              </Button>
+            )}
+          </span>
         )}
       </div>
       {goals.length === 0 ? (
@@ -160,6 +180,13 @@ export function GoalsSection() {
         </div>
       )}
       <GoalSheet goal={open} preset={fromLink} onClose={close} />
+      <Sheet open={suggesting} title={t.progress.suggest.title} onClose={() => setSuggesting(false)}>
+        {suggesting && (
+          <Suspense fallback={null}>
+            <GoalSuggestions onDone={() => setSuggesting(false)} />
+          </Suspense>
+        )}
+      </Sheet>
     </section>
   )
 }

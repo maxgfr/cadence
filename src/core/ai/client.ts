@@ -1,12 +1,10 @@
 import { generateText, type LanguageModel, NoObjectGeneratedError, Output } from 'ai'
+import { describeError, hasProvider, type LlmSettings, loadModel, registerProvider } from 'llm-connect'
 import type { z } from 'zod'
 import { currentMessages } from '../i18n/index.ts'
-import { type CatalogProvider, CUSTOM_PROVIDER } from './catalog.ts'
+import { type CatalogProvider, type ClientKind, CUSTOM_PROVIDER } from './catalog.ts'
 
 export class AiConfigError extends Error {}
-
-const ANTHROPIC_API = 'https://api.anthropic.com/v1'
-const ANTHROPIC_BROWSER_HEADER = 'anthropic-dangerous-direct-browser-access'
 
 export interface ModelRef {
   provider: CatalogProvider
@@ -16,57 +14,65 @@ export interface ModelRef {
   baseUrl?: string
 }
 
-const host = (url: string) => {
-  try {
-    return new URL(url).host
-  } catch {
-    return ''
+/** The package `llm-connect` calls each of our clients with. OpenRouter keeps its own SDK, registered below. */
+const NPM: Record<ClientKind, string> = {
+  anthropic: '@ai-sdk/anthropic',
+  google: '@ai-sdk/google',
+  openai: '@ai-sdk/openai',
+  openrouter: '@openrouter/ai-sdk-provider',
+  'openai-compatible': '@ai-sdk/openai-compatible',
+}
+
+/**
+ * The settings `llm-connect` builds a model from: the user's endpoint, or a catalog provider with its address
+ * (overridden by the user's own) and the headers its CORS preflight needs.
+ */
+export function toLlmSettings(ref: ModelRef): LlmSettings {
+  const { provider, modelId, apiKey } = ref
+  const baseUrl = ref.baseUrl?.trim() || undefined
+  const headers = provider.headers && Object.keys(provider.headers).length > 0 ? { ...provider.headers } : undefined
+  if (provider.id === CUSTOM_PROVIDER) {
+    if (!baseUrl) throw new AiConfigError(currentMessages().ai.errors.enterEndpoint)
+    return { apiKey, model: modelId, customEndpoint: baseUrl, customModel: modelId, ...(headers ? { headers } : {}) }
+  }
+  const api = baseUrl ?? provider.api
+  if (provider.client === 'openai-compatible' && !api)
+    throw new AiConfigError(currentMessages().ai.errors.noAddress(provider.name))
+  return {
+    apiKey,
+    model: modelId,
+    providerId: provider.id,
+    providerName: provider.name,
+    providerNpm: NPM[provider.client],
+    ...(api ? { providerApi: api } : {}),
+    ...(headers ? { headers } : {}),
   }
 }
 
-/** Builds a language model; provider packages are loaded only when first needed. */
+/** OpenRouter through its own SDK (its structured output and routing), behind `llm-connect`'s guarded fetch. */
+async function registerOpenRouter(): Promise<void> {
+  if (hasProvider(NPM.openrouter)) return
+  const { createOpenRouter } = await import('@openrouter/ai-sdk-provider')
+  registerProvider(NPM.openrouter, (config) =>
+    createOpenRouter({
+      apiKey: config.apiKey,
+      ...(config.baseURL ? { baseURL: config.baseURL } : {}),
+      ...(config.headers ? { headers: config.headers } : {}),
+      // The SDK only calls it; Bun's `typeof fetch` adds a `preconnect` no SDK uses.
+      ...(config.fetch ? { fetch: config.fetch as typeof fetch } : {}),
+    }).chat(config.model),
+  )
+}
+
+/**
+ * Builds a language model through `llm-connect`: each provider's request rules (Anthropic's browser header to its
+ * own host only, no `user-agent` for CORS, compatible base URLs, structured output on JSON-object APIs). Provider
+ * packages are loaded only when first needed.
+ */
 export async function createModel(ref: ModelRef): Promise<LanguageModel> {
-  const { provider, modelId, apiKey } = ref
-  const baseURL = ref.baseUrl?.trim() || provider.api || undefined
-  const headers = { ...(provider.headers ?? {}) }
-  switch (provider.client) {
-    case 'anthropic': {
-      // The browser header is Anthropic's own opt-in: it goes to Anthropic's host only, never to another server
-      // that merely speaks the same protocol (a proxy, MiniMax).
-      if (host(baseURL ?? ANTHROPIC_API) === host(ANTHROPIC_API)) headers[ANTHROPIC_BROWSER_HEADER] = 'true'
-      else delete headers[ANTHROPIC_BROWSER_HEADER]
-      const { createAnthropic } = await import('@ai-sdk/anthropic')
-      return createAnthropic({ apiKey, baseURL, headers })(modelId)
-    }
-    case 'google': {
-      const { createGoogle } = await import('@ai-sdk/google')
-      return createGoogle({ apiKey, baseURL, headers })(modelId)
-    }
-    case 'openai': {
-      const { createOpenAI } = await import('@ai-sdk/openai')
-      return createOpenAI({ apiKey, baseURL, headers })(modelId)
-    }
-    case 'openrouter': {
-      const { createOpenRouter } = await import('@openrouter/ai-sdk-provider')
-      return createOpenRouter({ apiKey, baseURL, headers }).chat(modelId)
-    }
-    case 'openai-compatible': {
-      if (!baseURL)
-        throw new AiConfigError(
-          provider.id === CUSTOM_PROVIDER
-            ? currentMessages().ai.errors.enterEndpoint
-            : currentMessages().ai.errors.noAddress(provider.name),
-        )
-      const { createOpenAICompatible } = await import('@ai-sdk/openai-compatible')
-      return createOpenAICompatible({
-        name: provider.id,
-        baseURL,
-        headers,
-        ...(apiKey ? { apiKey } : {}),
-        supportsStructuredOutputs: true,
-      }).chatModel(modelId)
-    }
-  }
+  const settings = toLlmSettings(ref)
+  if (ref.provider.client === 'openrouter' && ref.provider.id !== CUSTOM_PROVIDER) await registerOpenRouter()
+  return loadModel(settings)
 }
 
 export interface StructuredRequest<T> {
@@ -95,6 +101,24 @@ export function describeAiError(e: unknown): string {
   if (NoObjectGeneratedError.isInstance(e)) return t.notUsable
   const msg = e instanceof Error ? e.message : String(e)
   if (/abort/i.test(msg)) return t.stopped
+  // The provider's answer, classified by `llm-connect` (its message never holds the key).
+  const err = describeError(e)
+  switch (err.code) {
+    case 'auth':
+      return t.keyRefused
+    case 'auth-or-network':
+      return t.unreachable
+    case 'rate-limit':
+      return t.quota
+    case 'overloaded':
+    case 'server':
+      return t.busy
+    case 'context-length':
+      return t.tooLong
+    case 'not-found':
+      return t.unknownModel(err.message)
+  }
+  // Errors thrown before any request (or by a provider SDK in its own words).
   if (/401|unauthor|invalid.*key|api key/i.test(msg)) return t.keyRefused
   if (/429|rate|quota|credit/i.test(msg)) return t.quota
   if (/failed to fetch|network|load failed|cors/i.test(msg)) return t.unreachable
