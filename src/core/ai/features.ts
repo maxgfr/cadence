@@ -1,6 +1,16 @@
 import type { LanguageModel } from 'ai'
 import type { Goal, Program, ProgramLayout } from '../model/schemas.ts'
 import { generateStructured } from './client.ts'
+import {
+  AiCoachReply,
+  type CoachInput,
+  type CoachMessage,
+  type CoachPromptInput,
+  type CoachTurn,
+  coachFromAi,
+  coachMessages,
+  coachSystem,
+} from './coach.ts'
 import { AiExercises, type ExercisesDraft, exercisesFromAi } from './exercises.ts'
 import { AiGoals, type GoalProposal, goalsFromAi } from './goals.ts'
 import {
@@ -60,4 +70,22 @@ export async function generateGoalsDraft(
 ): Promise<GoalProposal[]> {
   const ai = await generateStructured(model, { ...pair, schema: AiGoals, ...(signal ? { signal } : {}) })
   return goalsFromAi(ai, library, existing, today)
+}
+
+/** One turn with the coach: its reply and the changes it proposes, none applied. */
+export async function generateCoachTurn(
+  model: LanguageModel,
+  prompt: CoachPromptInput,
+  history: readonly CoachMessage[],
+  input: CoachInput,
+  signal?: AbortSignal,
+): Promise<CoachTurn> {
+  const ai = await generateStructured(model, {
+    system: coachSystem(prompt),
+    prompt: '',
+    messages: coachMessages(history, input),
+    schema: AiCoachReply,
+    ...(signal ? { signal } : {}),
+  })
+  return coachFromAi(ai, prompt.context)
 }

@@ -47,6 +47,7 @@ Local-first and account-free: data lives on the device, exports to open JSON/CSV
 - Two modes, chosen at first run and switchable in Settings (user request): **Normal** shows the essentials (sets, reps, load or time or distance, session RPE, the main charts, a short AI questionnaire); **Advanced** adds per-set RPE, intensity prescriptions (%1RM, RPE, pace, % of max), rest and tempo in plans, extra stats (tonnage per muscle group, adherence) and the full AI questionnaire. The mode only hides or shows fields; the data model is the same, so switching never loses data.
 - Intensity in plans: kg, %1RM, RPE, pace, or % of max.
 - AI is BYOK, called directly from the browser; keys and base URL stay on the device and are excluded from exports. AI never writes data without confirmation.
+- Coach (user request): a conversation by text or voice that logs sets said aloud, sets the app up (exercises, programs, goals, settings) and gives advice ("is this exercise a good idea for me?"); each change is a card applied only on confirmation. Voice notes go to a model that hears audio, or are transcribed by the provider or on the device; recorded offline, they wait on the device. The conversation and pending notes are never exported.
 - No account, no sync service, no analytics.
 
 ## Brand Commitments

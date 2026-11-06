@@ -84,6 +84,18 @@ opens. The CSV export has one row per set.
 
 Cadence works fully without AI. With a model set up under *Settings › AI* it can:
 
+- **Coach** (*Today › Coach*): a conversation, typed or spoken. Say what you just did ("squat, three sets of five at
+  100, the last one hard") and the sets are proposed for the session in progress; ask it to design a program, adjust a
+  week, add exercises or goals, or change a setting; ask whether an exercise is a good idea for you, and it answers
+  from your program, goals, history and effort. Every change is a card you apply or dismiss; nothing is written before
+  *Apply*. The conversation stays in memory and is never stored.
+- **Voice while logging**: *Say what you did* on the logging screen turns a voice note (or typed words) into sets to
+  check, then add. A model that hears audio gets the recording itself; otherwise it is turned into text by your
+  provider (OpenAI, Gemini, Mistral, Groq) or, under *Settings › AI › Voice notes › This device*, by a speech model
+  run in the browser (NVIDIA Canary through `llm-connect`, English, French and German, about 215 MB downloaded once,
+  then offline). A note recorded without a network is kept on the device and sent when it is back.
+- **Ask the coach** from the block editor of a program: its verdict on the exercise for that day shows in place.
+
 - **Design a program** from a short questionnaire (disciplines, level, a set of sessions with no days or weeks to
   give, or days per week and weeks; goal; Advanced adds
   session length, equipment, target date, limitations and intensity style) for your disciplines or sports you name,

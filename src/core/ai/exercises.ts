@@ -5,7 +5,7 @@ import { type Discipline, Exercise, Metric, Muscle, PaceUnit } from '../model/sc
 import { type AthleteLibrary, disciplineResolver, languageRule, type PromptPair } from './program.ts'
 
 /* What a model is asked to return: every field present (nullable rather than optional), bounds applied after. */
-const AiExercise = z.object({
+export const AiExercise = z.object({
   name: z.string().describe("The usual name in the athlete's language, without the discipline in it"),
   discipline: z.string().nullable().describe("One of the athlete's disciplines by name, or the sport it belongs to"),
   metric: Metric.describe(

@@ -1,18 +1,21 @@
-import { Check, ChevronLeft, Plus, Timer, Trash2 } from 'lucide-react'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { Check, ChevronLeft, Mic, Plus, Timer, Trash2 } from 'lucide-react'
+import { Suspense, useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useLocation, useParams } from 'wouter'
+import { useAi } from '../../app/ai.tsx'
 import { useData } from '../../app/data.tsx'
 import { cameFrom } from '../../app/hashLocation.ts'
 import { useT } from '../../app/i18n.tsx'
+import { lazyChunk } from '../../app/lazyChunk.tsx'
 import { useToast } from '../../app/toast.tsx'
 import { newId } from '../../core/model/ids.ts'
-import { describeBlock, emptySet } from '../../core/model/program.ts'
+import { applyLoggedSets, describeBlock, emptySet } from '../../core/model/program.ts'
 import type { Entry, Exercise, Session, SetLog } from '../../core/model/schemas.ts'
 import { formatTime } from '../../core/model/units.ts'
 import { Button } from '../../ui/components/Button.tsx'
 import { DisciplineTag } from '../../ui/components/Discipline.tsx'
 import { EmptyState } from '../../ui/components/EmptyState.tsx'
 import { IconButton } from '../../ui/components/IconButton.tsx'
+import { Sheet } from '../../ui/components/Sheet.tsx'
 import { cx } from '../../ui/cx.ts'
 import { ExercisePicker } from '../../ui/ExercisePicker.tsx'
 import { useUnits } from '../../ui/units.ts'
@@ -20,6 +23,9 @@ import { FinishSheet } from './FinishSheet.tsx'
 import styles from './Log.module.css'
 import { RestTimer, useRestTimer } from './RestTimer.tsx'
 import { SetRow, setColumns } from './SetRow.tsx'
+
+// Voice logging carries the AI code: loaded only when the athlete opens it.
+const VoiceLog = lazyChunk(() => import('../Coach/VoiceLog.tsx').then((m) => m.VoiceLog))
 
 /**
  * The logging screen: one card per exercise, one row per set, a tick per set done. No clock runs: the rest timer
@@ -34,6 +40,8 @@ export function Log() {
   const [session, setSession] = useState<Session | undefined>(stored)
   const [picking, setPicking] = useState(false)
   const [finishing, setFinishing] = useState(false)
+  const [speaking, setSpeaking] = useState(false)
+  const ai = useAi()
   const rest = useRestTimer()
   const advanced = data.settings.mode === 'advanced'
   const units = useUnits()
@@ -141,6 +149,36 @@ export function Log() {
       >
         {t.log.addExercise}
       </Button>
+      {ai.ready && (
+        <Button
+          variant="secondary"
+          size="large"
+          full
+          icon={<Mic size={20} strokeWidth={2} aria-hidden="true" />}
+          onClick={() => setSpeaking(true)}
+        >
+          {t.coach.logSheet.title}
+        </Button>
+      )}
+      <Sheet open={speaking} title={t.coach.logSheet.title} onClose={() => setSpeaking(false)}>
+        {speaking && (
+          <Suspense fallback={null}>
+            <VoiceLog
+              sessionId={session.id}
+              onAdd={async (heard) => {
+                let next = session
+                for (const p of heard) {
+                  if (p.isNew) await data.put('exercises', p.exercise)
+                  next = applyLoggedSets(next, p.exercise.id, p.sets)
+                }
+                update(next)
+                setSpeaking(false)
+                toast(t.coach.appliedToast)
+              }}
+            />
+          </Suspense>
+        )}
+      </Sheet>
 
       <ExercisePicker
         open={picking}
