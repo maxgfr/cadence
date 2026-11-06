@@ -82,6 +82,15 @@
   hyphens: auto;
 }
 
+/* Narrow phones: five labels in French or German only fit on one line a size down (iOS tab bars use 10pt). */
+@media (max-width: 399px) {
+  .tab {
+    padding-inline: 0.125rem;
+    font-size: 0.6875rem;
+    letter-spacing: -0.01em;
+  }
+}
+
 .tab[aria-current] {
   color: var(--accent-ink);
 }
