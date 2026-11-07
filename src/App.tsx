@@ -1,5 +1,5 @@
 import { Suspense, useEffect, useRef } from 'react'
-import { Redirect, Route, Router, Switch } from 'wouter'
+import { Redirect, Route, Router, Switch, useLocation } from 'wouter'
 import { AiProvider } from './app/ai.tsx'
 import { CoachProvider } from './app/coach.tsx'
 import { DataProvider, useData } from './app/data.tsx'
@@ -32,8 +32,12 @@ const AiSettings = lazyChunk(() => import('./screens/Settings/AiSettings.tsx').t
 
 function Routes() {
   const { settings } = useData()
+  const [location] = useLocation()
   useTheme(settings.theme)
-  if (!settings.onboarded) return <Welcome />
+  // A device not set up yet can still sync: from the code's link, or from the welcome screen. Once synced it has
+  // the other device's data, and stays on the same screen.
+  const syncing = location === '/sync' || location === '/settings/sync'
+  if (!settings.onboarded && !syncing) return <Welcome />
   return (
     <Shell>
       <ScreenBoundary>

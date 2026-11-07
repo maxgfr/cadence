@@ -48,7 +48,7 @@ Local-first and account-free: data lives on the device, exports to open JSON/CSV
 - Intensity in plans: kg, %1RM, RPE, pace, or % of max.
 - AI is BYOK, called directly from the browser; keys and base URL stay on the device and are excluded from exports. AI never writes data without confirmation.
 - Coach (user request): a conversation by text or voice that logs sets said aloud, sets the app up (exercises, programs, goals, settings) and gives advice ("is this exercise a good idea for me?"); each change is a card applied only on confirmation. It is the only way to AI in the interface (user request: "AI everywhere" was too much): one bubble on every screen, which tells the coach where the athlete is and offers requests that fit; on the logging screen it is a microphone, above the rest timer. Voice notes go to a model that hears audio, or are transcribed by the provider or on the device; recorded offline, they wait on the device. The conversation and pending notes are never exported.
-- No account, no sync server, no analytics. Device-to-device sync (user request): a QR code pairs two devices, public relays only introduce them, the data is end-to-end encrypted and merged both ways (newest change wins, deletions carry over).
+- No account, no sync server, no analytics. Device-to-device sync (user request): a QR code pairs two devices, public relays only introduce them, the data is end-to-end encrypted and merged both ways (newest change wins, deletions carry over). Everything syncs, the AI settings and key included (user request: "sync everything"); a device not set up yet can sync from the link or the welcome screen.
 
 ## Brand Commitments
 

@@ -62,7 +62,7 @@ async function startWithDemo(page: Page, sport: RegExp) {
   await expect(page.getByRole('heading', { name: 'New session' })).toBeVisible()
 }
 
-test('two devices end with the same data, the AI settings go where there were none, never into a backup', async ({
+test('two devices end with the same data, the AI settings included, never into a backup', async ({
   page: pc,
   browser,
   context,
@@ -86,7 +86,8 @@ test('two devices end with the same data, the AI settings go where there were no
   // The PC shows a code; the phone opens its link (as the camera would).
   await pc.goto('./#/settings')
   await pc.getByRole('link', { name: /^Sync with another device/ }).click()
-  await expect(pc.getByRole('checkbox', { name: /Include AI settings/ })).toBeChecked()
+  // Everything goes: nothing to tick.
+  await expect(pc.getByRole('checkbox')).toHaveCount(0)
   await pc.getByRole('button', { name: /^Show a code/ }).click()
   await expect(pc.getByRole('img', { name: /^Pairing code/ })).toBeVisible()
   await expect(pc.getByText('Waiting for the other device…')).toBeVisible()
@@ -116,5 +117,67 @@ test('two devices end with the same data, the AI settings go where there were no
   expect(backup).toContain('"version": 7')
   expect(backup).not.toContain('sk-sync-secret')
   expect(backup).not.toContain('127.0.0.1:9')
+  await phoneContext.close()
+})
+
+/** The PC (Gym demo, AI set up) shows a code; its link, as the phone's camera would read it. */
+async function showCode(pc: Page) {
+  await startWithDemo(pc, /^Gym/)
+  await pc.goto('./#/settings/ai')
+  await pc.getByLabel('Provider').selectOption({ label: 'Custom endpoint (OpenAI-compatible)' })
+  await pc.getByLabel('Endpoint address').fill('http://127.0.0.1:9/v1')
+  await pc.getByLabel('Model').fill('mock')
+  await pc.getByRole('button', { name: 'Save', exact: true }).click()
+  await expect(pc.getByText('Saved.')).toBeVisible()
+  await pc.goto('./#/settings/sync')
+  await pc.getByRole('button', { name: /^Show a code/ }).click()
+  await pc.getByRole('button', { name: 'Copy link' }).click()
+  return pc.evaluate(() => navigator.clipboard.readText())
+}
+
+test('a phone never set up opens the code from its camera: it syncs, then opens on the data', async ({
+  page: pc,
+  browser,
+  context,
+}, testInfo) => {
+  const phoneContext = await browser.newContext({ baseURL: testInfo.project.use.baseURL })
+  const phone = await phoneContext.newPage()
+  await context.grantPermissions(['clipboard-read', 'clipboard-write'])
+  await relay(pc, phone)
+  const link = await showCode(pc)
+
+  // No welcome screen in the way: the link syncs right away.
+  await phone.goto(`./#/sync?${link.split('?')[1]}`)
+  await expect(phone.getByText('Up to date')).toBeVisible()
+  await expect(phone.getByText('AI settings received from the other device.')).toBeVisible()
+  await phone.getByRole('button', { name: 'Done' }).click()
+  await expect(phone.getByRole('heading', { name: 'Today' })).toBeVisible()
+  await phone.goto('./#/exercises')
+  await expect(phone.getByRole('button', { name: /^Back squat/ })).toBeVisible()
+  // The coach came with the AI settings.
+  await expect(phone.getByRole('button', { name: 'Coach', exact: true })).toBeVisible()
+  await phoneContext.close()
+})
+
+test('a device never set up can sync from the welcome screen instead', async ({
+  page: pc,
+  browser,
+  context,
+}, testInfo) => {
+  const phoneContext = await browser.newContext({ baseURL: testInfo.project.use.baseURL })
+  const phone = await phoneContext.newPage()
+  await context.grantPermissions(['clipboard-read', 'clipboard-write'])
+  await relay(pc, phone)
+  const link = await showCode(pc)
+
+  await phone.goto('./')
+  await phone.getByRole('button', { name: 'Already use Cadence on another device? Sync from it' }).click()
+  await phone.getByRole('button', { name: /^Scan a code/ }).click()
+  await phone.getByLabel(/link/i).fill(link)
+  await phone.getByRole('button', { name: 'Sync', exact: true }).click()
+  await expect(phone.getByText('Up to date')).toBeVisible()
+  await phone.getByRole('button', { name: 'Done' }).click()
+  await expect(phone.getByRole('heading', { name: 'Today' })).toBeVisible()
+  await expect(phone.getByRole('heading', { name: 'Cadence' })).toHaveCount(0)
   await phoneContext.close()
 })

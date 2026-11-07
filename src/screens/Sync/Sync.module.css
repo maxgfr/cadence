@@ -53,19 +53,14 @@
   opacity: 0.85;
 }
 
-.check {
-  display: grid;
-  grid-template-columns: 1.375rem minmax(0, 1fr);
-  gap: var(--space-3);
-  align-items: start;
-  cursor: pointer;
-}
-
-.check input {
-  width: 1.375rem;
-  height: 1.375rem;
-  margin: 0.125rem 0 0;
-  accent-color: var(--accent);
+/* Something to do on this device after the sync (iPhone: the home-screen app has its own data). */
+.note {
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-control);
+  background: var(--surface-pressed);
+  color: var(--ink);
+  line-height: var(--leading-body);
 }
 
 .qr {

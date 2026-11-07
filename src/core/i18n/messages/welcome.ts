@@ -15,6 +15,7 @@ export const welcome = namespace(
     note: 'Both can be changed any time in Settings. Switching mode never loses data.',
     startDemo: 'Start with the demo',
     startEmpty: 'Start empty',
+    syncInstead: 'Already use Cadence on another device? Sync from it',
   },
   {
     lead: 'Planifiez et notez vos entraînements, quel que soit le sport, et voyez ce qu’ils donnent. Tout reste sur cet appareil.',
@@ -30,6 +31,7 @@ export const welcome = namespace(
     note: 'Les deux se changent à tout moment dans les Réglages. Changer de mode ne perd jamais de données.',
     startDemo: 'Commencer avec la démo',
     startEmpty: 'Commencer à vide',
+    syncInstead: 'Vous utilisez déjà Cadence sur un autre appareil ? Synchronisez-le',
   },
   {
     lead: 'Plane und protokolliere dein Training, egal welcher Sport, und sieh, was es bringt. Alles bleibt auf diesem Gerät.',
@@ -45,5 +47,6 @@ export const welcome = namespace(
     note: 'Beides lässt sich jederzeit in den Einstellungen ändern. Ein Moduswechsel löscht nie Daten.',
     startDemo: 'Mit der Demo starten',
     startEmpty: 'Leer starten',
+    syncInstead: 'Nutzt du Cadence schon auf einem anderen Gerät? Synchronisiere von dort',
   },
 )

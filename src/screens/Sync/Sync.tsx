@@ -35,10 +35,25 @@ type Phase =
   | { kind: 'show'; pairing: Pairing; link: string }
   | { kind: 'scan' }
   | { kind: 'working' }
-  | { kind: 'done'; outcome: SyncOutcome }
+  /** `fromLink`: opened from the code's link (on iPhone, in Safari rather than the home-screen app). */
+  | { kind: 'done'; outcome: SyncOutcome; fromLink: boolean }
   | { kind: 'error'; message: string }
 
 const wide = () => typeof matchMedia !== 'undefined' && matchMedia('(min-width: 700px)').matches
+
+/**
+ * Safari on an iPhone or iPad, not the app added to the home screen: the two keep separate data, so a link opened
+ * from the Camera syncs Safari's copy, not the app's.
+ */
+const iosBrowser = () => {
+  if (typeof navigator === 'undefined') return false
+  const ios =
+    /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
+  const installed =
+    (navigator as Navigator & { standalone?: boolean }).standalone === true ||
+    (typeof matchMedia !== 'undefined' && matchMedia('(display-mode: standalone)').matches)
+  return ios && !installed
+}
 
 /**
  * Sync with another device: one shows a QR code, the other scans it (or opens its link). They connect directly,
@@ -54,10 +69,11 @@ export function Sync() {
   const [, navigate] = useLocation()
   const [phase, setPhase] = useState<Phase>({ kind: 'choose' })
   const [step, setStep] = useState<'waiting' | 'connecting' | 'syncing'>('connecting')
-  const [includeAi, setIncludeAi] = useState(true)
   const [pasted, setPasted] = useState('')
   const [cameraOff, setCameraOff] = useState(false)
   const busy = useRef(false)
+  // This sync started from the code's link, not from this screen.
+  const opened = useRef(false)
   const abort = useRef<AbortController | null>(null)
   // Leaving the screen stops a sync; a remount right away (React StrictMode in development) does not.
   const mounted = useRef(true)
@@ -89,16 +105,23 @@ export function Sync() {
         clearTimeout(wait)
         setPhase({ kind: 'working' })
         setStep('syncing')
-        const sendAi = includeAi && ai.ready
+        // Everything goes, the AI settings and key included (sealed end to end); the newest win on both devices.
         const exchange = runSync(link.channel, pairing.key, {
-          hasAi: ai.ready,
           snapshot: async () => ({
             backup: await exportBackup(data.store),
-            ...(sendAi ? { ai: { config: JSON.stringify(ai.config), key: await ai.getKey() } } : {}),
+            ...(ai.ready
+              ? {
+                  ai: {
+                    config: JSON.stringify(ai.config),
+                    key: await ai.getKey(),
+                    ...(ai.config.savedAt ? { savedAt: ai.config.savedAt } : {}),
+                  },
+                }
+              : {}),
           }),
           apply: async (merged, theirs) => {
             await data.replaceAll(merged)
-            if (theirs) await ai.save(parseConfig(theirs.config), theirs.key)
+            if (theirs) await ai.save(parseConfig(theirs.config), theirs.key, theirs.savedAt)
           },
         })
         const outcome = await Promise.race([
@@ -106,7 +129,7 @@ export function Sync() {
           new Promise<never>((_, reject) => setTimeout(() => reject(new SyncError('timeout')), EXCHANGE_MS)),
         ])
         markSynced()
-        setPhase({ kind: 'done', outcome })
+        setPhase({ kind: 'done', outcome, fromLink: !shown && opened.current })
       } catch (e) {
         const reason = e instanceof SyncError ? e : ctrl.signal.reason instanceof SyncError ? ctrl.signal.reason : null
         setPhase({
@@ -119,13 +142,14 @@ export function Sync() {
         busy.current = false
       }
     },
-    [ai, data, includeAi, s],
+    [ai, data, s],
   )
 
   // Opened from the QR code's link (the phone's camera app, or a pasted link): start right away.
   useEffect(() => {
     const p = parsePairing(`?${search}`)
     if (p) {
+      opened.current = true
       navigate('/settings/sync', { replace: true })
       run(p, false)
     }
@@ -171,15 +195,6 @@ export function Sync() {
               </button>
             ))}
           </div>
-          {ai.ready && (
-            <label className={styles.check}>
-              <input type="checkbox" checked={includeAi} onChange={(e) => setIncludeAi(e.target.checked)} />
-              <span>
-                {s.includeAi}
-                <span className={styles.hint}>{s.includeAiHint}</span>
-              </span>
-            </label>
-          )}
           <p className={styles.hint}>{last ? s.lastSynced(last.toLocaleString()) : s.never}</p>
         </div>
       )}
@@ -255,6 +270,7 @@ export function Sync() {
               : `${s.received(total(phase.outcome.received))} · ${s.sent(total(phase.outcome.sent))}`}
           </p>
           {phase.outcome.tookAi && <p className={styles.lead}>{s.tookAi}</p>}
+          {phase.fromLink && iosBrowser() && <p className={styles.note}>{s.safariSynced}</p>}
           <Button variant="primary" size="large" full onClick={() => navigate('/')}>
             {t.common.done}
           </Button>

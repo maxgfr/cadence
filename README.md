@@ -130,9 +130,11 @@ scans it from Cadence (*Scan a code*) or opens its link. The two connect directl
 introduce them, and that introduction is itself encrypted. Everything sent is sealed (AES-GCM, gzip) with a 256-bit key
 that exists only in the QR code, which works once, for 5 minutes. Both devices then apply the same merge: each record
 keeps its newest change, a deletion wins over older changes, settings keep the newest. Erasing or importing on one
-device deletes nothing on the other: the next sync brings its data back. *Include AI settings* sends the provider,
-model and key, encrypted, taken only by a device that has none. On iPhone, scan from Cadence itself rather than the
-Camera app: Safari and the home-screen app keep separate data.
+device deletes nothing on the other: the next sync brings its data back. Everything syncs, the AI provider, model and key
+included (sealed like the rest; the most recently saved win on both devices). A device not set up yet syncs too: open
+the link, or choose *Already use Cadence on another device?* on the welcome screen, and it starts with the other
+device's data. On iPhone, the Camera opens the link in Safari, which keeps its own data apart from Cadence added to the
+home screen: to sync that app, scan from inside it (*Settings › Sync with another device › Scan a code*).
 
 ## Privacy
 
@@ -140,7 +142,7 @@ Camera app: Safari and the home-screen app keep separate data.
   your devices only during a sync you start, end-to-end encrypted.
 - AI requests go straight from the device to the provider you chose, only when you ask for them.
 - The API key and endpoint are stored on the device, apart from training data, and never included in backups (a sync
-  can carry them to your other device, end-to-end encrypted, when you tick *Include AI settings*). They are
+  carries them to your other device, end-to-end encrypted). They are
   encrypted at rest (AES-GCM, under a key the browser keeps and will not export), so a dump of the site's storage holds
   no key in clear text.
 - `maxgfr.github.io` is shared by every site the author publishes on GitHub Pages. If you rely on Cadence, deploy your
