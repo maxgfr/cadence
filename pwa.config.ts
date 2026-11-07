@@ -29,20 +29,10 @@ export function pwaOptions(base: string): Partial<VitePWAOptions> {
     },
     workbox: {
       globPatterns: ['**/*.{js,css,html,svg,png,ico,woff2,json}'],
-      globIgnores: ['**/apple-splash-*.png', '**/transcribe.worker-*.js'],
+      globIgnores: ['**/apple-splash-*.png'],
       maximumFileSizeToCacheInBytes: 6 * 1024 * 1024,
       navigateFallback: 'index.html',
       cleanupOutdatedCaches: true,
-      // The on-device speech model's runtime (onnxruntime WebAssembly, an app file of ~30 MB): too big to precache
-      // for everyone, so it is kept the first time a voice note is transcribed on the device, then works offline.
-      runtimeCaching: [
-        {
-          urlPattern: ({ url, sameOrigin }) =>
-            sameOrigin && /\/assets\/(ort-wasm[^/]*\.wasm|transcribe\.worker-[^/]*\.js)$/.test(url.pathname),
-          handler: 'CacheFirst',
-          options: { cacheName: 'cadence-speech-runtime', expiration: { maxEntries: 4 } },
-        },
-      ],
     },
   }
 }

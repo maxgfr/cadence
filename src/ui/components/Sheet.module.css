@@ -98,7 +98,7 @@
 /* From 600px: a full-height panel on the right, the page dimmed beside it. */
 @media (min-width: 600px) {
   .sheet.fill {
-    width: min(var(--chat-width, 24rem), 100%);
+    width: min(var(--chat-width), 100%);
     margin: 0 0 0 auto;
     padding-left: 0;
     border-left: var(--hairline-width) solid var(--hairline);

@@ -9,6 +9,11 @@
   pointer-events: none;
 }
 
+/* On a computer the coach's column is on the right: toasts are centred on the app beside it. */
+:global(html[data-coach-dock]) .region {
+  right: calc(var(--chat-width) + var(--gutter));
+}
+
 .toast {
   display: flex;
   flex-wrap: wrap;

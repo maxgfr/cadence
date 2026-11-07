@@ -55,10 +55,23 @@ export async function connectMockModel(page: Page) {
   await expect(page.getByText('Saved.')).toBeVisible()
 }
 
-/** The coach's bubble, on whatever screen is shown, and the conversation it opens. */
-export async function openCoach(page: Page, name: string | RegExp = 'Coach') {
-  await page.getByRole('button', { name, exact: typeof name === 'string' }).click()
+/** A computer's window: the coach is a column beside the app rather than a bubble. */
+export const docked = (page: Page) => (page.viewportSize()?.width ?? 0) >= 1200
+
+/** The coach, on whatever screen is shown: its column on a computer, else the conversation its bubble opens. */
+export async function openCoach(page: Page) {
+  if (docked(page)) {
+    const dock = page.getByRole('complementary', { name: 'Coach' })
+    await expect(dock).toBeVisible()
+    return dock
+  }
+  await page.getByRole('button', { name: 'Coach', exact: true }).click()
   const sheet = page.getByRole('dialog', { name: 'Coach' })
   await expect(sheet).toBeVisible()
   return sheet
+}
+
+/** Back to the screen: the conversation over it closes (a computer's column stays). */
+export async function closeCoach(page: Page) {
+  if (!docked(page)) await page.getByRole('dialog', { name: 'Coach' }).getByRole('button', { name: 'Close' }).click()
 }

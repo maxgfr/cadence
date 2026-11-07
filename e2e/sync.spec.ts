@@ -155,7 +155,9 @@ test('a phone never set up opens the code from its camera: it syncs, then opens 
   await phone.goto('./#/exercises')
   await expect(phone.getByRole('button', { name: /^Back squat/ })).toBeVisible()
   // The coach came with the AI settings.
-  await expect(phone.getByRole('button', { name: 'Coach', exact: true })).toBeVisible()
+  await expect(
+    phone.getByRole('button', { name: 'Coach', exact: true }).or(phone.getByRole('complementary', { name: 'Coach' })),
+  ).toBeVisible()
   await phoneContext.close()
 })
 

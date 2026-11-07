@@ -1,4 +1,4 @@
-import type { ModelMessage, UserContent } from 'ai'
+import type { ModelMessage } from 'ai'
 import { z } from 'zod'
 import { type ExerciseIndex, findExercise, normalizeName } from '../library/exercises.ts'
 import { newId } from '../model/ids.ts'
@@ -430,13 +430,12 @@ export interface CoachMessage {
   text: string
 }
 
-/** What the athlete sends: words, a recording the model hears as is, or both. */
+/** What the athlete sends: what they typed. */
 export interface CoachInput {
-  text?: string
-  audio?: { data: Uint8Array; mediaType: string }
+  text: string
 }
 
-/** The last turns of the conversation, then the new message (its recording as a file part). */
+/** The last turns of the conversation, then the new message. */
 export function coachMessages(history: readonly CoachMessage[], input: CoachInput): ModelMessage[] {
   const past = history
     .slice(-12)
@@ -444,12 +443,5 @@ export function coachMessages(history: readonly CoachMessage[], input: CoachInpu
       (m): ModelMessage =>
         m.role === 'user' ? { role: 'user', content: m.text } : { role: 'assistant', content: m.text },
     )
-  const text = input.text?.trim() || 'Here is my voice note.'
-  const content: UserContent = input.audio
-    ? [
-        { type: 'file', data: input.audio.data, mediaType: input.audio.mediaType },
-        { type: 'text', text },
-      ]
-    : text
-  return [...past, { role: 'user', content }]
+  return [...past, { role: 'user', content: input.text.trim() }]
 }

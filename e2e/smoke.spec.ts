@@ -177,6 +177,7 @@ test('advanced mode shows per-set effort; AI stays out of the way until set up',
   await expect(page.getByRole('link', { name: /Demo programs/ })).toHaveCount(0)
   // No coach until a model is set up: no bubble anywhere, and its old link lands on Today, nothing open.
   await expect(page.getByRole('button', { name: 'Coach', exact: true })).toHaveCount(0)
+  await expect(page.getByRole('complementary', { name: 'Coach' })).toHaveCount(0)
   await page.goto('./#/coach')
   await expect(page.getByRole('heading', { name: 'Today' })).toBeVisible()
   await expect(page.getByRole('dialog')).toHaveCount(0)

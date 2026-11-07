@@ -1,5 +1,5 @@
 import { expect, type Page, test } from '@playwright/test'
-import { answerWith, coachAnswer, connectMockModel, isCoach, openCoach, said } from './mockModel.ts'
+import { answerWith, closeCoach, coachAnswer, connectMockModel, docked, isCoach, openCoach, said } from './mockModel.ts'
 
 async function setUp(page: Page) {
   await page.goto('./')
@@ -7,18 +7,6 @@ async function setUp(page: Page) {
   await page.getByRole('button', { name: 'Start with the demo' }).click()
   await expect(page.getByRole('heading', { name: 'New session' })).toBeVisible()
   await connectMockModel(page)
-}
-
-/** A microphone that records silence: what the browser under test lacks. */
-async function fakeMicrophone(page: Page) {
-  await page.addInitScript(() => {
-    navigator.mediaDevices.getUserMedia = async () => {
-      const audio = new AudioContext()
-      const out = audio.createMediaStreamDestination()
-      audio.createOscillator().connect(out)
-      return out.stream
-    }
-  })
 }
 
 test('the coach logs what was said, only once applied', async ({ page }) => {
@@ -46,7 +34,7 @@ test('the coach logs what was said, only once applied', async ({ page }) => {
   await expect(coach.getByRole('heading', { name: 'Log 3 sets of Back squat' })).toBeVisible()
 
   // Nothing is written before Apply. (Moving within the app: the conversation is in memory, a reload ends it.)
-  await coach.getByRole('button', { name: 'Close' }).click()
+  await closeCoach(page)
   await page.goto(session)
   await expect(squatKg).toHaveValue('')
   await page.goto('./#/')
@@ -54,7 +42,7 @@ test('the coach logs what was said, only once applied', async ({ page }) => {
   await coach.getByRole('button', { name: 'Apply' }).click()
   await expect(coach.getByRole('article').getByRole('status')).toHaveText('Applied')
 
-  await coach.getByRole('button', { name: 'Close' }).click()
+  await closeCoach(page)
   await page.goto(session)
   await expect(squatKg).toHaveValue('100')
   await expect(page.getByRole('button', { name: 'Back squat, set 3 done' })).toHaveAttribute('aria-pressed', 'true')
@@ -81,14 +69,13 @@ test('asked from a program, the coach reads the week on show and answers over th
   await expect(coach.getByText('Adjust it: Monday already has two squat patterns.')).toBeVisible()
   expect(asked).toContain('editing their program \\"Beginner full body\\"')
   expect(asked).toContain('Back squat')
-  await coach.getByRole('button', { name: 'Close' }).click()
+  await closeCoach(page)
   await expect(editor).toBeVisible()
 })
 
-test('on the logging screen the bubble is a microphone; what is said shows in the session at once', async ({
+test('on the logging screen, what the coach is told shows in the session at once, the rest timer in view', async ({
   page,
 }) => {
-  await fakeMicrophone(page)
   await setUp(page)
   await page.goto('./')
   await page
@@ -98,27 +85,50 @@ test('on the logging screen the bubble is a microphone; what is said shows in th
   await answerWith(page, () =>
     coachAnswer({ reply: 'Logged.', logSets: [{ exercise: 'back-squat', sets: [said(90, 5), said(95, 5)] }] }),
   )
-  // Resting is when the sets are said: the bubble stays above the rest timer.
+  // Resting is when the sets are told: the coach stays clear of the rest timer.
   await page.getByRole('button', { name: /^Rest .* after Back squat$/ }).click()
-  const bubble = page.getByRole('button', { name: 'Say what you did' })
   const rest = page.getByRole('region', { name: 'Rest timer' })
   await expect(rest).toBeVisible()
   // Measured once the bar has risen into place.
   await page.evaluate(() => Promise.all(document.getAnimations().map((a) => a.finished.catch(() => undefined))))
-  const [b, r] = [await bubble.boundingBox(), await rest.boundingBox()]
-  expect(b && r && b.y + b.height <= r.y).toBe(true)
+  const r = await rest.boundingBox()
+  if (docked(page)) {
+    // A computer: the bar stops at the coach's column.
+    const d = await page.getByRole('complementary', { name: 'Coach' }).boundingBox()
+    expect(r && d && r.x + r.width <= d.x).toBe(true)
+  } else {
+    const b = await page.getByRole('button', { name: 'Coach', exact: true }).boundingBox()
+    expect(b && r && b.y + b.height <= r.y).toBe(true)
+  }
 
-  const coach = await openCoach(page, 'Say what you did')
-  // It records as it opens; typing is there too.
-  await expect(coach.getByRole('status').filter({ hasText: 'Listening…' })).toBeVisible()
-  await coach.getByRole('button', { name: 'Cancel' }).click()
+  const coach = await openCoach(page)
   await coach.getByLabel('Message the coach…').fill('squat 90 then 95, five each')
   await coach.getByRole('button', { name: 'Send' }).click()
   await coach.getByRole('button', { name: 'Apply' }).click()
   await expect(coach.getByRole('article').getByRole('status')).toHaveText('Applied')
-  await coach.getByRole('button', { name: 'Close' }).click()
+  await closeCoach(page)
   await expect(page.getByLabel('Back squat, set 1, kg')).toHaveValue('90')
   await expect(page.getByLabel('Back squat, set 2, kg')).toHaveValue('95')
+})
+
+test('on a computer the coach is always beside the app; the conversation carries on from screen to screen', async ({
+  page,
+}) => {
+  test.skip(!docked(page), 'a computer only')
+  await setUp(page)
+  await answerWith(page, () => coachAnswer({ reply: 'Your week looks balanced.' }))
+  await page.goto('./#/programs')
+  const coach = await openCoach(page)
+  await coach.getByLabel('Message the coach…').fill('Is my week balanced?')
+  await coach.getByRole('button', { name: 'Send' }).click()
+  await expect(coach.getByText('Your week looks balanced.')).toBeVisible()
+  await page.goto('./#/progress')
+  await expect(page.getByRole('heading', { name: 'Progress', level: 1 })).toBeVisible()
+  await expect(coach.getByText('Your week looks balanced.')).toBeVisible()
+  // No bubble and nothing over the app: the column is beside it.
+  await expect(page.getByRole('button', { name: 'Coach', exact: true })).toHaveCount(0)
+  const [main, dock] = [await page.locator('#main').boundingBox(), await coach.boundingBox()]
+  expect(main && dock && main.x + main.width <= dock.x + 1).toBe(true)
 })
 
 test('asked for a program, the coach describes it and the designer builds it: a draft to edit', async ({ page }) => {

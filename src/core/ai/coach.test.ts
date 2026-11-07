@@ -19,7 +19,6 @@ import { AiExercises } from './exercises.ts'
 import { generateCoachTurn } from './features.ts'
 import { AiGoals } from './goals.ts'
 import { AiProgram, AiWeek } from './program.ts'
-import { encodeWav } from './wav.ts'
 
 describe('sets said aloud, into the session', () => {
   const planned: Session = {
@@ -58,18 +57,6 @@ describe('sets said aloud, into the session', () => {
   test('an exercise not in the session gets its own entry', () => {
     const next = applyLoggedSets(planned, 'kick', [{ distance: 100, done: true }])
     expect(next.entries.map((e) => e.exerciseId)).toEqual(['free', 'kick'])
-  })
-})
-
-describe('WAV', () => {
-  test('a RIFF header, 16-bit samples, clipped', () => {
-    const wav = encodeWav(new Float32Array([0, 1, -1, 2]), 16_000)
-    const view = new DataView(wav.buffer)
-    expect(new TextDecoder().decode(wav.slice(0, 4))).toBe('RIFF')
-    expect(new TextDecoder().decode(wav.slice(8, 12))).toBe('WAVE')
-    expect(view.getUint32(24, true)).toBe(16_000)
-    expect(wav.byteLength).toBe(44 + 8)
-    expect([0, 1, 2, 3].map((i) => view.getInt16(44 + i * 2, true))).toEqual([0, 32767, -32768, 32767])
   })
 })
 
@@ -351,7 +338,7 @@ describe('the conversation', () => {
     expect(sessionText(undefined, IDX, { weightUnit: 'kg', distanceUnit: 'm' })).toContain('No session in progress')
   })
 
-  test('a voice note goes to the model as a file part, after the last turns; the answer becomes proposals', async () => {
+  test('the message goes to the model after the last turns; the answer becomes proposals', async () => {
     const model = scriptedModel(() =>
       answer({
         reply: 'Trois séries de squat notées.',
@@ -365,13 +352,13 @@ describe('the conversation', () => {
         { role: 'user', text: 'Salut' },
         { role: 'assistant', text: 'Bonjour !' },
       ],
-      { audio: { data: new Uint8Array([1, 2, 3]), mediaType: 'audio/wav' } },
+      { text: 'squat, deux séries de cinq à 100' },
     )
     expect(turn.reply).toBe('Trois séries de squat notées.')
     expect(turn.proposals).toHaveLength(1)
     const prompt = model.doGenerateCalls[0]?.prompt ?? []
     expect(prompt.map((m) => m.role)).toEqual(['system', 'user', 'assistant', 'user'])
     const last = prompt.at(-1)
-    expect(JSON.stringify(last)).toContain('audio/wav')
+    expect(JSON.stringify(last)).toContain('squat, deux séries de cinq à 100')
   })
 })
