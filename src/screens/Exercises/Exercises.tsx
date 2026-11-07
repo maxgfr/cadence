@@ -1,6 +1,7 @@
-import { Dumbbell, Plus, Search, Sparkles } from 'lucide-react'
+import { Dumbbell, Plus, Search } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { Link } from 'wouter'
+import { useCoachScreen } from '../../app/coach.tsx'
 import { useData } from '../../app/data.tsx'
 import { useT } from '../../app/i18n.tsx'
 import type { Discipline, Exercise } from '../../core/model/schemas.ts'
@@ -24,6 +25,7 @@ export function Exercises() {
   const units = useUnits()
   const t = useT()
   const x = t.exercises
+  useCoachScreen({ where: 'their exercise library', starters: [t.coach.starters.exercises, t.coach.starters.advice] })
   const [query, setQuery] = useState('')
   const [editing, setEditing] = useState<Editing>(null)
   const trained = useMemo(
@@ -63,10 +65,6 @@ export function Exercises() {
         >
           {x.newDiscipline}
         </Button>
-        <Link href="/exercises/generate" className={buttonClass({ variant: 'secondary' })}>
-          <Sparkles size={18} strokeWidth={1.75} aria-hidden="true" />
-          {x.withAi}
-        </Link>
       </div>
 
       {empty ? (

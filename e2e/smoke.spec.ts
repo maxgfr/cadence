@@ -1,5 +1,6 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, type Page, test } from '@playwright/test'
+import { answerWith, coachAnswer, connectMockModel, isCoach, openCoach } from './mockModel.ts'
 
 /** No serious or critical accessibility violation on the current screen. */
 async function accessible(page: Page, screen: string) {
@@ -174,8 +175,11 @@ test('advanced mode shows per-set effort; AI stays out of the way until set up',
   await expect(page.getByRole('link', { name: /Design with AI \(optional\)/ })).toBeVisible()
   // The demo is managed from Settings only.
   await expect(page.getByRole('link', { name: /Demo programs/ })).toHaveCount(0)
-  await page.goto('./#/programs/generate')
-  await expect(page.getByRole('heading', { name: 'No AI model set up' })).toBeVisible()
+  // No coach until a model is set up: no bubble anywhere, and its old link lands on Today, nothing open.
+  await expect(page.getByRole('button', { name: 'Coach', exact: true })).toHaveCount(0)
+  await page.goto('./#/coach')
+  await expect(page.getByRole('heading', { name: 'Today' })).toBeVisible()
+  await expect(page.getByRole('dialog')).toHaveCount(0)
 })
 
 test('a set of sessions: written once, then Today runs the next one or any other', async ({ page }) => {
@@ -267,7 +271,7 @@ test('the week todo ticks what is finished, by tabs or by going back', async ({ 
   await expect(week.getByRole('button', { name: /^Full body B To do/ })).toBeVisible()
 })
 
-test('AI proposes exercises, picked and edited before they reach the library', async ({ page }) => {
+test('the coach proposes exercises, picked and edited before they reach the library', async ({ page }) => {
   const proposal = {
     exercises: [
       ['Campus board', 'reps'],
@@ -283,38 +287,28 @@ test('AI proposes exercises, picked and edited before they reach the library', a
       notes: null,
     })),
   }
-  // A local OpenAI-compatible server, answered by the test.
-  await page.route('http://127.0.0.1:9/v1/chat/completions', (route) =>
-    route.fulfill({
-      contentType: 'application/json',
-      headers: { 'access-control-allow-origin': '*' },
-      body: JSON.stringify({
-        id: 'mock',
-        object: 'chat.completion',
-        created: 0,
-        model: 'mock',
-        choices: [
-          { index: 0, finish_reason: 'stop', message: { role: 'assistant', content: JSON.stringify(proposal) } },
-        ],
-        usage: { prompt_tokens: 1, completion_tokens: 1, total_tokens: 2 },
-      }),
-    }),
-  )
+  const prompts: string[] = []
+  await answerWith(page, (body) => {
+    prompts.push(body)
+    return isCoach(body)
+      ? coachAnswer({
+          reply: 'Here are the climbing essentials.',
+          addExercises: [{ sports: ['Climbing'], level: 'beginner', size: 'essentials', equipment: '', notes: '' }],
+        })
+      : proposal
+  })
   await page.goto('./')
   await page.getByRole('button', { name: 'Start empty' }).click()
-  await page.goto('./#/settings/ai')
-  await page.getByLabel('Provider').selectOption({ label: 'Custom endpoint (OpenAI-compatible)' })
-  await page.getByLabel('Endpoint address').fill('http://127.0.0.1:9/v1')
-  await page.getByLabel('Model').fill('mock')
-  await page.getByRole('button', { name: 'Save', exact: true }).click()
-  await expect(page.getByText('Saved.')).toBeVisible()
+  await connectMockModel(page)
 
   await page.goto('./#/exercises')
-  await page.getByRole('link', { name: 'With AI' }).click()
-  await page.getByLabel('Sports').fill('Climbing')
-  await page.getByText('Essentials', { exact: true }).click()
-  await accessible(page, 'exercises with AI')
-  await page.getByRole('button', { name: 'Propose exercises' }).click()
+  const coach = await openCoach(page)
+  await coach.getByLabel('Message the coach…').fill('The climbing essentials, please')
+  await coach.getByRole('button', { name: 'Send' }).click()
+  await expect(coach.getByRole('heading', { name: 'Add 3 exercises to your library' })).toBeVisible()
+  await accessible(page, 'the coach')
+  expect(prompts[1]).toContain('Climbing')
+  await coach.getByRole('button', { name: 'Review' }).click()
   await expect(page.getByRole('heading', { name: 'Proposed exercises' })).toBeVisible()
   await expect(page.getByRole('heading', { name: 'Climbing (new discipline)' })).toBeVisible()
   await accessible(page, 'proposed exercises')

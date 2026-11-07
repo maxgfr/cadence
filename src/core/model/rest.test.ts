@@ -27,28 +27,20 @@ describe('the rest between sets', () => {
   })
 
   test('the coach sets it on an exercise or a sport, never globally', () => {
-    const base = {
-      exercise: null,
-      sets: null,
-      exercises: null,
-      program: null,
-      layout: null,
-      programId: null,
-      weekNumber: null,
-      week: null,
-      goals: null,
-      settings: null,
-      discipline: null,
-      restSeconds: null,
-    }
     const gym = ATHLETE.disciplines.find((d) => d.id === GYM)?.name ?? ''
     const ai: AiCoachReply = {
       reply: 'Done.',
-      actions: [
-        { ...base, type: 'set_rest', exercise: 'back-squat', restSeconds: 180 },
-        { ...base, type: 'set_rest', discipline: gym, restSeconds: 90.4 },
-        { ...base, type: 'set_rest', discipline: 'Curling', restSeconds: 60 },
-        { ...base, type: 'set_rest', exercise: 'back-squat', restSeconds: 5000 },
+      logSets: [],
+      createProgram: [],
+      adjustWeek: [],
+      addExercises: [],
+      addGoals: [],
+      updateSettings: [],
+      setRest: [
+        { exercise: 'back-squat', discipline: '', seconds: 180 },
+        { exercise: '', discipline: gym, seconds: 90.4 },
+        { exercise: '', discipline: 'Curling', seconds: 60 },
+        { exercise: 'back-squat', discipline: '', seconds: 5000 },
       ],
     }
     const turn = coachFromAi(ai, {

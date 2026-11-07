@@ -22,76 +22,117 @@ import {
   toDisplayDistance,
   toDisplayWeight,
 } from '../model/units.ts'
-import { AiExercise, type ExercisesDraft, exercisesFromAi } from './exercises.ts'
-import { AiGoal, type GoalProposal, goalsFromAi } from './goals.ts'
+import { type ExercisesAnswers, type ExercisesDraft, exercisesPrompt } from './exercises.ts'
+import { type GoalProposal, goalsPrompt } from './goals.ts'
 import {
-  AiProgram,
-  AiWeek,
   type AthleteLibrary,
+  adjustWeekPrompt,
+  contextPrompt,
   type Draft,
-  draftFromAi,
-  draftWeekFromAi,
   languageRule,
   libraryText,
+  type ProgramShape,
+  type PromptPair,
+  type ScratchAnswers,
+  scratchPrompt,
 } from './program.ts'
 
 /*
- * What the coach answers each turn: a reply, and changes to the app it proposes. Every action is one object whose
- * fields are all present and nullable (rather than a union): the most portable shape across structured-output modes.
+ * What the coach answers each turn: a reply, and the changes it proposes, one list per kind of change. Fields are all
+ * present, with a neutral value (0, "", "unchanged") rather than null wherever one does: strict structured-output
+ * modes cap how many nullable fields one schema may have (Anthropic: 16), and the exercise and goal schemas carry
+ * some. A program or a week is only described here (what to build): it is then designed by its own call and schema.
  * Nothing here is ever stored; the athlete applies each proposal or not.
  */
 
-export const COACH_ACTIONS = [
-  'log_sets',
-  'add_exercises',
-  'create_program',
-  'adjust_week',
-  'add_goals',
-  'update_settings',
-  'set_rest',
-] as const
-
 const AiSet = z.object({
-  reps: z.number().nullable(),
-  weight: z.number().nullable().describe("Load, in the athlete's weight unit"),
-  timeSeconds: z.number().nullable(),
-  distance: z.number().nullable().describe("In the athlete's distance unit"),
-  rpe: z.number().nullable().describe('Effort 1-10, when they said it'),
+  reps: z.number().describe('0 when not said'),
+  weight: z.number().describe("Load, in the athlete's weight unit; 0 for none or not said"),
+  timeSeconds: z.number().describe('0 when not said'),
+  distance: z.number().describe("In the athlete's distance unit; 0 when not said"),
+  rpe: z.number().describe('Effort 1-10 when they said it, else 0'),
 })
+/** A set as a model gives it: 0 (or null) for what was not said. */
+export type AiSetIn = { [K in keyof z.infer<typeof AiSet>]: number | null }
 
+/** Each setting, or "unchanged". */
 const AiSettingsPatch = z.object({
-  mode: Mode.nullable(),
-  weightUnit: z.enum(['kg', 'lb']).nullable(),
-  distanceUnit: z.enum(['m', 'yd']).nullable(),
-  weekStartsOnMonday: z.boolean().nullable(),
-  language: Language.nullable(),
+  mode: z.enum(['unchanged', ...Mode.options]),
+  weightUnit: z.enum(['unchanged', 'kg', 'lb']),
+  distanceUnit: z.enum(['unchanged', 'm', 'yd']),
+  weekStart: z.enum(['unchanged', 'monday', 'sunday']),
+  language: z.enum(['unchanged', ...Language.options]),
 })
 
-const AiAction = z.object({
-  type: z.enum(COACH_ACTIONS),
-  exercise: z.string().nullable().describe('log_sets: the exercise, by its id in the library, else by name'),
-  sets: z.array(AiSet).nullable().describe('log_sets: one entry per set, in the order done'),
-  exercises: z.array(AiExercise).nullable().describe('add_exercises: the exercises to add'),
-  program: AiProgram.nullable().describe('create_program: the whole program'),
+const AiLogSets = z.object({
+  exercise: z.string().describe('The exercise, by its id in the library, else by name'),
+  sets: z.array(AiSet).describe('One entry per set, in the order done'),
+})
+
+const Level = z.enum(['beginner', 'intermediate', 'advanced'])
+
+const AiProgramRequest = z.object({
+  brief: z
+    .string()
+    .describe(
+      'Everything they asked for, for the program designer: the split, how many exercises per session, the equipment, the goal, limitations',
+    ),
   layout: z
     .enum(['weeks', 'sessions'])
-    .nullable()
-    .describe('create_program: weeks (a plan week by week) or sessions (one week of sessions done in any order)'),
-  programId: z.string().nullable().describe('adjust_week: the id of one of their programs'),
-  weekNumber: z.number().nullable().describe('adjust_week: the week to rewrite, 1 for the first'),
-  week: AiWeek.nullable().describe('adjust_week: the new week'),
-  goals: z.array(AiGoal).nullable().describe('add_goals: the goals'),
-  settings: AiSettingsPatch.nullable().describe('update_settings: only what they asked to change, others null'),
-  discipline: z.string().nullable().describe('set_rest: a discipline by name, for the rest of a whole sport'),
-  restSeconds: z.number().nullable().describe('set_rest: seconds between sets; 0 for no timer'),
+    .describe('weeks: a plan week by week; sessions: a set of sessions done in any order and repeated'),
+  weeks: z.number().describe('weeks layout: how many weeks; 0 otherwise'),
+  daysPerWeek: z.number().describe('weeks layout: training days per week; 0 otherwise'),
+  sessions: z.number().describe('sessions layout: how many distinct sessions, 0 to let the designer choose'),
+  sports: z.array(z.string()).describe('The sports it covers, by name'),
+  level: Level,
+})
+type AiProgramRequest = z.infer<typeof AiProgramRequest>
+
+const AiWeekRequest = z.object({
+  programId: z.string().describe('The id of one of their programs'),
+  weekNumber: z.number().describe('The week to rewrite, 1 for the first'),
+  brief: z.string().describe('What to change, as they asked; "" to fit it to how they trained'),
+})
+
+const AiExercisesRequest = z.object({
+  sports: z.array(z.string()).describe('The sports, by name'),
+  level: Level,
+  size: z.enum(['essentials', 'complete']).describe('essentials: the few that matter; complete: a full library'),
+  equipment: z.string().describe('What they have, "" when not said'),
+  notes: z.string().describe('Anything else they asked for, "" when nothing'),
+})
+
+const AiGoalsRequest = z.object({
+  focus: z.string().describe('What the goals are about, "" for their training as a whole'),
+})
+
+const AiRest = z.object({
+  exercise: z.string().describe('An exercise by id or name; "" for a whole sport'),
+  discipline: z.string().describe('A discipline by name, for all its exercises; "" for one exercise'),
+  seconds: z.number().describe('Seconds between sets; 0 for no timer'),
 })
 
 export const AiCoachReply = z.object({
   reply: z.string().describe('What you say to the athlete'),
-  actions: z.array(AiAction).describe('Changes you propose; empty when you only answer'),
+  logSets: z.array(AiLogSets).describe('Sets they say they did; empty unless they told you'),
+  createProgram: z.array(AiProgramRequest).describe('A program to design, only when asked: at most one'),
+  adjustWeek: z.array(AiWeekRequest).describe('A week of one of their programs to rewrite, only when asked'),
+  addExercises: z.array(AiExercisesRequest).describe('Exercises to propose for their library, only when asked'),
+  addGoals: z.array(AiGoalsRequest).describe('Goals to propose, only when asked: at most one'),
+  updateSettings: z.array(AiSettingsPatch).describe('Settings to change, only when asked: at most one'),
+  setRest: z.array(AiRest).describe('The rest between sets of an exercise or a sport, only when asked'),
 })
 export type AiCoachReply = z.infer<typeof AiCoachReply>
-type AiAction = z.infer<typeof AiAction>
+
+/**
+ * What the coach was asked to build: a program, a week, exercises or goals. Each is designed by its own call (its own
+ * prompt and schema, as tested in their modules), then proposed like any other change.
+ */
+export type CoachBuild =
+  | { kind: 'program'; shape: ProgramShape; brief: string; sports: string[]; level: ScratchAnswers['level'] }
+  | { kind: 'week'; program: Program; index: number; brief: string }
+  | { kind: 'exercises'; answers: ExercisesAnswers }
+  | { kind: 'goals'; focus: string }
 
 /** A change the coach proposes, ready to apply; `id` keys it in the conversation. */
 export type CoachProposal = { id: string } & (
@@ -122,6 +163,8 @@ export type CoachProposal = { id: string } & (
 export interface CoachTurn {
   reply: string
   proposals: CoachProposal[]
+  /** Why something the coach was asked to build could not be (the first error), when one failed. */
+  failed?: unknown
 }
 
 export interface CoachContext {
@@ -133,6 +176,10 @@ export interface CoachContext {
   active: Session | undefined
   settings: Settings
   today: string
+  /** They have finished sessions: a program is built on their history rather than from scratch. */
+  trained?: boolean
+  /** Where the athlete is in the app as they ask ("editing the program …"), for the model. */
+  screen?: string
   now?: Date
 }
 
@@ -146,8 +193,8 @@ function metricOf(sets: readonly SetLog[]): Metric {
   return 'reps'
 }
 
-/** Sets as the athlete said them (their units) → stored sets (metric), done. Empty sets are dropped. */
-export function setsFromAi(sets: readonly z.infer<typeof AiSet>[], units: UnitPrefs): SetLog[] {
+/** Sets as the athlete said them (their units) → stored sets (metric), done. 0 is "not said"; empty sets are dropped. */
+export function setsFromAi(sets: readonly AiSetIn[], units: UnitPrefs): SetLog[] {
   const out: SetLog[] = []
   for (const s of sets.slice(0, 50)) {
     const reps = finite(s.reps)
@@ -156,8 +203,8 @@ export function setsFromAi(sets: readonly z.infer<typeof AiSet>[], units: UnitPr
     const distance = finite(s.distance)
     const rpe = finite(s.rpe)
     const set: SetLog = { done: true }
-    if (reps !== undefined && reps >= 0 && reps <= 1000) set.reps = Math.round(reps)
-    if (weight !== undefined && weight >= 0 && weight < 2000)
+    if (reps !== undefined && reps > 0 && reps <= 1000) set.reps = Math.round(reps)
+    if (weight !== undefined && weight > 0 && weight < 2000)
       set.weight = Math.round(fromDisplayWeight(weight, units.weightUnit) * 100) / 100
     if (time !== undefined && time > 0 && time < 86_400) set.time = time
     if (distance !== undefined && distance > 0 && distance < 1_000_000)
@@ -170,115 +217,153 @@ export function setsFromAi(sets: readonly z.infer<typeof AiSet>[], units: UnitPr
 
 function settingsFromAi(p: z.infer<typeof AiSettingsPatch>): Partial<Settings> {
   const patch: Partial<Settings> = {}
-  if (p.mode) patch.mode = p.mode
-  if (p.weightUnit) patch.weightUnit = p.weightUnit
-  if (p.distanceUnit) patch.distanceUnit = p.distanceUnit
-  if (p.weekStartsOnMonday !== null) patch.weekStart = p.weekStartsOnMonday ? 1 : 0
-  if (p.language) patch.language = p.language
+  if (p.mode !== 'unchanged') patch.mode = p.mode
+  if (p.weightUnit !== 'unchanged') patch.weightUnit = p.weightUnit
+  if (p.distanceUnit !== 'unchanged') patch.distanceUnit = p.distanceUnit
+  if (p.weekStart !== 'unchanged') patch.weekStart = p.weekStart === 'monday' ? 1 : 0
+  if (p.language !== 'unchanged') patch.language = p.language
   return patch
 }
 
-function proposalOf(a: AiAction, c: CoachContext): CoachProposal | undefined {
-  const units = { weightUnit: c.settings.weightUnit, distanceUnit: c.settings.distanceUnit }
-  const id = newId()
-  switch (a.type) {
-    case 'log_sets': {
-      const name = a.exercise?.trim()
-      const sets = setsFromAi(a.sets ?? [], units)
-      if (!name || sets.length === 0) return undefined
-      const known = findExercise(c.library.exercises, name)
-      if (known) return { id, kind: 'log_sets', exercise: known, isNew: false, sets }
-      const exercise: Exercise = {
-        id: newId(),
-        name: name.slice(0, 80),
-        metric: metricOf(sets),
-        ...(c.active?.disciplineId ? { disciplineId: c.active.disciplineId } : {}),
-      }
-      return { id, kind: 'log_sets', exercise, isNew: true, sets }
-    }
-    case 'add_exercises': {
-      if (!a.exercises?.length) return undefined
-      const draft = exercisesFromAi({ exercises: a.exercises }, c.library)
-      return draft.exercises.length > 0 ? { id, kind: 'add_exercises', draft } : undefined
-    }
-    case 'create_program': {
-      if (!a.program) return undefined
-      try {
-        const draft = draftFromAi(a.program, c.library, c.now, a.layout ?? 'weeks')
-        return { id, kind: 'program', origin: 'ai', draft }
-      } catch {
-        return undefined
-      }
-    }
-    case 'adjust_week': {
-      const program = c.programs.find((p) => p.id === a.programId)
-      const index = Math.round(finite(a.weekNumber) ?? 0) - 1
-      if (!program || !a.week || index < 0 || index >= program.weeks.length) return undefined
-      try {
-        const draft = draftWeekFromAi(a.week, program, index, c.library)
-        return { id, kind: 'program', origin: 'adjust', draft, week: index + 1 }
-      } catch {
-        return undefined
-      }
-    }
-    case 'add_goals': {
-      if (!a.goals?.length) return undefined
-      const goals = goalsFromAi({ goals: a.goals }, c.library, c.goals, c.today, c.now)
-      return goals.length > 0 ? { id, kind: 'add_goals', goals } : undefined
-    }
-    case 'set_rest': {
-      const seconds = finite(a.restSeconds)
-      if (seconds === undefined || seconds < 0 || seconds > 900) return undefined
-      const exercise = a.exercise?.trim() ? findExercise(c.library.exercises, a.exercise.trim()) : undefined
-      if (exercise) return { id, kind: 'rest', target: { exercise }, seconds: Math.round(seconds) }
-      const name = a.discipline?.trim()
-      const discipline = name
-        ? c.library.disciplines.find((d) => normalizeName(d.name) === normalizeName(name) || d.id === name)
-        : undefined
-      return discipline ? { id, kind: 'rest', target: { discipline }, seconds: Math.round(seconds) } : undefined
-    }
-    case 'update_settings': {
-      if (!a.settings) return undefined
-      const patch = settingsFromAi(a.settings)
-      return Object.keys(patch).length > 0 ? { id, kind: 'settings', patch } : undefined
-    }
-  }
+const whole = (v: number | null | undefined, min: number, max: number): number | undefined => {
+  const n = finite(v)
+  return n !== undefined && n >= min && n <= max ? Math.round(n) : undefined
 }
 
-/** The model's answer as a reply and proposals: what cannot be applied safely is left out. */
-export function coachFromAi(ai: AiCoachReply, c: CoachContext): CoachTurn {
-  const proposals: CoachProposal[] = []
-  for (const a of ai.actions.slice(0, 12)) {
-    const p = proposalOf(a, c)
-    if (p) proposals.push(p)
+/** A program's shape as the coach described it, bounded: a week plan, or a set of sessions. */
+function shapeOf(r: AiProgramRequest): ProgramShape {
+  if (r.layout === 'weeks')
+    return { layout: 'weeks', weeks: whole(r.weeks, 1, 16) ?? 4, daysPerWeek: whole(r.daysPerWeek, 1, 7) ?? 3 }
+  const sessions = whole(r.sessions, 1, 7)
+  return { layout: 'sessions', ...(sessions ? { sessions } : {}) }
+}
+
+function logSetsOf(a: z.infer<typeof AiLogSets>, c: CoachContext): CoachProposal | undefined {
+  const name = a.exercise.trim()
+  const sets = setsFromAi(a.sets, { weightUnit: c.settings.weightUnit, distanceUnit: c.settings.distanceUnit })
+  if (!name || sets.length === 0) return undefined
+  const id = newId()
+  const known = findExercise(c.library.exercises, name)
+  if (known) return { id, kind: 'log_sets', exercise: known, isNew: false, sets }
+  const exercise: Exercise = {
+    id: newId(),
+    name: name.slice(0, 80),
+    metric: metricOf(sets),
+    ...(c.active?.disciplineId ? { disciplineId: c.active.disciplineId } : {}),
   }
-  return { reply: ai.reply.trim().slice(0, 4000), proposals }
+  return { id, kind: 'log_sets', exercise, isNew: true, sets }
+}
+
+function restOf(a: z.infer<typeof AiRest>, c: CoachContext): CoachProposal | undefined {
+  const seconds = whole(a.seconds, 0, 900)
+  if (seconds === undefined) return undefined
+  const id = newId()
+  const exercise = a.exercise.trim() ? findExercise(c.library.exercises, a.exercise.trim()) : undefined
+  if (exercise) return { id, kind: 'rest', target: { exercise }, seconds }
+  const name = a.discipline.trim()
+  const discipline = name
+    ? c.library.disciplines.find((d) => normalizeName(d.name) === normalizeName(name) || d.id === name)
+    : undefined
+  return discipline ? { id, kind: 'rest', target: { discipline }, seconds } : undefined
+}
+
+/**
+ * The model's answer as a reply, the proposals ready to apply, and what is still to be designed (`builds`): what
+ * cannot be applied safely is left out.
+ */
+export function coachFromAi(ai: AiCoachReply, c: CoachContext): CoachTurn & { builds: CoachBuild[] } {
+  const proposals: CoachProposal[] = []
+  const add = (p: CoachProposal | undefined) => {
+    if (p && proposals.length < 12) proposals.push(p)
+  }
+  for (const a of ai.logSets) add(logSetsOf(a, c))
+  for (const a of ai.setRest) add(restOf(a, c))
+  const patch = ai.updateSettings[0] ? settingsFromAi(ai.updateSettings[0]) : {}
+  if (Object.keys(patch).length > 0) add({ id: newId(), kind: 'settings', patch })
+
+  const builds: CoachBuild[] = []
+  const brief = (v: string) => v.trim().slice(0, 2000)
+  const names = (v: readonly string[]) => v.map((x) => x.trim().slice(0, 80)).filter(Boolean)
+  const exercises = ai.addExercises[0]
+  if (exercises)
+    builds.push({
+      kind: 'exercises',
+      answers: {
+        sports: names(exercises.sports),
+        level: exercises.level,
+        size: exercises.size,
+        equipment: brief(exercises.equipment),
+        notes: brief(exercises.notes),
+      },
+    })
+  const program = ai.createProgram[0]
+  if (program)
+    builds.push({
+      kind: 'program',
+      shape: shapeOf(program),
+      brief: brief(program.brief),
+      sports: names(program.sports),
+      level: program.level,
+    })
+  for (const w of ai.adjustWeek.slice(0, 2)) {
+    const p = c.programs.find((x) => x.id === w.programId)
+    const index = (whole(w.weekNumber, 1, 520) ?? 0) - 1
+    if (p && index >= 0 && index < p.weeks.length)
+      builds.push({ kind: 'week', program: p, index, brief: brief(w.brief) })
+  }
+  const goals = ai.addGoals[0]
+  if (goals) builds.push({ kind: 'goals', focus: brief(goals.focus) })
+  return { reply: ai.reply.trim().slice(0, 4000), proposals, builds }
+}
+
+/**
+ * What the designer of a build is asked: the prompts of the program, week, exercises and goals features, with what
+ * the athlete told the coach. A program builds on their history when they have one.
+ */
+export function buildPrompt(b: CoachBuild, c: CoachContext, history: string): PromptPair {
+  switch (b.kind) {
+    case 'program': {
+      return c.trained
+        ? contextPrompt({ shape: b.shape, focus: b.brief, sports: b.sports }, history, c.library)
+        : scratchPrompt({ sports: b.sports, level: b.level, shape: b.shape, goal: b.brief }, c.library, c.today)
+    }
+    case 'week':
+      return adjustWeekPrompt(b.program, b.index, history, c.library, c.index, b.brief)
+    case 'exercises':
+      return exercisesPrompt(b.answers, c.library)
+    case 'goals':
+      return goalsPrompt({ focus: b.focus }, history, c.library)
+  }
 }
 
 // ——— Prompt ———
 
 const SYSTEM = `You are the coach inside Cadence, an athlete's training app: an experienced coach across sports \
 (strength, swimming, track and field, running and others). You talk with the athlete, and when they ask for it or \
-describe what they did, you propose changes to their app as actions. Nothing is applied until they confirm each one, \
-so propose exactly what they asked for or clearly meant, nothing more.
+describe what they did, you propose changes to their app. Nothing is applied until they confirm each one, so propose \
+exactly what they asked for or clearly meant, nothing more; leave every other list empty.
 
-Actions:
-- log_sets: sets they say they did, for the session in progress. One action per exercise, one entry per set, values \
-in their units (given below). "Same as last time" means their last logged sets on that exercise. An exercise not in \
-the library may be named; it is created with the sets.
-- add_exercises: new exercises for their library, only when asked.
-- create_program: a whole program, only when asked to design one. Use library ids; percentages are whole numbers; \
-metric units (kg, metres, seconds) inside programs.
-- adjust_week: rewrite one week of one of their programs (its id and the week number), only when asked.
-- add_goals: goals, only when asked; targets from their logged bests, metric units.
-- update_settings: only the settings they asked to change.
-- set_rest: the rest between sets of one exercise (exercise) or of a whole sport (discipline), in seconds.
+Changes:
+- logSets: sets they say they did, for the session in progress. One item per exercise, one entry per set, values in \
+their units (given below), 0 for what they did not say. "Same as last time" means their last logged sets on that \
+exercise. An exercise not in the library may be named; it is created with the sets.
+- addExercises: only when asked for exercises for their library: the sports, level and equipment, for the \
+exercise designer.
+- createProgram: only when asked to design a program. Do not write the program: describe it for the program designer, \
+who sees their library and history. Put in the brief everything they asked for (the split, how many sessions and how \
+many exercises per session, the equipment, their level, goal and limitations), and say in your reply that you are \
+designing it. The same goes for adjustWeek, addExercises and addGoals: you describe, a designer builds.
+- adjustWeek: rewrite one week of one of their programs (its id and the week number), only when asked; the brief says \
+what to change.
+- addGoals: only when asked for goals: what they are about, for the goal designer.
+- updateSettings: only the settings they asked to change, "unchanged" for the others.
+- setRest: the rest between sets of one exercise or of a whole sport (discipline), in seconds.
 
 Advice: when asked whether an exercise, a change or a plan is a good idea, give the verdict first (good, adjust it, or \
 avoid it) and the reasons from their program, the day it goes in (muscle balance, volume already planned, overlap with \
 exercises they have), their goals, their history and effort (RPE), and the limitations they mentioned. When something \
-fits better, propose it as an action. Be brief and honest: never invent numbers or history, and say you cannot tell \
-when their data is not enough. For pain or injury, advise seeing a professional.
+fits better, propose it. Be brief and honest: never invent numbers or history, and say you cannot tell when their \
+data is not enough. For pain or injury, advise seeing a professional.
 
 Replies are short and plain: a few sentences, unless they ask for detail.`
 
@@ -332,6 +417,7 @@ export function coachSystem({ context: c, history }: CoachPromptInput): string {
       : 'Their programs: none yet.',
     '',
     sessionText(c.active, c.index, units),
+    ...(c.screen ? ['', `Where they are in the app as they write: ${c.screen}`] : []),
     '',
     'Their training:',
     history,

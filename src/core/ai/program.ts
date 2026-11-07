@@ -522,13 +522,17 @@ export function contextPrompt(a: ContextAnswers, context: string, library: Athle
   }
 }
 
-/** Asks for a replacement of the program's week `index`, from what was actually done in the week before it. */
+/**
+ * Asks for a replacement of the program's week `index`, from what was actually done in the week before it, and what
+ * the athlete asked to change, if they did.
+ */
 export function adjustWeekPrompt(
   program: Program,
   index: number,
   context: string,
   library: AthleteLibrary,
   exercises: ExerciseIndex,
+  request = '',
 ): PromptPair {
   const units = { weightUnit: 'kg' as const, distanceUnit: 'm' as const }
   const week = program.weeks[index]
@@ -547,6 +551,7 @@ export function adjustWeekPrompt(
       `Rewrite week ${index + 1} so it fits what they actually did: if sets were missed or the effort was higher`,
       'than planned, ease off; if everything was done at a lower effort than planned, progress a little more.',
       `Keep the same number of days (${week?.days.length ?? 3}) and the same structure where it worked.`,
+      ...(request.trim() ? [`What the athlete asked to change, which comes first: ${request.trim()}`] : []),
       '',
       `Planned week ${index + 1}:`,
       plan,

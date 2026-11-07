@@ -9,6 +9,7 @@ import { I18nProvider, useT } from './app/i18n.tsx'
 import { lazyChunk, ScreenBoundary } from './app/lazyChunk.tsx'
 import { useTheme } from './app/theme.ts'
 import { ToastProvider, useToast } from './app/toast.tsx'
+import { CoachBubble, OpenCoach } from './screens/Coach/CoachBubble.tsx'
 import { Exercises } from './screens/Exercises/Exercises.tsx'
 import { SessionDetail } from './screens/History/SessionDetail.tsx'
 import { Log } from './screens/Log/Log.tsx'
@@ -22,12 +23,9 @@ import { Settings } from './screens/Settings/Settings.tsx'
 import { Today } from './screens/Today/Today.tsx'
 import { Shell } from './ui/shell/Shell.tsx'
 
-// The AI screens carry the provider SDKs: loaded only when opened.
-const Generate = lazyChunk(() => import('./screens/Programs/Generate.tsx').then((m) => m.Generate))
-const GenerateExercises = lazyChunk(() =>
-  import('./screens/Exercises/GenerateExercises.tsx').then((m) => m.GenerateExercises),
+const ReviewExercises = lazyChunk(() =>
+  import('./screens/Exercises/ReviewExercises.tsx').then((m) => m.ReviewExercises),
 )
-const Coach = lazyChunk(() => import('./screens/Coach/Coach.tsx').then((m) => m.Coach))
 // Sync carries the WebRTC and QR code libraries: loaded only when opened.
 const Sync = lazyChunk(() => import('./screens/Sync/Sync.tsx').then((m) => m.Sync))
 const AiSettings = lazyChunk(() => import('./screens/Settings/AiSettings.tsx').then((m) => m.AiSettings))
@@ -49,16 +47,16 @@ function Routes() {
             </Route>
             <Route path="/history/:id">{(p) => <Redirect to={`/progress/sessions/${p.id}`} replace />}</Route>
             <Route path="/programs" component={Programs} />
-            <Route path="/programs/generate" component={Generate} />
             <Route path="/programs/draft" component={DraftEditor} />
             <Route path="/programs/:id" component={ProgramEditor} />
             <Route path="/progress" component={Progress} />
             <Route path="/progress/sessions/:id" component={SessionDetail} />
             <Route path="/exercises" component={Exercises} />
-            <Route path="/exercises/generate" component={GenerateExercises} />
+            <Route path="/exercises/review" component={ReviewExercises} />
             <Route path="/settings" component={Settings} />
             <Route path="/settings/ai" component={AiSettings} />
-            <Route path="/coach" component={Coach} />
+            {/* The coach opens over any screen; an older link to it lands on Today with it open. */}
+            <Route path="/coach" component={OpenCoach} />
             <Route path="/settings/demo" component={Demo} />
             <Route path="/settings/sync" component={Sync} />
             {/* The QR code's link: opening it on the other device starts the sync. */}
@@ -67,6 +65,7 @@ function Routes() {
           </Switch>
         </Suspense>
       </ScreenBoundary>
+      <CoachBubble />
     </Shell>
   )
 }

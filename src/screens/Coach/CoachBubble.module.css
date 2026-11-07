@@ -1,0 +1,66 @@
+/* Room at the end of every screen, so the bubble never sits on the last row. */
+.spacer {
+  height: calc(var(--hit-large) + var(--space-4));
+}
+
+/* The coach: one round button in the corner, above the tab bar. */
+.bubble {
+  position: fixed;
+  z-index: 16;
+  right: var(--gutter);
+  bottom: calc(var(--tabbar-height) + env(safe-area-inset-bottom) + var(--space-3));
+  display: grid;
+  place-items: center;
+  width: var(--hit-large);
+  height: var(--hit-large);
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: var(--accent);
+  color: var(--on-accent);
+  box-shadow:
+    var(--lift),
+    0 6px 16px rgb(0 0 0 / 0.18);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.bubble:active {
+  transform: scale(0.94);
+}
+
+.bubble:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 3px;
+}
+
+.bubble[hidden] {
+  display: none;
+}
+
+/* The logging screen has no tab bar. */
+.bubble[data-focus] {
+  bottom: calc(env(safe-area-inset-bottom) + var(--space-4));
+}
+
+/* Above the rest timer: resting is when the athlete says what they just did. */
+.bubble[data-raised] {
+  bottom: calc(env(safe-area-inset-bottom) + 8rem);
+}
+
+/* The keyboard is open: the bubble steps aside with the tab bar. */
+:global(html[data-keyboard="open"]) .bubble {
+  display: none;
+}
+
+@media (min-width: 1000px) {
+  .bubble {
+    right: var(--space-5);
+    bottom: calc(env(safe-area-inset-bottom) + var(--space-5));
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .bubble {
+    transition: transform var(--dur) var(--ease-out);
+  }
+}

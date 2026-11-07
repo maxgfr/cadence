@@ -1,4 +1,5 @@
 import { Check } from 'lucide-react'
+import { useState } from 'react'
 import { useData } from '../../app/data.tsx'
 import { useT } from '../../app/i18n.tsx'
 import type { CoachProposal } from '../../core/ai/coach.ts'
@@ -72,7 +73,10 @@ export function useProposalText(p: CoachProposal): { title: string; lines: strin
   }
 }
 
-/** One proposal of the coach: what it does, and Apply or Dismiss. Nothing happens before Apply. */
+/**
+ * One proposal of the coach: what it does, and Apply or Dismiss. Nothing happens before Apply. Goals are ticked one
+ * by one; a program and exercises open for review first.
+ */
 export function ProposalCard({
   proposal,
   outcome,
@@ -81,20 +85,57 @@ export function ProposalCard({
 }: {
   proposal: CoachProposal
   outcome: 'applied' | 'dismissed' | undefined
-  onApply: () => void
+  /** With the proposal as applied: only the goals left ticked. */
+  onApply: (applied: CoachProposal) => void
   onDismiss: () => void
 }) {
   const t = useT()
   const { title, lines } = useProposalText(proposal)
-  const opensDraft = proposal.kind === 'program'
+  const [left, setLeft] = useState<ReadonlySet<number>>(new Set())
+  const goals = proposal.kind === 'add_goals' ? proposal.goals : undefined
+  const ticked = goals?.filter((_, i) => !left.has(i))
+  const applied: CoachProposal = proposal.kind === 'add_goals' ? { ...proposal, goals: ticked ?? [] } : proposal
+  const label =
+    proposal.kind === 'program'
+      ? t.coach.openDraft
+      : proposal.kind === 'add_exercises'
+        ? t.coach.review
+        : ticked
+          ? t.coach.proposal.addGoals(ticked.length)
+          : t.coach.apply
   return (
     <article className={styles.card} data-outcome={outcome}>
       <h3 className={styles.cardTitle}>{title}</h3>
-      {lines.filter(Boolean).map((l) => (
-        <p key={l} className={styles.cardLine}>
-          {l}
-        </p>
-      ))}
+      {goals && !outcome ? (
+        <ul className={styles.picks}>
+          {lines.map((l, i) => (
+            <li key={l}>
+              <label className={styles.pick}>
+                <input
+                  type="checkbox"
+                  checked={!left.has(i)}
+                  onChange={(e) => {
+                    const next = new Set(left)
+                    if (e.target.checked) next.delete(i)
+                    else next.add(i)
+                    setLeft(next)
+                  }}
+                />
+                <span>
+                  {l}
+                  {goals[i]?.why && <span className={styles.why}>{goals[i].why}</span>}
+                </span>
+              </label>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        lines.filter(Boolean).map((l) => (
+          <p key={l} className={styles.cardLine}>
+            {l}
+          </p>
+        ))
+      )}
       {outcome ? (
         <p className={styles.outcome} role="status">
           {outcome === 'applied' && <Check size={16} strokeWidth={2.25} aria-hidden="true" />}
@@ -102,8 +143,8 @@ export function ProposalCard({
         </p>
       ) : (
         <div className={styles.cardActions}>
-          <Button variant="primary" onClick={onApply}>
-            {opensDraft ? t.coach.openDraft : t.coach.apply}
+          <Button variant="primary" disabled={ticked?.length === 0} onClick={() => onApply(applied)}>
+            {label}
           </Button>
           <Button variant="plain" onClick={onDismiss}>
             {t.coach.dismiss}
