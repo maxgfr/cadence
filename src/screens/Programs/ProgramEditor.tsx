@@ -1,8 +1,8 @@
-import { Copy, Play, Plus, Sparkles, Trash2 } from 'lucide-react'
+import { Copy, Play, Plus, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import { Link, useLocation, useParams } from 'wouter'
 import { useStartSession } from '../../app/actions.ts'
-import { useAi } from '../../app/ai.tsx'
+import { useCoachScreen } from '../../app/coach.tsx'
 import { useData } from '../../app/data.tsx'
 import { type ProgramDraft, useDraft } from '../../app/drafts.tsx'
 import { useT } from '../../app/i18n.tsx'
@@ -58,7 +58,6 @@ export function DraftEditor() {
 
 function ProgramForm({ initial, draft, saved }: { initial: Program; draft?: ProgramDraft; saved: boolean }) {
   const data = useData()
-  const ai = useAi()
   const t = useT()
   const m = t.programs.editor
   const toast = useToast()
@@ -91,6 +90,27 @@ function ProgramForm({ initial, draft, saved }: { initial: Program; draft?: Prog
   const exName = (id: string) =>
     data.index.get(id)?.name ?? draft?.newExercises.find((e) => e.id === id)?.name ?? m.unknownExercise
   const exOf = (id: string) => data.index.get(id) ?? draft?.newExercises.find((e) => e.id === id)
+
+  // The coach reads the week on show, to answer "is it balanced?" or rewrite it, without leaving the editor.
+  const shown = (week?.days ?? [])
+    .map(
+      (d) =>
+        `${d.name}: ${d.blocks.map((b) => `${exName(b.exerciseId)} ${describeBlock(b, exOf(b.exerciseId), units)}`).join(', ') || 'no exercise yet'}`,
+    )
+    .join(' | ')
+  useCoachScreen({
+    where: [
+      saved
+        ? `editing their program "${program.name}" (id ${program.id})`
+        : `looking at a program draft, "${program.name}", not saved yet`,
+      `${set ? 'its sessions' : `week ${weekIndex + 1} of ${program.weeks.length}`}: ${shown || 'empty'}`,
+    ].join('; '),
+    starters: [
+      t.coach.starters.balance,
+      ...(saved && !set ? [t.coach.starters.adjustWeek(weekIndex + 1)] : []),
+      t.coach.starters.addExercise,
+    ],
+  })
 
   const change = (fn: (p: Program) => Program) => {
     setProgram(fn)
@@ -273,15 +293,6 @@ function ProgramForm({ initial, draft, saved }: { initial: Program; draft?: Prog
                     {m.deleteWeek}
                   </Button>
                 )}
-                {saved && ai.ready && (
-                  <Link
-                    href={`/programs/generate?adjust=${program.id}&week=${weekIndex}`}
-                    className={buttonClass({ variant: 'plain' })}
-                  >
-                    <Sparkles size={18} strokeWidth={1.75} aria-hidden="true" />
-                    {m.adjustWithAi}
-                  </Link>
-                )}
               </div>
             </div>
           )}
@@ -428,7 +439,6 @@ function ProgramForm({ initial, draft, saved }: { initial: Program; draft?: Prog
 
       <BlockSheet
         block={editing?.block ?? null}
-        where={editing ? { day: week?.days[editing.day]?.name ?? '', program: program.name } : undefined}
         onClose={() => setEditing(null)}
         onSave={(b) => {
           if (editing) changeDay(editing.day, (x) => ({ ...x, blocks: x.blocks.map((y) => (y.id === b.id ? b : y)) }))

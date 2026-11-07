@@ -1,6 +1,7 @@
 import { Target, TrendingUp } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { Link, useLocation, useSearch } from 'wouter'
+import { useCoachScreen } from '../../app/coach.tsx'
 import { useData } from '../../app/data.tsx'
 import { useT } from '../../app/i18n.tsx'
 import { formatDecimal } from '../../core/i18n/locale.ts'
@@ -31,6 +32,10 @@ type View = 'overview' | 'history'
 export function Progress() {
   const data = useData()
   const t = useT()
+  useCoachScreen({
+    where: 'Progress: their goals, records and history',
+    starters: [t.coach.starters.goals, t.coach.starters.howAmIDoing],
+  })
   const [, navigate] = useLocation()
   const view: View = new URLSearchParams(useSearch()).get('view') === 'history' ? 'history' : 'overview'
   const done = data.sessions.filter((s) => s.status === 'done').length

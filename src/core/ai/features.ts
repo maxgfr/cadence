@@ -1,11 +1,15 @@
 import type { LanguageModel } from 'ai'
+import { newId } from '../model/ids.ts'
 import type { Goal, Program, ProgramLayout } from '../model/schemas.ts'
 import { generateStructured } from './client.ts'
 import {
   AiCoachReply,
+  buildPrompt,
+  type CoachBuild,
   type CoachInput,
   type CoachMessage,
   type CoachPromptInput,
+  type CoachProposal,
   type CoachTurn,
   coachFromAi,
   coachMessages,
@@ -72,13 +76,48 @@ export async function generateGoalsDraft(
   return goalsFromAi(ai, library, existing, today)
 }
 
-/** One turn with the coach: its reply and the changes it proposes, none applied. */
+/** Designs one thing the coach was asked to build, with that feature's own prompt and schema. */
+async function runBuild(
+  model: LanguageModel,
+  b: CoachBuild,
+  prompt: CoachPromptInput,
+  signal: AbortSignal | undefined,
+): Promise<CoachProposal | undefined> {
+  const c = prompt.context
+  const pair = buildPrompt(b, c, prompt.history)
+  const id = newId()
+  switch (b.kind) {
+    case 'program': {
+      const draft = await generateProgramDraft(model, pair, c.library, signal, b.shape.layout)
+      return { id, kind: 'program', origin: 'ai', draft }
+    }
+    case 'week': {
+      const draft = await adjustWeekDraft(model, pair, b.program, b.index, c.library, signal)
+      return { id, kind: 'program', origin: 'adjust', draft, week: b.index + 1 }
+    }
+    case 'exercises': {
+      const draft = await generateExercisesDraft(model, pair, c.library, signal)
+      return draft.exercises.length > 0 ? { id, kind: 'add_exercises', draft } : undefined
+    }
+    case 'goals': {
+      const goals = await generateGoalsDraft(model, pair, c.library, c.goals, c.today, signal)
+      return goals.length > 0 ? { id, kind: 'add_goals', goals } : undefined
+    }
+  }
+}
+
+/**
+ * One turn with the coach: its reply and the changes it proposes, none applied. What it was asked to build (a
+ * program, a week, exercises, goals) is then designed by that feature's own call, all at once; `onBuilding` says when
+ * that starts. One that fails leaves the others, its error in `failed`.
+ */
 export async function generateCoachTurn(
   model: LanguageModel,
   prompt: CoachPromptInput,
   history: readonly CoachMessage[],
   input: CoachInput,
   signal?: AbortSignal,
+  onBuilding?: (count: number) => void,
 ): Promise<CoachTurn> {
   const ai = await generateStructured(model, {
     system: coachSystem(prompt),
@@ -87,5 +126,15 @@ export async function generateCoachTurn(
     schema: AiCoachReply,
     ...(signal ? { signal } : {}),
   })
-  return coachFromAi(ai, prompt.context)
+  const { reply, proposals, builds } = coachFromAi(ai, prompt.context)
+  if (builds.length === 0) return { reply, proposals }
+  onBuilding?.(builds.length)
+  const built = await Promise.allSettled(builds.map((b) => runBuild(model, b, prompt, signal)))
+  signal?.throwIfAborted()
+  let failed: unknown
+  for (const r of built) {
+    if (r.status === 'rejected') failed ??= r.reason
+    else if (r.value) proposals.push(r.value)
+  }
+  return { reply, proposals, ...(failed !== undefined ? { failed } : {}) }
 }

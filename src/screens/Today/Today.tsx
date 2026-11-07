@@ -1,8 +1,9 @@
-import { ClipboardList, MessageCircle, Play, Plus, Target } from 'lucide-react'
+import { ClipboardList, Play, Plus, Target } from 'lucide-react'
 import { useState } from 'react'
 import { Link, useLocation } from 'wouter'
 import { useStartSession } from '../../app/actions.ts'
 import { useAi } from '../../app/ai.tsx'
+import { useCoach, useCoachScreen } from '../../app/coach.tsx'
 import { useData } from '../../app/data.tsx'
 import { useT } from '../../app/i18n.tsx'
 import { formatDay, startOfWeek } from '../../core/model/dates.ts'
@@ -24,6 +25,8 @@ export function Today() {
   const data = useData()
   const t = useT()
   const ai = useAi()
+  const coach = useCoach()
+  useCoachScreen({ where: 'Today: their week, and the sessions they can start' })
   const start = useStartSession()
   const active = data.sessions.find((s) => s.status === 'active')
   const choices = useChoosableSessions()
@@ -54,18 +57,7 @@ export function Today() {
   }
 
   return (
-    <Screen
-      title={t.today.title}
-      subtitle={formatDay(data.today)}
-      trailing={
-        ai.ready ? (
-          <Link href="/coach" className={buttonClass({ variant: 'secondary' })}>
-            <MessageCircle size={18} strokeWidth={2} aria-hidden="true" />
-            {t.coach.open}
-          </Link>
-        ) : undefined
-      }
-    >
+    <Screen title={t.today.title} subtitle={formatDay(data.today)}>
       {active && (
         <section className={styles.hero} aria-labelledby="active-title">
           <h2 id="active-title" className={styles.heroTitle}>
@@ -95,9 +87,15 @@ export function Today() {
               <Link href="/settings/demo" className={buttonClass({ variant: 'primary' })}>
                 {t.today.loadDemo}
               </Link>
-              <Link href={ai.ready ? '/coach' : '/settings/ai'} className={buttonClass({ variant: 'secondary' })}>
-                {t.coach.setUpWithCoach}
-              </Link>
+              {ai.ready ? (
+                <Button variant="secondary" onClick={() => coach.show({ text: t.coach.starters.setUp })}>
+                  {t.coach.setUpWithCoach}
+                </Button>
+              ) : (
+                <Link href="/settings/ai" className={buttonClass({ variant: 'secondary' })}>
+                  {t.coach.setUpWithCoach}
+                </Link>
+              )}
               <Link href="/exercises" className={buttonClass({ variant: 'secondary' })}>
                 {t.today.createExercises}
               </Link>
@@ -137,14 +135,7 @@ export function Today() {
             <p className={styles.nudge}>
               <ClipboardList size={16} strokeWidth={1.75} aria-hidden="true" />
               <span>
-                {t.today.programsNudge} <Link href="/programs">{t.today.writeOne}</Link>
-                {ai.ready && (
-                  <>
-                    {' '}
-                    {t.today.or} <Link href="/programs/generate">{t.today.designWithAi}</Link>
-                  </>
-                )}
-                .
+                {t.today.programsNudge} <Link href="/programs">{t.today.writeOne}</Link>.
               </span>
             </p>
           )

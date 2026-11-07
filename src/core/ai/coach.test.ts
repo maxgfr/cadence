@@ -1,11 +1,24 @@
 import { afterEach, describe, expect, test } from 'bun:test'
 import { MockLanguageModelV4 } from 'ai/test'
+import { z } from 'zod'
 import { setDisplayLocale } from '../i18n/locale.ts'
 import { applyLoggedSets } from '../model/program.ts'
 import { DEFAULT_SETTINGS, type Session } from '../model/schemas.ts'
 import { ATHLETE, GYM, IDX } from '../testkit.test.ts'
-import { type AiCoachReply, type CoachContext, coachFromAi, coachSystem, sessionText, setsFromAi } from './coach.ts'
+import {
+  AiCoachReply,
+  type AiSetIn,
+  buildPrompt,
+  type CoachContext,
+  coachFromAi,
+  coachSystem,
+  sessionText,
+  setsFromAi,
+} from './coach.ts'
+import { AiExercises } from './exercises.ts'
 import { generateCoachTurn } from './features.ts'
+import { AiGoals } from './goals.ts'
+import { AiProgram, AiWeek } from './program.ts'
 import { encodeWav } from './wav.ts'
 
 describe('sets said aloud, into the session', () => {
@@ -84,44 +97,72 @@ const ctx = (p: Partial<CoachContext> = {}): CoachContext => ({
   ...p,
 })
 
-type Action = AiCoachReply['actions'][number]
-const action = (p: Partial<Action>): Action => ({
-  type: 'log_sets',
-  exercise: null,
-  sets: null,
-  exercises: null,
-  program: null,
-  layout: null,
-  programId: null,
-  weekNumber: null,
-  week: null,
-  goals: null,
-  settings: null,
-  discipline: null,
-  restSeconds: null,
+/** A coach answer: nothing proposed but what the test gives. */
+const answer = (p: Partial<AiCoachReply>): AiCoachReply => ({
+  reply: 'Done.',
+  logSets: [],
+  createProgram: [],
+  adjustWeek: [],
+  addExercises: [],
+  addGoals: [],
+  updateSettings: [],
+  setRest: [],
   ...p,
 })
-const set = (p: Partial<NonNullable<Action['sets']>[number]>) => ({
-  reps: null,
-  weight: null,
-  timeSeconds: null,
-  distance: null,
-  rpe: null,
-  ...p,
+const set = (p: Partial<AiSetIn>): AiSetIn => ({ reps: 0, weight: 0, timeSeconds: 0, distance: 0, rpe: 0, ...p })
+type Sets = AiCoachReply['logSets'][number]['sets']
+const sets = (...s: Partial<AiSetIn>[]) => s.map(set) as Sets
+
+/** A model answering each call with what `answerFor` returns for its prompt (the coach first, then the designers). */
+function scriptedModel(answerFor: (prompt: string) => unknown) {
+  return new MockLanguageModelV4({
+    doGenerate: async (options) => {
+      const value = answerFor(JSON.stringify(options.prompt))
+      if (value instanceof Error) throw value
+      return {
+        content: [{ type: 'text', text: JSON.stringify(value) }],
+        finishReason: { unified: 'stop', raw: undefined },
+        usage: {
+          inputTokens: { total: 1, noCache: 1, cacheRead: undefined, cacheWrite: undefined },
+          outputTokens: { total: 1, text: 1, reasoning: undefined },
+        },
+        warnings: [],
+      }
+    },
+  })
+}
+
+/** Parameters with a union (anyOf, or an array of types, as nullable gives), in a JSON schema. */
+function unions(schema: unknown): number {
+  if (!schema || typeof schema !== 'object') return 0
+  if (Array.isArray(schema)) return schema.reduce((n: number, x) => n + unions(x), 0)
+  const o = schema as Record<string, unknown>
+  const own = o.anyOf || o.oneOf || Array.isArray(o.type) ? 1 : 0
+  return own + Object.values(o).reduce((n: number, x) => n + unions(x), 0)
+}
+
+describe('what a model is asked to fill', () => {
+  test('every schema stays within strict structured outputs: at most 16 union-typed parameters (Anthropic)', () => {
+    for (const schema of [AiCoachReply, AiProgram, AiWeek, AiExercises, AiGoals])
+      expect(unions(z.toJSONSchema(schema, { io: 'input' }))).toBeLessThanOrEqual(16)
+    // The coach's own: a neutral value stands for "nothing" rather than null.
+    expect(unions(z.toJSONSchema(AiCoachReply, { io: 'input' }))).toBe(0)
+  })
 })
 
 describe('sets said aloud', () => {
-  test("the athlete's units become metric, values are bounded, empty sets dropped", () => {
-    const sets = setsFromAi(
+  test("the athlete's units become metric, values are bounded, 0 and empty sets dropped", () => {
+    const out = setsFromAi(
       [
         set({ reps: 8, weight: 225, rpe: 8.7 }),
         set({}),
+        set({ reps: null, weight: null }),
         set({ reps: 8.4, weight: -5 }),
         set({ distance: 100, timeSeconds: 75 }),
       ],
       { weightUnit: 'lb', distanceUnit: 'yd' },
     )
-    expect(sets).toEqual([
+    expect(out).toEqual([
       { done: true, reps: 8, weight: 102.06, rpe: 8.5 },
       { done: true, reps: 8 },
       { done: true, time: 75, distance: 91.4 },
@@ -130,16 +171,16 @@ describe('sets said aloud', () => {
 
   test('a known exercise by id or name; an unknown one is created, measured by what its sets carry', () => {
     const turn = coachFromAi(
-      {
+      answer({
         reply: 'Logged.',
-        actions: [
-          action({ exercise: 'back-squat', sets: [set({ reps: 5, weight: 105 })] }),
-          action({ exercise: 'Bench press', sets: [set({ reps: 8, weight: 70 })] }),
-          action({ exercise: 'Sled push', sets: [set({ distance: 20, timeSeconds: 12 })] }),
-          action({ exercise: 'Wall sit', sets: [set({ timeSeconds: 60 })] }),
-          action({ exercise: 'Plank', sets: [] }),
+        logSets: [
+          { exercise: 'back-squat', sets: sets({ reps: 5, weight: 105 }) },
+          { exercise: 'Bench press', sets: sets({ reps: 8, weight: 70 }) },
+          { exercise: 'Sled push', sets: sets({ distance: 20, timeSeconds: 12 }) },
+          { exercise: 'Wall sit', sets: sets({ timeSeconds: 60 }) },
+          { exercise: 'Plank', sets: [] },
         ],
-      },
+      }),
       ctx(),
     )
     const logs = turn.proposals.flatMap((p) => (p.kind === 'log_sets' ? [p] : []))
@@ -154,23 +195,13 @@ describe('sets said aloud', () => {
 })
 
 describe('other proposals', () => {
-  test('settings: only what was asked, within bounds', () => {
+  test('settings: only what was asked, the others unchanged', () => {
     const turn = coachFromAi(
-      {
-        reply: 'Done.',
-        actions: [
-          action({
-            type: 'update_settings',
-            settings: {
-              mode: null,
-              weightUnit: 'lb',
-              distanceUnit: null,
-              weekStartsOnMonday: false,
-              language: 'fr',
-            },
-          }),
+      answer({
+        updateSettings: [
+          { mode: 'unchanged', weightUnit: 'lb', distanceUnit: 'unchanged', weekStart: 'sunday', language: 'fr' },
         ],
-      },
+      }),
       ctx(),
     )
     expect(turn.proposals).toEqual([
@@ -178,26 +209,136 @@ describe('other proposals', () => {
     ])
   })
 
-  test('a week of a program they do not have, or an empty answer, proposes nothing: advice is a reply alone', () => {
+  test('a week of a program they do not have, or nothing asked, builds nothing: advice is a reply alone', () => {
     const turn = coachFromAi(
-      {
+      answer({
         reply: 'Adjust it: you already do three squat variations on Monday.',
-        actions: [
-          action({ type: 'adjust_week', programId: 'nope', weekNumber: 1, week: { name: 'W1', days: [] } }),
-          action({ type: 'add_goals', goals: [] }),
-        ],
-      },
+        adjustWeek: [{ programId: 'nope', weekNumber: 1, brief: '' }],
+      }),
       ctx(),
     )
-    expect(turn).toEqual({ reply: 'Adjust it: you already do three squat variations on Monday.', proposals: [] })
+    expect(turn).toEqual({
+      reply: 'Adjust it: you already do three squat variations on Monday.',
+      proposals: [],
+      builds: [],
+    })
+  })
+})
+
+describe('what the coach has built', () => {
+  const ppl = {
+    brief: 'Push, pull, legs with abs and shoulders on leg day; 7 exercises per session; machines and dumbbells',
+    layout: 'sessions' as const,
+    weeks: 0,
+    daysPerWeek: 0,
+    sessions: 3,
+    sports: ['Gym'],
+    level: 'beginner' as const,
+  }
+
+  test('a program is described, then designed by the program prompt: from scratch, or on their history', () => {
+    const c = ctx()
+    const { builds } = coachFromAi(answer({ createProgram: [ppl, ppl] }), c)
+    expect(builds).toHaveLength(1)
+    const b = builds[0]
+    if (b?.kind !== 'program') throw new Error('expected a program')
+    expect(b.shape).toEqual({ layout: 'sessions', sessions: 3 })
+    const fresh = buildPrompt(b, c, 'Today is 2026-11-06.').prompt
+    expect(fresh).toContain('Design a set of 3 distinct training sessions')
+    expect(fresh).toContain('7 exercises per session; machines and dumbbells')
+    const trained = buildPrompt(b, ctx({ trained: true }), 'Sessions in the last 8 weeks: 6.').prompt
+    expect(trained).toContain("Base it on the athlete's own training history below.")
+    expect(trained).toContain('Sessions in the last 8 weeks: 6.')
+
+    const odd = coachFromAi(answer({ createProgram: [{ ...ppl, layout: 'weeks', weeks: 99, daysPerWeek: 0 }] }), c)
+    expect(odd.builds[0]).toMatchObject({ shape: { layout: 'weeks', weeks: 4, daysPerWeek: 3 } })
+  })
+
+  test('asked for a program and goals, the turn proposes the designed program and goals, nothing applied', async () => {
+    const program = {
+      name: 'Push Pull Legs',
+      goal: 'Simple machine work',
+      weeks: [
+        {
+          name: 'Sessions',
+          days: ['Push', 'Pull', 'Legs'].map((name) => ({
+            name,
+            discipline: 'Gym',
+            notes: null,
+            blocks: [
+              {
+                exercise: 'back-squat',
+                newExercise: null,
+                sets: 3,
+                reps: 10,
+                distanceMeters: null,
+                durationSeconds: null,
+                intensity: null,
+                restSeconds: 90,
+                intervalSeconds: null,
+                tempo: null,
+                notes: null,
+              },
+            ],
+          })),
+        },
+      ],
+    }
+    const goal = { kind: 'frequency', exercise: null, discipline: 'Gym', volume: null, target: 3, weeks: 8, why: null }
+    const model = scriptedModel((prompt) =>
+      prompt.includes('You are the coach inside Cadence')
+        ? answer({
+            reply: 'I am designing your push, pull, legs.',
+            createProgram: [ppl],
+            addGoals: [{ focus: 'consistency' }],
+          })
+        : prompt.includes('Design a set of')
+          ? program
+          : { goals: [goal] },
+    )
+    const stages: number[] = []
+    const turn = await generateCoachTurn(
+      model,
+      { context: ctx(), history: '' },
+      [],
+      { text: 'PPL, 7 exercises' },
+      undefined,
+      (n) => stages.push(n),
+    )
+    expect(stages).toEqual([2])
+    expect(model.doGenerateCalls).toHaveLength(3)
+    expect(turn.reply).toBe('I am designing your push, pull, legs.')
+    expect(turn.failed).toBeUndefined()
+    const kinds = turn.proposals.map((p) => p.kind)
+    expect(kinds).toEqual(['program', 'add_goals'])
+    const designed = turn.proposals[0]
+    if (designed?.kind !== 'program') throw new Error('expected a program')
+    expect(designed.draft.program.layout).toBe('sessions')
+    expect(designed.draft.program.weeks[0]?.days.map((d) => d.name)).toEqual(['Push', 'Pull', 'Legs'])
+  })
+
+  test('a design that fails leaves the reply and the rest, with the reason', async () => {
+    const model = scriptedModel((prompt) =>
+      prompt.includes('You are the coach inside Cadence')
+        ? answer({
+            reply: 'Here you go.',
+            logSets: [{ exercise: 'back-squat', sets: sets({ reps: 5, weight: 100 }) }],
+            addGoals: [{ focus: '' }],
+          })
+        : new Error('overloaded'),
+    )
+    const turn = await generateCoachTurn(model, { context: ctx(), history: '' }, [], { text: 'squat 5 at 100' })
+    expect(turn.reply).toBe('Here you go.')
+    expect(turn.proposals.map((p) => p.kind)).toEqual(['log_sets'])
+    expect(turn.failed).toBeInstanceOf(Error)
   })
 })
 
 describe('the conversation', () => {
-  test('the model gets the rules, the language, the library, the session in progress and the history', async () => {
+  test('the model gets the rules, the language, the library, the session in progress, the screen and the history', async () => {
     setDisplayLocale('fr')
     const system = coachSystem({
-      context: ctx({ settings: { ...DEFAULT_SETTINGS, weightUnit: 'lb' } }),
+      context: ctx({ settings: { ...DEFAULT_SETTINGS, weightUnit: 'lb' }, screen: 'the Goals screen' }),
       history: 'Today is 2026-11-06.',
     })
     expect(system).toContain('in French')
@@ -205,28 +346,18 @@ describe('the conversation', () => {
     expect(system).toContain('back-squat')
     expect(system).toContain('Session in progress: "Leg day"')
     expect(system).toContain('220.5 lb 5 reps')
+    expect(system).toContain('Where they are in the app as they write: the Goals screen')
     expect(system).toContain('Today is 2026-11-06.')
     expect(sessionText(undefined, IDX, { weightUnit: 'kg', distanceUnit: 'm' })).toContain('No session in progress')
   })
 
   test('a voice note goes to the model as a file part, after the last turns; the answer becomes proposals', async () => {
-    const answer: AiCoachReply = {
-      reply: 'Trois séries de squat notées.',
-      actions: [
-        action({ exercise: 'back-squat', sets: [set({ reps: 5, weight: 100 }), set({ reps: 5, weight: 100 })] }),
-      ],
-    }
-    const model = new MockLanguageModelV4({
-      doGenerate: {
-        content: [{ type: 'text', text: JSON.stringify(answer) }],
-        finishReason: { unified: 'stop', raw: undefined },
-        usage: {
-          inputTokens: { total: 1, noCache: 1, cacheRead: undefined, cacheWrite: undefined },
-          outputTokens: { total: 1, text: 1, reasoning: undefined },
-        },
-        warnings: [],
-      },
-    })
+    const model = scriptedModel(() =>
+      answer({
+        reply: 'Trois séries de squat notées.',
+        logSets: [{ exercise: 'back-squat', sets: sets({ reps: 5, weight: 100 }, { reps: 5, weight: 100 }) }],
+      }),
+    )
     const turn = await generateCoachTurn(
       model,
       { context: ctx(), history: '' },

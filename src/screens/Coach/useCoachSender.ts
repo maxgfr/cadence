@@ -12,15 +12,18 @@ import { generateCoachTurn } from '../../core/ai/features.ts'
 import { summarizeContext } from '../../core/ai/program.ts'
 import { newId } from '../../core/model/ids.ts'
 
-export type SenderStatus = { kind: 'idle' } | { kind: 'transcribing'; ratio?: number } | { kind: 'thinking' }
-
-/** Sent with a note from the logging screen: the prompt stays in English, like every prompt. */
-const LOG_ONLY = 'Log what I say in the session in progress. Only log_sets actions; reply in one short sentence.'
+export type SenderStatus =
+  | { kind: 'idle' }
+  | { kind: 'transcribing'; ratio?: number }
+  | { kind: 'thinking' }
+  /** Designing what the coach was asked to build: a program, a week, exercises, goals. */
+  | { kind: 'building' }
 
 /** Turns text or a recording into a coach turn: the AI code and the conversation's context, in one place. */
 export function useCoachTurn() {
   const data = useData()
   const ai = useAi()
+  const { screen } = useCoach()
   const locale = useLocale()
   const t = useT()
   const [status, setStatus] = useState<SenderStatus>({ kind: 'idle' })
@@ -35,8 +38,10 @@ export function useCoachTurn() {
       active: data.sessions.find((s) => s.status === 'active'),
       settings: data.settings,
       today: data.today,
+      trained: data.sessions.some((s) => s.status === 'done'),
+      ...(screen ? { screen: screen.where } : {}),
     }),
-    [data],
+    [data, screen],
   )
 
   /** Words from a recording, or the recording itself when the model hears audio. */
@@ -51,7 +56,7 @@ export function useCoachTurn() {
   )
 
   const turn = useCallback(
-    async (history: readonly CoachMessage[], input: CoachInput, logOnly = false): Promise<CoachTurn> => {
+    async (history: readonly CoachMessage[], input: CoachInput): Promise<CoachTurn> => {
       const ctrl = new AbortController()
       abort.current = ctrl
       setStatus({ kind: 'thinking' })
@@ -66,8 +71,14 @@ export function useCoachTurn() {
           today: data.today,
           weekStart: data.settings.weekStart,
         })
-        const said = logOnly ? { ...input, text: [LOG_ONLY, input.text ?? ''].join('\n\n').trim() } : input
-        return await generateCoachTurn(await ai.model(), { context: c, history: history_ }, history, said, ctrl.signal)
+        return await generateCoachTurn(
+          await ai.model(),
+          { context: c, history: history_ },
+          history,
+          input,
+          ctrl.signal,
+          () => setStatus({ kind: 'building' }),
+        )
       } finally {
         abort.current = null
         setStatus({ kind: 'idle' })
@@ -96,7 +107,7 @@ export function useCoachTurn() {
   return { status, setStatus, turn, fromVoice, describe, stop: () => abort.current?.abort() }
 }
 
-/** The coach screen's sending: each message and its answer join the conversation; offline notes wait on the device. */
+/** The coach's sending: each message and its answer join the conversation; offline notes wait on the device. */
 export function useCoachSender() {
   const { entries, setEntries } = useCoach()
   const { status, setStatus, turn, fromVoice, describe, stop } = useCoachTurn()
@@ -121,8 +132,10 @@ export function useCoachSender() {
         ...all,
         { id: newId(), role: 'assistant', text: reply.reply, proposals: reply.proposals, outcome: {} },
       ])
+      // Something it was asked to build could not be: said under its reply, which stands.
+      if (reply.failed !== undefined) setError(describe(reply.failed))
     },
-    [entries, setEntries, turn],
+    [entries, setEntries, turn, describe],
   )
 
   const sendText = useCallback(

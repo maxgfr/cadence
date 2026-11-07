@@ -1,9 +1,7 @@
 import { ChevronRight } from 'lucide-react'
-import { Suspense, useState } from 'react'
-import { useAi } from '../../app/ai.tsx'
+import { useState } from 'react'
 import { useData } from '../../app/data.tsx'
 import { useT } from '../../app/i18n.tsx'
-import { lazyChunk } from '../../app/lazyChunk.tsx'
 import { formatDecimal } from '../../core/i18n/locale.ts'
 import type { Block, IntensityKind } from '../../core/model/schemas.ts'
 import {
@@ -23,24 +21,19 @@ import { ExercisePicker } from '../../ui/ExercisePicker.tsx'
 import { useUnits } from '../../ui/units.ts'
 import styles from './Programs.module.css'
 
-// The coach's advice carries the AI code: loaded only when the sheet offers it.
-const AskCoach = lazyChunk(() => import('../Coach/AskCoach.tsx').then((m) => m.AskCoach))
-
 interface BlockSheetProps {
   block: Block | null
-  /** The day and program the block is in, for the coach's advice. */
-  where?: { day: string; program: string } | undefined
   onClose: () => void
   onSave: (block: Block) => void
   onDelete: () => void
 }
 
 /** Edits one planned block. Normal mode shows volume only; Advanced adds intensity, rest, interval and tempo. */
-export function BlockSheet({ block, where, onClose, onSave, onDelete }: BlockSheetProps) {
+export function BlockSheet({ block, onClose, onSave, onDelete }: BlockSheetProps) {
   const t = useT()
   return (
     <Sheet open={block !== null} title={t.programs.block.title} onClose={onClose}>
-      {block && <BlockForm key={block.id} block={block} where={where} onSave={onSave} onDelete={onDelete} />}
+      {block && <BlockForm key={block.id} block={block} onSave={onSave} onDelete={onDelete} />}
     </Sheet>
   )
 }
@@ -53,19 +46,8 @@ const str = (v: number | undefined, digits = 1) =>
   v === undefined ? '' : formatDecimal(Math.round(v * 10 ** digits) / 10 ** digits, digits)
 const clock = (v: number | undefined) => (v === undefined ? '' : formatTime(v, v < 60).replace(`${NBSP}s`, ''))
 
-function BlockForm({
-  block,
-  where,
-  onSave,
-  onDelete,
-}: {
-  block: Block
-  where: { day: string; program: string } | undefined
-  onSave: (b: Block) => void
-  onDelete: () => void
-}) {
+function BlockForm({ block, onSave, onDelete }: { block: Block; onSave: (b: Block) => void; onDelete: () => void }) {
   const data = useData()
-  const ai = useAi()
   const units = useUnits()
   const t = useT()
   const m = t.programs.block
@@ -136,18 +118,6 @@ function BlockForm({
           <ChevronRight size={18} strokeWidth={2} aria-hidden="true" />
         </button>
       </div>
-      {ai.ready && ex && (
-        <Suspense fallback={null}>
-          <AskCoach
-            key={`${ex.id}-${sets}-${reps}`}
-            question={t.coach.ask.exercise(
-              ex.name,
-              showReps && reps ? `${sets}×${reps}` : `${sets}×`,
-              where?.day && where.program ? t.coach.ask.where(where.day, where.program) : '',
-            )}
-          />
-        </Suspense>
-      )}
       <div className={styles.pair}>
         <Field
           label={metric === 'distance_time' || metric === 'time' ? m.repetitions : t.common.sets}

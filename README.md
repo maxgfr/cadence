@@ -46,8 +46,8 @@ starting point. AI, to design programs and propose exercises, is optional and us
   of the last four weeks) and suggests a target that stretches it within reach, which you change as you like. A goal
   can be started from any exercise's chart, and shows a trend projected to its deadline.
 - **Two modes**: *Normal* shows the essentials. *Advanced* adds effort per set, intensity targets (%1RM, RPE, pace,
-  % of best effort), rest and tempo in plans, sets per muscle group, adherence to the plan, goal charts and the
-  full AI questionnaire. Switching never loses data.
+  % of best effort), rest and tempo in plans, sets per muscle group, adherence to the plan and goal charts.
+  Switching never loses data.
 - **Units**: kilograms or pounds, metres or yards, week starting Monday or Sunday, light and dark themes.
 - **Installable and offline**: a PWA; once installed it works without a network.
 
@@ -84,29 +84,27 @@ opens. The CSV export has one row per set.
 
 Cadence works fully without AI. With a model set up under *Settings › AI* it can:
 
-- **Coach** (*Today › Coach*): a conversation, typed or spoken. Say what you just did ("squat, three sets of five at
-  100, the last one hard") and the sets are proposed for the session in progress; ask it to design a program, adjust a
-  week, add exercises or goals, or change a setting; ask whether an exercise is a good idea for you, and it answers
-  from your program, goals, history and effort. Every change is a card you apply or dismiss; nothing is written before
-  *Apply*. The conversation stays in memory and is never stored.
-- **Voice while logging**: *Say what you did* on the logging screen turns a voice note (or typed words) into sets to
-  check, then add. A model that hears audio gets the recording itself; otherwise it is turned into text by your
-  provider (OpenAI, Gemini, Mistral, Groq) or, under *Settings › AI › Voice notes › This device*, by a speech model
-  run in the browser (NVIDIA Canary through `llm-connect`, English, French and German, about 215 MB downloaded once,
-  then offline). A note recorded without a network is kept on the device and sent when it is back.
-- **Ask the coach** from the block editor of a program: its verdict on the exercise for that day shows in place.
+- **One coach, on every screen**: a round button in the corner opens a conversation, typed or spoken, over the screen
+  you are on, and the coach knows where that is (the session you are logging, the program and week you are editing,
+  your goals) and offers requests that fit it. Nothing else in the app mentions AI.
+  - **Log by voice**: on the logging screen the button is a microphone, above the rest timer, and records as it opens.
+    Say what you just did ("squat, three sets of five at 100, the last one hard") and the sets are proposed for the
+    session, which shows them as soon as you apply them. A model that hears audio gets the recording itself;
+    otherwise it is turned into text by your provider (OpenAI, Gemini, Mistral, Groq) or, under *Settings › AI ›
+    Voice notes › This device*, by a speech model run in the browser (NVIDIA Canary through `llm-connect`, English,
+    French and German, about 215 MB downloaded once, then offline). A note recorded without a network is kept on the
+    device and sent when it is back.
+  - **Design a program** ("push, pull, legs, seven exercises per session, machines and free weights"), **adjust a
+    week** of one of yours, **propose exercises** for your sports or **goals** from your training: the coach says
+    what to build, and a designer with its own prompt builds it, from your history when you have one. A program opens
+    as a draft in the editor; exercises open in a list you untick and edit before they reach your library; goals are
+    ticked one by one.
+  - **Advice**: ask whether an exercise or a week is a good idea, and it answers from your program, goals, history and
+    effort.
+  - **Settings and rest times** it changes when you ask.
 
-- **Design a program** from a short questionnaire (disciplines, level, a set of sessions with no days or weeks to
-  give, or days per week and weeks; goal; Advanced adds
-  session length, equipment, target date, limitations and intensity style) for your disciplines or sports you name,
-  or **from your own history** (recent
-  sessions, records, goals and the programs under way, summarised; the exact text sent is shown before sending).
-- **Adjust a week** of a program from what you actually logged.
-- **Propose exercises** for your disciplines or sports you name (level, essentials or a complete library, equipment),
-  each with its discipline, how it is measured, a fixed distance or a pace unit, and the muscles worked. Exercises you
-  already have are left out; you untick and edit the list before adding it to your library.
-- **Suggest goals** from your own training (*Progress › Suggest with AI*, with an optional focus): each with a reason,
-  ticked or unticked before any is added.
+  Every change is a card you apply or dismiss; nothing is written before *Apply*. The conversation stays in memory and
+  is never stored.
 
 The model writes names, goals and notes in the interface language (English, French or German).
 

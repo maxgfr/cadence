@@ -1,6 +1,7 @@
 import { CalendarRange, Repeat, Sparkles } from 'lucide-react'
 import { useLocation } from 'wouter'
 import { useAi } from '../../app/ai.tsx'
+import { useCoachScreen } from '../../app/coach.tsx'
 import { useData } from '../../app/data.tsx'
 import { useDraft } from '../../app/drafts.tsx'
 import { useT } from '../../app/i18n.tsx'
@@ -49,6 +50,10 @@ export function Programs() {
   const data = useData()
   const ai = useAi()
   const t = useT()
+  useCoachScreen({
+    where: 'their list of programs',
+    starters: [t.coach.starters.program, t.coach.starters.sessionSet],
+  })
   const { setDraft } = useDraft()
   const [, navigate] = useLocation()
   // Every program, the latest edited first.
@@ -82,14 +87,7 @@ export function Programs() {
       )}
 
       <ListGroup title={t.programs.newProgram}>
-        {ai.ready ? (
-          <ListRow
-            leading={<Sparkles size={20} strokeWidth={1.75} />}
-            title={t.programs.designWithAi}
-            subtitle={t.programs.designWithAiSub}
-            href="/programs/generate"
-          />
-        ) : (
+        {!ai.ready && (
           <ListRow
             leading={<Sparkles size={20} strokeWidth={1.75} />}
             title={t.programs.designWithAiOptional}
