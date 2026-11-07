@@ -7,6 +7,7 @@ import { mergeSnapshots, total } from './merge.ts'
 import {
   type AiSecrets,
   type Channel,
+  newerAi,
   newPairing,
   openPayload,
   pairingLink,
@@ -179,7 +180,6 @@ describe('a sync between two devices', () => {
     const ai: AiSecrets = { config: '{"providerId":"anthropic"}', key: 'sk-test' }
     const taken: (AiSecrets | undefined)[] = []
     const side = (store: typeof pc, mine: AiSecrets | undefined) => ({
-      hasAi: mine !== undefined,
       snapshot: async () => ({ backup: await exportBackup(store), ...(mine ? { ai: mine } : {}) }),
       apply: async (merged: Backup, theirs: AiSecrets | undefined) => {
         await store.replaceAll(merged)
@@ -197,6 +197,24 @@ describe('a sync between two devices', () => {
     expect(taken).toContainEqual(ai)
     expect(r1.received.sessions).toBe(1)
     expect(r2.received.exercises).toBe(1)
+  })
+
+  test('both devices with AI settings: the most recently saved win on both, the key with them', () => {
+    const older: AiSecrets = { config: '{"providerId":"openai"}', key: 'sk-old', savedAt: '2026-11-01T10:00:00.000Z' }
+    const newer: AiSecrets = {
+      config: '{"providerId":"anthropic"}',
+      key: 'sk-new',
+      savedAt: '2026-11-06T10:00:00.000Z',
+    }
+    // Each side takes the other's only when it is newer: both end with the newer.
+    expect(newerAi(older, newer)).toBe(newer)
+    expect(newerAi(newer, older)).toBeUndefined()
+    expect(newerAi(undefined, older)).toBe(older)
+    expect(newerAi(newer, undefined)).toBeUndefined()
+    // Settings from an older app carry no date: any dated ones win over them.
+    const undated: AiSecrets = { config: '{"providerId":"mistral"}', key: 'sk-x' }
+    expect(newerAi(undated, older)).toBe(older)
+    expect(newerAi(older, undated)).toBeUndefined()
   })
 
   test('another version of the app is refused, with nothing applied', async () => {

@@ -12,8 +12,11 @@ import { type MergeResult, mergeSnapshots } from './merge.ts'
 
 export const SYNC_PROTOCOL = 1
 
-/** The device's AI settings as they are stored (device-only secrets), sent only end-to-end encrypted. */
-export const AiSecrets = z.object({ config: z.string(), key: z.string() })
+/**
+ * The device's AI settings as they are stored (device-only secrets), sent only end-to-end encrypted. `savedAt` dates
+ * them: the most recently saved win, like every record (none, from an older app, is the oldest).
+ */
+export const AiSecrets = z.object({ config: z.string(), key: z.string(), savedAt: z.string().optional() })
 export type AiSecrets = z.infer<typeof AiSecrets>
 
 const Envelope = z.object({
@@ -105,8 +108,6 @@ export interface SyncSide {
   snapshot(): Promise<SyncPayload>
   /** Writes the merged data (and the other device's AI settings, when this one takes them). */
   apply(merged: Backup, ai: AiSecrets | undefined): Promise<void>
-  /** Whether this device has AI settings of its own (then it keeps them). */
-  hasAi: boolean
 }
 
 export interface SyncOutcome extends MergeResult {
@@ -114,13 +115,20 @@ export interface SyncOutcome extends MergeResult {
   tookAi: boolean
 }
 
-/** One sync over a channel: send ours, receive theirs, merge, apply. */
+/** The AI settings this device takes: the other's, when it has none or theirs were saved later. */
+export function newerAi(mine: AiSecrets | undefined, theirs: AiSecrets | undefined): AiSecrets | undefined {
+  if (!theirs) return undefined
+  if (!mine) return theirs
+  return (theirs.savedAt ?? '') > (mine.savedAt ?? '') ? theirs : undefined
+}
+
+/** One sync over a channel: send ours, receive theirs, merge, apply: everything, the AI settings included. */
 export async function runSync(channel: Channel, key: string, side: SyncSide, now = new Date()): Promise<SyncOutcome> {
   const mine = await side.snapshot()
   channel.send(await sealPayload(key, mine))
   const theirs = await openPayload(key, await channel.receive())
   const result = mergeSnapshots(mine.backup, theirs.backup, now)
-  const ai = !side.hasAi && theirs.ai ? theirs.ai : undefined
+  const ai = newerAi(mine.ai, theirs.ai)
   await side.apply(result.merged, ai)
   return { ...result, tookAi: ai !== undefined }
 }

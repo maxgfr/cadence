@@ -15,6 +15,8 @@ export interface AiConfig {
    * or a model run on this device (downloaded once, works offline, nothing leaves the device).
    */
   voice?: 'provider' | 'device'
+  /** When they were last saved here (ISO): a sync keeps the most recent on both devices. */
+  savedAt?: string
 }
 
 const CONFIG_KEY = 'ai.config'
@@ -25,7 +27,8 @@ interface Ai {
   hasKey: boolean
   /** A provider and model are chosen (and a key, unless it is the keyless custom endpoint). */
   ready: boolean
-  save(config: AiConfig, apiKey: string | undefined): Promise<void>
+  /** Stores them, dated now, or `savedAt` (as saved on the other device, for a sync). */
+  save(config: AiConfig, apiKey: string | undefined, savedAt?: string): Promise<void>
   getKey(): Promise<string>
   /** Builds the configured model; loads the AI code on first use. */
   model(): Promise<LanguageModel>
@@ -50,6 +53,7 @@ export function parseConfig(raw: string | undefined): AiConfig {
     if (typeof v.modelId === 'string' && v.modelId) out.modelId = v.modelId
     if (typeof v.baseUrl === 'string' && v.baseUrl) out.baseUrl = v.baseUrl
     if (v.voice === 'provider' || v.voice === 'device') out.voice = v.voice
+    if (typeof v.savedAt === 'string' && v.savedAt) out.savedAt = v.savedAt
     return out
   } catch {
     return {}
@@ -69,7 +73,8 @@ export function AiProvider({ children }: { children: ReactNode }) {
   }, [store])
 
   const save = useCallback(
-    async (next: AiConfig, apiKey: string | undefined) => {
+    async (config: AiConfig, apiKey: string | undefined, savedAt = new Date().toISOString()) => {
+      const next = { ...config, savedAt }
       // The key first: when it cannot be stored, nothing claims to be set up.
       if (apiKey !== undefined) await store.putSecret(KEY_KEY, apiKey.trim())
       await store.putSecret(CONFIG_KEY, JSON.stringify(next))

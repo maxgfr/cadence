@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useLocation } from 'wouter'
 import { useData } from '../../app/data.tsx'
 import { useT } from '../../app/i18n.tsx'
 import type { DemoSport } from '../../core/demo/catalog.ts'
@@ -21,6 +22,7 @@ export function useModeOptions(): readonly { value: Mode; title: string; body: s
 /** First run: the two choices that change every screen, then straight to Today. */
 export function Welcome() {
   const { settings, updateSettings, loadDemo } = useData()
+  const [, navigate] = useLocation()
   const t = useT()
   const modeOptions = useModeOptions()
   const [sports, setSports] = useState<DemoSport[]>([])
@@ -76,6 +78,10 @@ export function Welcome() {
           }}
         >
           {sports.length > 0 ? t.welcome.startDemo : t.welcome.startEmpty}
+        </Button>
+        {/* Cadence already used elsewhere: this device starts with everything from there. */}
+        <Button variant="plain" full onClick={() => navigate('/settings/sync')}>
+          {t.welcome.syncInstead}
         </Button>
       </div>
     </main>

@@ -27,8 +27,8 @@ under `/cadence/`, no server.
   `demo-*` ids so it can be removed), never in defaults. Stored data of an older shape is migrated in
   `core/storage/migrate.ts`, both on load and on backup import.
 - AI is optional and never writes data: every AI result is a draft the user edits and saves. Keys and the endpoint live
-  in `llm-connect`'s `sealedStore` (database `cadence-sealed`), encrypted at rest, never in clear text, and never appear in exports; a sync sends them only when the user ticks it,
-  sealed with the pairing key. The Anthropic browser header goes to Anthropic's own host only.
+  in `llm-connect`'s `sealedStore` (database `cadence-sealed`), encrypted at rest, never in clear text, and never appear in exports; a sync always sends them (user request: sync everything),
+  sealed with the pairing key, and the most recently saved (`savedAt`) win on both devices. The Anthropic browser header goes to Anthropic's own host only.
 - AI and provider SDK code is loaded lazily (AI screens only); keep it out of the main chunk.
 - Models are built through `llm-connect` (`createModel` in `core/ai/client.ts` maps our catalog to its settings);
   errors are read with its `describeError`. Prompts stay in English and end with `languageRule()`, so the model writes
