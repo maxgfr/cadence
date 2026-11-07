@@ -39,6 +39,7 @@
   /* Layout. */
   --content-max: 720px;
   --sidebar-width: 260px;
+  --chat-width: 24rem;
   --tabbar-height: 3.5rem;
   /* Logging controls: thumb-sized, used mid-workout. */
   --hit-large: 3.25rem;

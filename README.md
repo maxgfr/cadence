@@ -84,16 +84,13 @@ opens. The CSV export has one row per set.
 
 Cadence works fully without AI. With a model set up under *Settings › AI* it can:
 
-- **One coach, on every screen**: a round button in the corner opens a conversation, typed or spoken, over the screen
-  you are on, and the coach knows where that is (the session you are logging, the program and week you are editing,
-  your goals) and offers requests that fit it. Nothing else in the app mentions AI.
-  - **Log by voice**: on the logging screen the button is a microphone, above the rest timer, and records as it opens.
-    Say what you just did ("squat, three sets of five at 100, the last one hard") and the sets are proposed for the
-    session, which shows them as soon as you apply them. A model that hears audio gets the recording itself;
-    otherwise it is turned into text by your provider (OpenAI, Gemini, Mistral, Groq) or, under *Settings › AI ›
-    Voice notes › This device*, by a speech model run in the browser (NVIDIA Canary through `llm-connect`, English,
-    French and German, about 215 MB downloaded once, then offline). A note recorded without a network is kept on the
-    device and sent when it is back.
+- **One coach, on every screen**: on a computer it is a column beside the app, always there, the conversation
+  carrying on from screen to screen; on a phone or tablet, a round button in the corner opens it over the screen. The
+  coach knows where you are (the session you are logging, the program and week you are editing, your goals) and offers
+  requests that fit. Nothing else in the app mentions AI.
+  - **Log sets**: tell it what you just did ("squat, three sets of five at 100, the last one hard"), from the logging
+    screen even while you rest (the button stays above the rest timer), and the sets are proposed for the session,
+    which shows them as soon as you apply them.
   - **Design a program** ("push, pull, legs, seven exercises per session, machines and free weights"), **adjust a
     week** of one of yours, **propose exercises** for your sports or **goals** from your training: the coach says
     what to build, and a designer with its own prompt builds it, from your history when you have one. A program opens

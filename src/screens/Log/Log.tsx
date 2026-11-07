@@ -36,13 +36,12 @@ export function Log() {
   const [picking, setPicking] = useState(false)
   const [finishing, setFinishing] = useState(false)
   const rest = useRestTimer()
-  // Here the coach is a microphone: what the athlete says goes into this session, even while they rest.
+  // The coach logs what the athlete tells it into this session, even while they rest.
   useCoachScreen(
     session
       ? {
           where: `logging the session in progress, "${session.title}": the sets they say go there`,
           starters: [t.coach.starters.sameAsLast, t.coach.starters.nextLoad],
-          voiceFirst: true,
           raised: rest.endsAt !== null,
         }
       : undefined,

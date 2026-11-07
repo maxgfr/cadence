@@ -1,11 +1,9 @@
-import { ArrowUp, Mic, RotateCcw, Square, X } from 'lucide-react'
+import { ArrowUp, RotateCcw, X } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { useCoach } from '../../app/coach.tsx'
 import { useT } from '../../app/i18n.tsx'
 import { useToast } from '../../app/toast.tsx'
-import { canRecord } from '../../app/voice.ts'
 import type { CoachProposal } from '../../core/ai/coach.ts'
-import { Button } from '../../ui/components/Button.tsx'
 import { IconButton } from '../../ui/components/IconButton.tsx'
 import { Sheet } from '../../ui/components/Sheet.tsx'
 import { cx } from '../../ui/cx.ts'
@@ -13,31 +11,21 @@ import { useApplyProposal } from './apply.ts'
 import styles from './Coach.module.css'
 import { ProposalCard } from './ProposalCard.tsx'
 import { type SenderStatus, useCoachSender } from './useCoachSender.ts'
-import { useRecorder } from './useRecorder.ts'
 
 function StatusLine({ status }: { status: SenderStatus }) {
   const t = useT()
   if (status.kind === 'idle') return null
-  const text =
-    status.kind === 'thinking'
-      ? t.coach.thinking
-      : status.kind === 'building'
-        ? t.coach.building
-        : status.ratio !== undefined && status.ratio < 1
-          ? t.coach.downloading(Math.round(status.ratio * 100))
-          : t.coach.transcribing
   return (
     <p className={styles.status} role="status">
       <span className={styles.dot} aria-hidden="true" />
-      {text}
+      {status.kind === 'building' ? t.coach.building : t.coach.thinking}
     </p>
   )
 }
 
 /**
- * The coach, over whatever screen the athlete is on: a conversation by text or voice that logs sets, sets the app up
- * and gives advice, knowing where they are. Each change it proposes is a card applied only when they say so. The
- * conversation stays in memory. Loaded with the AI code, the first time the bubble opens it.
+ * The coach over whatever screen the athlete is on (phones and tablets, from the bubble). Loaded with the AI code,
+ * the first time the bubble opens it.
  */
 export function CoachSheet() {
   const t = useT()
@@ -49,27 +37,39 @@ export function CoachSheet() {
   )
 }
 
-function Conversation() {
+/** The coach beside the app, always there on a computer: the conversation carries on from screen to screen. */
+export function CoachDock() {
+  const t = useT()
+  return (
+    <aside className={styles.dock} aria-label={t.coach.title} data-coach-dock="">
+      <Conversation docked />
+    </aside>
+  )
+}
+
+/**
+ * The conversation: it logs sets, sets the app up and gives advice, knowing where the athlete is. Each change it
+ * proposes is a card applied only when they say so. It stays in memory.
+ */
+function Conversation({ docked = false }: { docked?: boolean }) {
   const t = useT()
   const toast = useToast()
   const coach = useCoach()
   const apply = useApplyProposal()
   const sender = useCoachSender()
-  const recorder = useRecorder((e) => sender.setError(sender.describe(e)))
   const [text, setText] = useState(coach.draft)
   const input = useRef<HTMLTextAreaElement>(null)
   const end = useRef<HTMLDivElement>(null)
   const busy = sender.status.kind !== 'idle'
 
-  // A question asked from a screen lands in the composer, ready to send or edit; the logging screen's bubble records.
+  // A question asked from a screen lands in the composer, ready to send or edit.
   useEffect(() => {
     if (coach.draft) {
       setText(coach.draft)
       coach.setDraft('')
       input.current?.focus()
     }
-    if (coach.takeRecord() && canRecord()) recorder.start()
-  }, [coach, recorder])
+  }, [coach])
   useEffect(() => {
     if (coach.entries.length > 0 || busy) end.current?.scrollIntoView({ block: 'end', behavior: 'smooth' })
   }, [coach.entries.length, busy])
@@ -89,7 +89,7 @@ function Conversation() {
   const onApply = async (entryId: string, p: CoachProposal) => {
     await apply(p)
     outcome(entryId, p.id, 'applied')
-    // A draft opens on its screen, the conversation steps aside; anything else is done here.
+    // A draft opens on its screen, and the conversation over it steps aside; anything else is done here.
     if (p.kind === 'program' || p.kind === 'add_exercises') coach.hide()
     else toast(t.coach.appliedToast)
   }
@@ -104,25 +104,16 @@ function Conversation() {
   return (
     <>
       <header className={styles.head}>
-        <p className={styles.headTitle} aria-hidden="true">
+        <p className={styles.headTitle} aria-hidden={docked ? undefined : 'true'}>
           {t.coach.title}
         </p>
         {coach.entries.length > 0 && (
           <IconButton icon={RotateCcw} label={t.coach.newConversation} onClick={coach.clear} disabled={busy} />
         )}
-        <IconButton icon={X} label={t.common.close} onClick={coach.hide} />
+        {!docked && <IconButton icon={X} label={t.common.close} onClick={coach.hide} />}
       </header>
 
       <div className={styles.thread}>
-        {sender.pending.length > 0 && (
-          <div className={styles.pending}>
-            <p>{t.coach.pending(sender.pending.length)}</p>
-            <Button variant="secondary" onClick={sender.sendPending} disabled={busy}>
-              {t.coach.sendPending}
-            </Button>
-          </div>
-        )}
-
         {coach.entries.length === 0 && (
           <>
             <p className={styles.lead}>{t.coach.subtitle}</p>
@@ -150,9 +141,6 @@ function Conversation() {
             <li key={e.id} className={cx(styles.message, e.role === 'user' ? styles.mine : styles.theirs)}>
               <p className={styles.bubble}>
                 <span className="sr-only">{e.role === 'user' ? t.coach.you : t.coach.title}: </span>
-                {e.voice && (
-                  <Mic className={styles.voiceIcon} size={14} strokeWidth={2} aria-label={t.coach.voiceNote} />
-                )}
                 {e.text}
               </p>
               {e.proposals?.map((p) => (
@@ -160,7 +148,7 @@ function Conversation() {
                   key={p.id}
                   proposal={p}
                   outcome={e.outcome?.[p.id]}
-                  onApply={(picked) => onApply(e.id, picked)}
+                  onApply={(applied) => onApply(e.id, applied)}
                   onDismiss={() => outcome(e.id, p.id, 'dismissed')}
                 />
               ))}
@@ -184,59 +172,27 @@ function Conversation() {
           send()
         }}
       >
-        {recorder.recording ? (
-          <>
-            <IconButton icon={X} label={t.coach.cancel} onClick={recorder.cancel} />
-            <p className={styles.listening} role="status">
-              <span className={styles.dot} aria-hidden="true" />
-              {t.coach.listening}
-            </p>
-            <Button
-              variant="primary"
-              size="large"
-              icon={<Square size={18} strokeWidth={2} aria-hidden="true" />}
-              onClick={async () => {
-                const blob = await recorder.stop()
-                if (blob) await sender.sendVoice(blob)
-              }}
-            >
-              {t.coach.stop}
-            </Button>
-          </>
+        <textarea
+          ref={input}
+          className={styles.input}
+          rows={1}
+          aria-label={t.coach.placeholder}
+          placeholder={t.coach.placeholder}
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
+              e.preventDefault()
+              send()
+            }
+          }}
+        />
+        {busy ? (
+          <IconButton icon={X} label={t.coach.cancel} onClick={sender.stop} />
         ) : (
-          <>
-            <textarea
-              ref={input}
-              className={styles.input}
-              rows={1}
-              aria-label={t.coach.placeholder}
-              placeholder={t.coach.placeholder}
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
-                  e.preventDefault()
-                  send()
-                }
-              }}
-            />
-            {text.trim() || !canRecord() ? (
-              <button type="submit" className={styles.round} aria-label={t.coach.send} disabled={busy || !text.trim()}>
-                <ArrowUp size={22} strokeWidth={2.25} aria-hidden="true" />
-              </button>
-            ) : (
-              <button
-                type="button"
-                className={styles.round}
-                aria-label={t.coach.record}
-                disabled={busy}
-                onClick={recorder.start}
-              >
-                <Mic size={22} strokeWidth={2} aria-hidden="true" />
-              </button>
-            )}
-            {busy && <IconButton icon={X} label={t.coach.cancel} onClick={sender.stop} />}
-          </>
+          <button type="submit" className={styles.round} aria-label={t.coach.send} disabled={!text.trim()}>
+            <ArrowUp size={22} strokeWidth={2.25} aria-hidden="true" />
+          </button>
         )}
       </form>
     </>

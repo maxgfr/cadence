@@ -283,6 +283,11 @@
   animation: rise var(--dur) var(--ease-out);
 }
 
+/* On a computer the coach's column is on the right: the bar stops at it. */
+:global(html[data-coach-dock]) .rest {
+  right: var(--chat-width);
+}
+
 @keyframes rise {
   from {
     transform: translateY(100%);

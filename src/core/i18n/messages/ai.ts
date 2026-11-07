@@ -27,17 +27,6 @@ export const ai = namespace(
     modelNotListed: 'Model not listed? Enter its id',
     modelFromList: 'Pick from the list',
     modelIdHint: (provider: string) => `The id ${provider}’s API expects, as its documentation writes it.`,
-    hearsAudio: 'Hears audio',
-    voice: {
-      title: 'Voice notes',
-      provider: 'My provider',
-      device: 'This device',
-      providerHint:
-        'Your provider turns speech into text (OpenAI, Gemini, Mistral, Groq or your endpoint). Anthropic has none: choose This device.',
-      deviceHint:
-        'A speech model (English, French, German, about 215 MB) is downloaded once, on the first voice note. It then works offline, and your voice never leaves the device.',
-      hears: 'This model hears voice notes itself: they go to it as they are.',
-    },
     address: 'Address (optional)',
     addressHint: (provider: string) =>
       `Leave empty to call ${provider} directly. A proxy or gateway that speaks the same API goes here.`,
@@ -101,17 +90,6 @@ export const ai = namespace(
     modelFromList: 'Choisir dans la liste',
     modelIdHint: (provider: string) =>
       `L’identifiant attendu par l’API de ${provider}, tel que sa documentation l’écrit.`,
-    hearsAudio: 'Comprend l’audio',
-    voice: {
-      title: 'Messages vocaux',
-      provider: 'Mon fournisseur',
-      device: 'Cet appareil',
-      providerHint:
-        'Votre fournisseur transcrit la voix (OpenAI, Gemini, Mistral, Groq ou votre point d’accès). Anthropic ne le fait pas : choisissez Cet appareil.',
-      deviceHint:
-        'Un modèle vocal (anglais, français, allemand, environ 215 Mo) est téléchargé une fois, au premier message vocal. Il fonctionne ensuite hors ligne, et votre voix ne quitte jamais l’appareil.',
-      hears: 'Ce modèle comprend directement les messages vocaux : ils lui sont envoyés tels quels.',
-    },
     address: 'Adresse (facultatif)',
     addressHint: (provider: string) =>
       `Laissez vide pour appeler ${provider} directement. Un proxy ou une passerelle qui parle la même API se met ici.`,
@@ -176,17 +154,6 @@ export const ai = namespace(
     modelNotListed: 'Modell nicht in der Liste? ID eingeben',
     modelFromList: 'Aus der Liste wählen',
     modelIdHint: (provider: string) => `Die ID, die die API von ${provider} erwartet, wie in ihrer Doku angegeben.`,
-    hearsAudio: 'Versteht Audio',
-    voice: {
-      title: 'Sprachnachrichten',
-      provider: 'Mein Anbieter',
-      device: 'Dieses Gerät',
-      providerHint:
-        'Dein Anbieter wandelt Sprache in Text um (OpenAI, Gemini, Mistral, Groq oder dein Endpunkt). Anthropic kann das nicht: Wähle Dieses Gerät.',
-      deviceHint:
-        'Ein Sprachmodell (Englisch, Französisch, Deutsch, etwa 215 MB) wird einmal geladen, bei der ersten Sprachnachricht. Danach funktioniert es offline, und deine Stimme verlässt das Gerät nie.',
-      hears: 'Dieses Modell versteht Sprachnachrichten selbst: Sie gehen unverändert an es.',
-    },
     address: 'Adresse (optional)',
     addressHint: (provider: string) =>
       `Leer lassen, um ${provider} direkt aufzurufen. Ein Proxy oder Gateway mit derselben API gehört hierher.`,

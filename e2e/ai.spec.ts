@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { answerWith, coachAnswer, connectMockModel, isCoach, openCoach } from './mockModel.ts'
+import { answerWith, closeCoach, coachAnswer, connectMockModel, isCoach, openCoach } from './mockModel.ts'
 
 test('asked for goals, the coach proposes them from the training, ticked one by one before they are added', async ({
   page,
@@ -42,7 +42,7 @@ test('asked for goals, the coach proposes them from the training, ticked one by 
   await coach.getByRole('checkbox', { name: /sessions a week/ }).uncheck()
   await coach.getByRole('button', { name: 'Add 1 goal' }).click()
   await expect(coach.getByRole('article').getByRole('status')).toHaveText('Applied')
-  await coach.getByRole('button', { name: 'Close' }).click()
+  await closeCoach(page)
   await expect(page.getByRole('button', { name: /^Back squat: estimated 1RM 140\skg/ })).toBeVisible()
   await expect(page.getByRole('button', { name: /sessions a week/ })).toHaveCount(0)
 })

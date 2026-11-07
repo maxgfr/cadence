@@ -18,7 +18,6 @@ import { formatDecimal } from '../../core/i18n/locale.ts'
 import { Button } from '../../ui/components/Button.tsx'
 import { Field } from '../../ui/components/Field.tsx'
 import { IconButton } from '../../ui/components/IconButton.tsx'
-import { Segmented } from '../../ui/components/Segmented.tsx'
 import { SelectField } from '../../ui/components/SelectField.tsx'
 import { Screen } from '../../ui/shell/Screen.tsx'
 import styles from './Settings.module.css'
@@ -34,7 +33,6 @@ export function AiSettings() {
   const [providerId, setProviderId] = useState(ai.config.providerId ?? '')
   const [modelId, setModelId] = useState(ai.config.modelId ?? '')
   const [baseUrl, setBaseUrl] = useState(ai.config.baseUrl ?? '')
-  const [voice, setVoice] = useState<'provider' | 'device'>(ai.config.voice ?? 'provider')
   const [key, setKey] = useState('')
   const [showKey, setShowKey] = useState(false)
   const [status, setStatus] = useState<{ ok: boolean; text: string }>()
@@ -47,7 +45,6 @@ export function AiSettings() {
     setProviderId(ai.config.providerId ?? '')
     setModelId(ai.config.modelId ?? '')
     setBaseUrl(ai.config.baseUrl ?? '')
-    setVoice(ai.config.voice ?? 'provider')
   }, [ai.config])
   useEffect(() => {
     ai.getKey().then(setKey)
@@ -78,7 +75,6 @@ export function AiSettings() {
           providerId,
           modelId: modelId.trim(),
           ...(baseUrl.trim() ? { baseUrl: baseUrl.trim() } : {}),
-          ...(voice === 'device' ? { voice } : {}),
         },
         key,
       )
@@ -167,7 +163,6 @@ export function AiSettings() {
                     model
                       ? [
                           model.structured ? t.ai.supportsStructured : t.ai.mayNotReturn,
-                          model.audio ? t.ai.hearsAudio : '',
                           model.cost ? t.ai.cost(usd(model.cost[0]), usd(model.cost[1])) : '',
                           model.context ? t.ai.context(formatDecimal(Math.round(model.context / 1000), 0)) : '',
                         ]
@@ -201,22 +196,6 @@ export function AiSettings() {
               )}
             </>
           )
-        )}
-        {providerId && (
-          <Segmented
-            label={t.ai.voice.title}
-            options={[
-              { value: 'provider', label: t.ai.voice.provider },
-              { value: 'device', label: t.ai.voice.device },
-            ]}
-            value={voice}
-            onChange={setVoice}
-          />
-        )}
-        {providerId && (
-          <p className={styles.muted}>
-            {model?.audio ? t.ai.voice.hears : voice === 'device' ? t.ai.voice.deviceHint : t.ai.voice.providerHint}
-          </p>
         )}
         <div className={styles.keyRow}>
           <Field

@@ -6,8 +6,6 @@ export interface CoachEntry {
   id: string
   role: 'user' | 'assistant'
   text: string
-  /** The athlete spoke rather than typed. */
-  voice?: boolean
   proposals?: CoachProposal[]
   /** Proposal id → what the athlete did with it. */
   outcome?: Record<string, 'applied' | 'dismissed'>
@@ -19,8 +17,6 @@ export interface CoachScreen {
   where: string
   /** Requests that fit this screen, in the interface language, offered before the first message. */
   starters?: string[]
-  /** The microphone comes first: the bubble records as it opens (logging a session). */
-  voiceFirst?: boolean
   /** Something sits at the bottom of the screen (the rest timer): the bubble moves above it. */
   raised?: boolean
 }
@@ -31,13 +27,11 @@ interface Coach {
   /** Text waiting in the composer (a question asked from a screen). */
   draft: string
   setDraft(text: string): void
-  /** The conversation is open, over the current screen. */
+  /** The conversation is open over the current screen (phones and tablets; on a computer it is always beside it). */
   open: boolean
-  /** Opens it; `text` waits in the composer, ready to send or edit; `record` starts a voice note. */
-  show(options?: { text?: string; record?: boolean }): void
+  /** Opens it; `text` waits in the composer, ready to send or edit. */
+  show(options?: { text?: string }): void
   hide(): void
-  /** A voice note to start as the conversation opens (taken once). */
-  takeRecord(): boolean
   clear(): void
   screen: CoachScreen | undefined
   setScreen(screen: CoachScreen | undefined): void
@@ -52,8 +46,8 @@ export function useCoach(): Coach {
 }
 
 /**
- * Tells the coach where the athlete is while this screen is shown: what it reads in its prompt, the starters it
- * offers, whether the microphone comes first.
+ * Tells the coach where the athlete is while this screen is shown: what it reads in its prompt and the starters it
+ * offers.
  */
 export function useCoachScreen(screen: CoachScreen | undefined): void {
   const { setScreen } = useCoach()
@@ -69,27 +63,20 @@ export function CoachProvider({ children }: { children: ReactNode }) {
   const [entries, setEntriesState] = useState<CoachEntry[]>([])
   const [draft, setDraft] = useState('')
   const [open, setOpen] = useState(false)
-  const [record, setRecord] = useState(false)
   const [screen, setScreen] = useState<CoachScreen>()
   const setEntries = useCallback((fn: (e: CoachEntry[]) => CoachEntry[]) => setEntriesState(fn), [])
-  const show = useCallback((options: { text?: string; record?: boolean } = {}) => {
+  const show = useCallback((options: { text?: string } = {}) => {
     if (options.text) setDraft(options.text)
-    setRecord(options.record === true)
     setOpen(true)
   }, [])
   const hide = useCallback(() => setOpen(false), [])
-  const takeRecord = useCallback(() => {
-    if (!record) return false
-    setRecord(false)
-    return true
-  }, [record])
   const clear = useCallback(() => {
     setEntriesState([])
     setDraft('')
   }, [])
   const value = useMemo(
-    () => ({ entries, setEntries, draft, setDraft, open, show, hide, takeRecord, clear, screen, setScreen }),
-    [entries, setEntries, draft, open, show, hide, takeRecord, clear, screen],
+    () => ({ entries, setEntries, draft, setDraft, open, show, hide, clear, screen, setScreen }),
+    [entries, setEntries, draft, open, show, hide, clear, screen],
   )
   return <CoachContext.Provider value={value}>{children}</CoachContext.Provider>
 }

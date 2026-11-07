@@ -1,24 +1,18 @@
 import { namespace, plural, pluralFr } from '../define.ts'
 
-/** The coach: a conversation by text or voice, whose proposals are applied one by one. */
+/** The coach: a conversation, whose proposals are applied one by one. */
 export const coach = namespace(
   {
     title: 'Coach',
-    subtitle: 'Talk or type: log your sets, set up the app, ask for advice.',
+    subtitle: 'Log your sets, set up the app, ask for advice.',
     open: 'Coach',
     setUpWithCoach: 'Set up with the coach',
     newConversation: 'New conversation',
     you: 'You',
     placeholder: 'Message the coach…',
     send: 'Send',
-    record: 'Record a voice note',
-    stop: 'Stop and send',
     cancel: 'Cancel',
-    listening: 'Listening…',
     thinking: 'Thinking…',
-    transcribing: 'Writing down what you said…',
-    downloading: (pct: number) => `Downloading the voice model: ${pct}%`,
-    voiceNote: 'Voice note',
     starters: {
       log: 'Log what I just did',
       advice: 'Is this exercise a good idea for me?',
@@ -35,7 +29,6 @@ export const coach = namespace(
       howAmIDoing: 'How is my training going?',
     },
     building: 'Designing it…',
-    speak: 'Say what you did',
     review: 'Review',
     apply: 'Apply',
     applied: 'Applied',
@@ -58,35 +51,18 @@ export const coach = namespace(
       language: (name: string) => `language: ${name}`,
     },
     appliedToast: 'Applied',
-    offline: 'Offline: the voice note is kept on this device and sent when you are back online.',
-    pending: (n: number) =>
-      n === 1 ? '1 voice note waiting for the network' : `${n} voice notes waiting for the network`,
-    sendPending: 'Send now',
-    voiceErrors: {
-      unsupported: 'This browser cannot record audio.',
-      denied: 'The microphone is blocked. Allow it for this site in the browser settings.',
-      noTranscription:
-        'Your provider cannot turn speech into text. Choose “On this device” under Settings › AI › Voice notes, or a model that hears audio.',
-      deviceFailed: 'The voice model on this device could not run. Try again, or use your provider.',
-    },
   },
   {
     title: 'Coach',
-    subtitle: 'Parlez ou écrivez : notez vos séries, configurez l’app, demandez conseil.',
+    subtitle: 'Notez vos séries, configurez l’app, demandez conseil.',
     open: 'Coach',
     setUpWithCoach: 'Configurer avec le coach',
     newConversation: 'Nouvelle conversation',
     you: 'Vous',
     placeholder: 'Écrire au coach…',
     send: 'Envoyer',
-    record: 'Enregistrer un message vocal',
-    stop: 'Arrêter et envoyer',
     cancel: 'Annuler',
-    listening: 'À l’écoute…',
     thinking: 'Réflexion…',
-    transcribing: 'Transcription de votre message…',
-    downloading: (pct: number) => `Téléchargement du modèle vocal : ${pct} %`,
-    voiceNote: 'Message vocal',
     starters: {
       log: 'Noter ce que je viens de faire',
       advice: 'Cet exercice est-il une bonne idée pour moi ?',
@@ -103,7 +79,6 @@ export const coach = namespace(
       howAmIDoing: 'Où en est mon entraînement ?',
     },
     building: 'Préparation…',
-    speak: 'Dites ce que vous avez fait',
     review: 'Vérifier',
     apply: 'Appliquer',
     applied: 'Appliqué',
@@ -126,35 +101,18 @@ export const coach = namespace(
       language: (name: string) => `langue : ${name}`,
     },
     appliedToast: 'Appliqué',
-    offline: 'Hors ligne : le message vocal reste sur cet appareil et partira au retour du réseau.',
-    pending: (n: number) =>
-      n < 2 ? `${n} message vocal en attente du réseau` : `${n} messages vocaux en attente du réseau`,
-    sendPending: 'Envoyer maintenant',
-    voiceErrors: {
-      unsupported: 'Ce navigateur ne peut pas enregistrer de son.',
-      denied: 'Le micro est bloqué. Autorisez-le pour ce site dans les réglages du navigateur.',
-      noTranscription:
-        'Votre fournisseur ne sait pas transcrire la voix. Choisissez « Sur cet appareil » dans Réglages › IA › Messages vocaux, ou un modèle qui comprend l’audio.',
-      deviceFailed: 'Le modèle vocal de cet appareil n’a pas pu tourner. Réessayez, ou passez par votre fournisseur.',
-    },
   },
   {
     title: 'Coach',
-    subtitle: 'Sprich oder schreib: Sätze eintragen, die App einrichten, um Rat fragen.',
+    subtitle: 'Sätze eintragen, die App einrichten, um Rat fragen.',
     open: 'Coach',
     setUpWithCoach: 'Mit dem Coach einrichten',
     newConversation: 'Neues Gespräch',
     you: 'Du',
     placeholder: 'Nachricht an den Coach…',
     send: 'Senden',
-    record: 'Sprachnachricht aufnehmen',
-    stop: 'Stoppen und senden',
     cancel: 'Abbrechen',
-    listening: 'Hört zu…',
     thinking: 'Denkt nach…',
-    transcribing: 'Schreibt mit, was du gesagt hast…',
-    downloading: (pct: number) => `Sprachmodell wird geladen: ${pct} %`,
-    voiceNote: 'Sprachnachricht',
     starters: {
       log: 'Eintragen, was ich gerade gemacht habe',
       advice: 'Ist diese Übung eine gute Idee für mich?',
@@ -171,7 +129,6 @@ export const coach = namespace(
       howAmIDoing: 'Wie läuft mein Training?',
     },
     building: 'Wird erstellt…',
-    speak: 'Sag, was du gemacht hast',
     review: 'Prüfen',
     apply: 'Übernehmen',
     applied: 'Übernommen',
@@ -194,17 +151,5 @@ export const coach = namespace(
       language: (name: string) => `Sprache: ${name}`,
     },
     appliedToast: 'Übernommen',
-    offline: 'Offline: Die Sprachnachricht bleibt auf diesem Gerät und wird gesendet, sobald du wieder online bist.',
-    pending: (n: number) =>
-      n === 1 ? '1 Sprachnachricht wartet auf das Netz' : `${n} Sprachnachrichten warten auf das Netz`,
-    sendPending: 'Jetzt senden',
-    voiceErrors: {
-      unsupported: 'Dieser Browser kann keinen Ton aufnehmen.',
-      denied: 'Das Mikrofon ist blockiert. Erlaube es für diese Seite in den Browsereinstellungen.',
-      noTranscription:
-        'Dein Anbieter kann Sprache nicht in Text umwandeln. Wähle „Auf diesem Gerät“ unter Einstellungen › KI › Sprachnachrichten oder ein Modell, das Audio versteht.',
-      deviceFailed:
-        'Das Sprachmodell auf diesem Gerät konnte nicht laufen. Versuch es noch einmal oder nutze deinen Anbieter.',
-    },
   },
 )

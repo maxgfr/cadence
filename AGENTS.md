@@ -34,13 +34,11 @@ under `/cadence/`, no server.
   errors are read with its `describeError`. Prompts stay in English and end with `languageRule()`, so the model writes
   in the interface language.
 - The coach (`core/ai/coach.ts`) only proposes: a model's answer becomes `CoachProposal`s, applied one by one by
-  `screens/Coach/apply.ts` after the user confirms. It is the only AI entry point in the interface: the bubble
-  (`screens/Coach/CoachBubble.tsx`) on every screen, which a screen tells where the athlete is with `useCoachScreen`;
+  `screens/Coach/apply.ts` after the user confirms. It is the only AI entry point in the interface: a column beside
+  the app on a computer, else a bubble on every screen (`screens/Coach/CoachBubble.tsx`), which a screen tells where the athlete is with `useCoachScreen`;
   do not add AI buttons to screens. The coach describes programs, weeks, exercises and goals; their own features design
   them. Every structured-output schema stays within strict modes (at most 16 nullable or union fields, Anthropic's
-  limit; `coach.test.ts` checks it): prefer a neutral value (0, "", "unchanged") to null. Its conversation lives in memory; voice notes recorded offline wait
-  in their own database (`cadence-voice`), never exported. The on-device speech runtime (onnxruntime, in
-  `app/transcribe.worker.ts`) is cached on first use, never precached.
+  limit; `coach.test.ts` checks it): prefer a neutral value (0, "", "unchanged") to null. Its conversation lives in memory. It is typed: no voice.
 - Sync (`core/sync`): every write is dated (`updatedAt`) and every deletion leaves a tombstone, through `app/data.tsx`;
   never write around it. The merge is symmetric and deterministic. Erase and import leave no tombstones, so a sync never
   deletes on the other device what was only reset here. Trystero and the QR code libraries load with the sync screen only.
