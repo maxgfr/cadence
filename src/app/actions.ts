@@ -1,6 +1,6 @@
 import { useLocation } from 'wouter'
-import { freeSession, sessionFromDay } from '../core/model/program.ts'
-import type { Program, ProgramRef } from '../core/model/schemas.ts'
+import { freeSession, restartSession, sessionFromDay } from '../core/model/program.ts'
+import type { Program, ProgramRef, Session } from '../core/model/schemas.ts'
 import { currentE1rm, lastPerformance } from '../core/stats/metrics.ts'
 import { useData } from './data.tsx'
 
@@ -13,6 +13,18 @@ export function useStartSession() {
     return ex ? currentE1rm(data.sessions, ex, data.today) : undefined
   }
   return {
+    /** The session started over, as it would start now. Not stored: the logging screen writes it. */
+    restarted(session: Session): Session {
+      const now = new Date()
+      const before = { date: session.date, startedAt: now.toISOString() }
+      return restartSession(
+        session,
+        data.index,
+        e1rmOf,
+        (exerciseId) => lastPerformance(data.sessions, exerciseId, before),
+        now,
+      )
+    },
     async fromDay(program: Program, ref: ProgramRef) {
       const now = new Date()
       const before = { date: data.today, startedAt: now.toISOString() }

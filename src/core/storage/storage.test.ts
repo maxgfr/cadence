@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 import { openDB } from 'idb'
 import { instantiate, TEMPLATES } from '../demo/programs.ts'
-import { BACKUP_VERSION, DEFAULT_SETTINGS } from '../model/schemas.ts'
+import { BACKUP_VERSION, DEFAULT_SETTINGS, EXERCISE_PHOTO_MAX, Exercise } from '../model/schemas.ts'
 import { entry, IDX, must, session, set } from '../testkit.test.ts'
 import { BackupError, exportBackup, importBackup, parseBackup, sessionsCsv } from './backup.ts'
 import { idbStore } from './idb.ts'
@@ -90,7 +90,7 @@ describe('parseBackup', () => {
   test('refuses what is not a valid backup, saying why', () => {
     expect(() => parseBackup('nope')).toThrow(BackupError)
     expect(() => parseBackup('{"app":"other"}')).toThrow('not a Cadence backup')
-    expect(() => parseBackup('{"app":"cadence","version":9}')).toThrow('format version 9')
+    expect(() => parseBackup('{"app":"cadence","version":99}')).toThrow('format version 99')
     expect(() =>
       parseBackup(
         JSON.stringify({
@@ -130,6 +130,33 @@ describe('parseBackup', () => {
     expect(b.programs).toHaveLength(1)
     expect(b.version).toBe(BACKUP_VERSION)
     expect(b.programs.every((p) => p.layout === undefined)).toBe(true)
+  })
+})
+
+describe('an exercise photo', () => {
+  const exercise = { id: 'e', name: 'Leg press', metric: 'weight_reps' as const }
+  const photo = 'data:image/jpeg;base64,/9j/4AAQ'
+
+  test('is a JPEG within its limit, and nothing else', () => {
+    expect(Exercise.safeParse({ ...exercise, photo }).success).toBe(true)
+    for (const bad of [
+      'https://example.com/machine.jpg',
+      'data:image/svg+xml;base64,PHN2Zy8+',
+      'data:text/html;base64,PGI+',
+      `data:image/jpeg;base64,${'A'.repeat(EXERCISE_PHOTO_MAX)}`,
+    ])
+      expect(Exercise.safeParse({ ...exercise, photo: bad }).success).toBe(false)
+  })
+
+  test('travels in a backup, and a version 8 backup reads with none', async () => {
+    const store = memoryStore()
+    await store.put('exercises', { ...exercise, photo })
+    const b = parseBackup(JSON.stringify(await exportBackup(store)))
+    expect(b.exercises[0]?.photo).toBe(photo)
+    const v8 = await exportBackup(memoryStore())
+    const old = parseBackup(JSON.stringify({ ...v8, version: 8, exercises: [exercise] }))
+    expect(old.version).toBe(BACKUP_VERSION)
+    expect(old.exercises[0]?.photo).toBeUndefined()
   })
 })
 

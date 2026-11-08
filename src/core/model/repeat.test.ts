@@ -3,6 +3,7 @@ import { draftWeekFromAi } from '../ai/program.ts'
 import { lastPerformance } from '../stats/metrics.ts'
 import { ATHLETE, entry, IDX, must, session, set } from '../testkit.test.ts'
 import {
+  activeSessions,
   currentRef,
   dayToStart,
   describeSets,
@@ -10,7 +11,9 @@ import {
   nextDay,
   plannedSets,
   replaceBlockExercise,
+  restartSession,
   sessionFromDay,
+  sessionInFocus,
   setsFromLast,
   swapEntryExercise,
   weekTodo,
@@ -38,6 +41,59 @@ const program = (days: Day[], p: Partial<Program> = {}): Program => ({
 })
 const ref = (d: number, dayId?: string) => ({ programId: 'p', week: 0, day: d, ...(dayId ? { dayId } : {}) })
 const before = { date: '2026-11-08', startedAt: '2026-11-08T18:00:00.000Z' }
+
+describe('sessions in progress', () => {
+  const running = (id: string, startedAt: string) => session('2026-11-08', [], { id, status: 'active', startedAt })
+  const morning = running('morning', '2026-11-08T08:00:00.000Z')
+  const noon = running('noon', '2026-11-08T12:00:00.000Z')
+  const finished = session('2026-11-08', [], { id: 'finished', startedAt: '2026-11-08T14:00:00.000Z' })
+
+  test('several at once, the latest started first, the finished ones apart', () => {
+    expect(activeSessions([morning, finished, noon]).map((s) => s.id)).toEqual(['noon', 'morning'])
+  })
+
+  test('the coach works on the one on screen, else the latest started', () => {
+    expect(sessionInFocus([morning, noon], 'morning')?.id).toBe('morning')
+    expect(sessionInFocus([morning, noon], undefined)?.id).toBe('noon')
+    expect(sessionInFocus([morning, finished, noon], 'finished')?.id).toBe('noon')
+    expect(sessionInFocus([finished], undefined)).toBeUndefined()
+  })
+
+  test('starting over unticks everything and goes back to the plan and last time, on the same session', () => {
+    const planned = { ...entry(squat.id, [set({ weight: 200, reps: 1 })]), planned: block({ sets: 2, reps: 5 }) }
+    const added = entry(bench.id, [
+      set({ weight: 90, reps: 3 }),
+      set({ weight: 90, reps: 3 }),
+      set({ weight: 90, reps: 3 }),
+    ])
+    const started = session('2026-11-08', [planned, added], {
+      id: 'kept',
+      status: 'active',
+      startedAt: '2026-11-08T08:00:00.000Z',
+      programRef: ref(0),
+    })
+    const last = { date: '2026-11-01', sets: [set({ weight: 100, reps: 5 })] }
+    const now = new Date('2026-11-08T09:00:00.000Z')
+    const after = restartSession(
+      started,
+      IDX,
+      () => undefined,
+      (id) => (id === squat.id ? last : undefined),
+      now,
+    )
+
+    expect(after.id).toBe('kept')
+    expect(after.programRef).toEqual(ref(0))
+    expect(after.startedAt).toBe(now.toISOString())
+    expect(after.entries.map((e) => e.id)).toEqual([planned.id, added.id])
+    expect(after.entries[0]?.sets).toEqual([
+      { done: false, reps: 5, weight: 100 },
+      { done: false, reps: 5, weight: 100 },
+    ])
+    expect(after.entries[1]?.sets).toEqual([{ done: false }])
+    expect(started.entries[0]?.sets[0]?.done).toBe(true)
+  })
+})
 
 describe('what was done last time', () => {
   const at = (date: string, weight: number, startedAt?: string) =>

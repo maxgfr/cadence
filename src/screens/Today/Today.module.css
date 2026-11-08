@@ -190,12 +190,6 @@ a.day:hover {
   gap: var(--space-4);
 }
 
-.switch {
-  display: grid;
-  gap: var(--space-3);
-  color: var(--ink-2);
-}
-
 .subTitle {
   margin-top: var(--space-2);
   color: var(--ink-2);

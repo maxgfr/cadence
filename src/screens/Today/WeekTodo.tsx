@@ -4,17 +4,16 @@ import { formatShortDay } from '../../core/model/dates.ts'
 import type { WeekTodo } from '../../core/model/program.ts'
 import type { ProgramRef } from '../../core/model/schemas.ts'
 import { ListGroup, ListRow } from '../../ui/components/List.tsx'
-import { sameRef } from './SessionChooser.tsx'
 import styles from './Today.module.css'
 
 /** One program's week: its sessions to do, those done (with the day), and a tap to start the rest. */
 export function WeekTodoCard({
   todo,
-  activeRef,
+  isRunning,
   onStart,
 }: {
   todo: WeekTodo
-  activeRef: ProgramRef | undefined
+  isRunning: (ref: ProgramRef) => boolean
   onStart: (ref: ProgramRef) => void
 }) {
   const t = useT()
@@ -29,7 +28,7 @@ export function WeekTodoCard({
   return (
     <ListGroup title={program.name} footer={summary}>
       {days.map(({ ref, day, done }) => {
-        const running = sameRef(activeRef, ref)
+        const running = isRunning(ref)
         return (
           <ListRow
             key={day.id}

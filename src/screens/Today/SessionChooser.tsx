@@ -28,12 +28,12 @@ export function useChoosableSessions() {
 export const sameRef = (a: ProgramRef | undefined, b: ProgramRef) =>
   a !== undefined && a.programId === b.programId && a.week === b.week && a.day === b.day
 
-/** The sessions of every program, to start any of them (or come back to the one in progress). */
+/** The sessions of every program, to start any of them (or come back to one in progress). */
 export function SessionList({
-  activeRef,
+  isRunning,
   onPick,
 }: {
-  activeRef: ProgramRef | undefined
+  isRunning: (ref: ProgramRef) => boolean
   onPick: (program: Program, ref: ProgramRef) => void
 }) {
   const groups = useChoosableSessions()
@@ -51,7 +51,7 @@ export function SessionList({
             subtitle={[
               isSessionSet(program) ? '' : (program.weeks[ref.week]?.name ?? t.today.week(ref.week + 1)),
               t.today.exercises(day.blocks.length),
-              sameRef(activeRef, ref) ? t.today.inProgressLower : sameRef(next, ref) ? t.today.nextUp : '',
+              isRunning(ref) ? t.today.inProgressLower : sameRef(next, ref) ? t.today.nextUp : '',
             ]
               .filter(Boolean)
               .join(' · ')}

@@ -23,8 +23,10 @@ import { Field } from './components/Field.tsx'
 import { Segmented } from './components/Segmented.tsx'
 import { SelectField } from './components/SelectField.tsx'
 import { TextArea } from './components/TextArea.tsx'
+import { cx } from './cx.ts'
 import { ColorPicker, freeColor } from './DisciplineForm.tsx'
 import styles from './Forms.module.css'
+import { compressPhoto } from './photo.ts'
 import { RestField } from './RestField.tsx'
 import { useUnits } from './units.ts'
 
@@ -86,6 +88,8 @@ export function ExerciseForm({
   const [rest, setRest] = useState<number | undefined>(exercise?.rest)
   const [description, setDescription] = useState(initialDescription ?? exercise?.description ?? '')
   const [notes, setNotes] = useState(exercise?.notes ?? '')
+  const [photo, setPhoto] = useState(exercise?.photo)
+  const [photoError, setPhotoError] = useState(false)
   const [error, setError] = useState<string>()
   const [newError, setNewError] = useState<string>()
   const used =
@@ -144,6 +148,7 @@ export function ExerciseForm({
           ...(exercise?.stroke ? { stroke: exercise.stroke } : {}),
           ...(notes.trim() ? { notes: notes.trim().slice(0, 500) } : {}),
           ...(description.trim() ? { description: description.trim().slice(0, 4000) } : {}),
+          ...(photo ? { photo } : {}),
           ...(rest !== undefined ? { rest } : {}),
         }
         if (draft) {
@@ -276,6 +281,47 @@ export function ExerciseForm({
         value={notes}
         onChange={(e) => setNotes(e.target.value)}
       />
+      <div className={styles.photoField}>
+        <span className={styles.legend}>{t.forms.exercise.photo}</span>
+        {photo && (
+          <img className={styles.photo} src={photo} alt={t.forms.exercise.photoOf(name.trim() || t.common.exercise)} />
+        )}
+        <div className={styles.photoActions}>
+          <label className={cx(buttonClass({ variant: 'secondary' }), styles.photoPick)}>
+            <input
+              type="file"
+              accept="image/*"
+              className="sr-only"
+              onChange={async (e) => {
+                const input = e.target
+                const file = input.files?.[0]
+                if (!file) return
+                try {
+                  setPhoto(await compressPhoto(file))
+                  setPhotoError(false)
+                } catch {
+                  setPhotoError(true)
+                }
+                // Picking the same file again still counts as a change.
+                input.value = ''
+              }}
+            />
+            {photo ? t.forms.exercise.changePhoto : t.forms.exercise.addPhoto}
+          </label>
+          {photo && (
+            <Button variant="plain" onClick={() => setPhoto(undefined)}>
+              {t.forms.exercise.removePhoto}
+            </Button>
+          )}
+        </div>
+        {photoError ? (
+          <p className={styles.note} role="alert">
+            {t.forms.exercise.photoFailed}
+          </p>
+        ) : (
+          <p className={styles.note}>{t.forms.exercise.photoHint}</p>
+        )}
+      </div>
       <Button type="submit" variant="primary" size="large" full>
         {exercise ? t.common.save : t.forms.exercise.add}
       </Button>

@@ -217,18 +217,22 @@ test('a set of sessions: written once, then Today runs the next one or any other
   await expect(page.getByRole('heading', { name: 'Bodyweight', level: 1 })).toBeVisible()
   await expect(page.getByRole('heading', { name: 'Push-up' })).toBeVisible()
 
-  // Switching from a session with sets done asks what to keep.
+  // A session with sets done stays in progress while another starts.
   await page.getByRole('button', { name: 'Push-up, set 1 done' }).click()
   await page.getByRole('link', { name: 'Back' }).click()
   await expect(page.getByRole('link', { name: 'Resume session' })).toBeVisible()
   await page.getByRole('button', { name: /^Leg day/ }).click()
-  await expect(page.getByRole('dialog', { name: 'Switch session?' })).toBeVisible()
-  await accessible(page, 'switch session')
-  await page.getByRole('button', { name: 'Save it and switch' }).click()
   await expect(page.getByRole('heading', { name: 'Leg day', level: 1 })).toBeVisible()
-
-  // This week's todo: Bodyweight done today, Leg day under way.
   await page.getByRole('link', { name: 'Back' }).click()
+  await expect(page.getByRole('link', { name: 'Resume session' })).toHaveCount(2)
+  await accessible(page, 'sessions in progress')
+
+  // Bodyweight is finished from its own card, Leg day stays under way: this week's todo shows both.
+  await page.getByRole('region', { name: 'Bodyweight' }).getByRole('link', { name: 'Resume session' }).click()
+  await page.getByRole('button', { name: 'Finish', exact: true }).click()
+  await page.getByRole('button', { name: 'Save session' }).click()
+  await expect(page.getByText('Session saved.')).toBeVisible()
+  await page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name: 'Today' }).click()
   const week = page.getByRole('region', { name: 'My split' })
   await expect(week.getByRole('button', { name: /^Leg day.*In progress/ })).toBeVisible()
   await expect(week.getByText(/^Done /)).toBeVisible()

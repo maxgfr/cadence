@@ -1,9 +1,10 @@
 import { useCallback } from 'react'
 import { useLocation } from 'wouter'
+import { useCoach } from '../../app/coach.tsx'
 import { useData } from '../../app/data.tsx'
 import { useDraft } from '../../app/drafts.tsx'
 import type { CoachProposal } from '../../core/ai/coach.ts'
-import { applyLoggedSets, freeSession } from '../../core/model/program.ts'
+import { applyLoggedSets, freeSession, sessionInFocus } from '../../core/model/program.ts'
 
 /**
  * Applies one proposal the athlete confirmed: the only place the coach's work reaches their data. A program opens as
@@ -13,13 +14,14 @@ export function useApplyProposal() {
   const data = useData()
   const { setDraft, setExercises, setDescription } = useDraft()
   const [, navigate] = useLocation()
+  const sessionId = useCoach().screen?.sessionId
   return useCallback(
     async (p: CoachProposal) => {
       switch (p.kind) {
         case 'log_sets': {
           if (p.isNew) await data.put('exercises', p.exercise)
           const discipline = p.exercise.disciplineId ? data.disciplineIndex.get(p.exercise.disciplineId) : undefined
-          const session = data.sessions.find((s) => s.status === 'active') ?? freeSession(discipline, data.today)
+          const session = sessionInFocus(data.sessions, sessionId) ?? freeSession(discipline, data.today)
           await data.put('sessions', applyLoggedSets(session, p.exercise.id, p.sets))
           return
         }
@@ -47,6 +49,6 @@ export function useApplyProposal() {
           return
       }
     },
-    [data, setDraft, setExercises, setDescription, navigate],
+    [data, sessionId, setDraft, setExercises, setDescription, navigate],
   )
 }

@@ -56,6 +56,9 @@ const nonNegative = z.number().finite().nonnegative()
 export const PaceUnit = z.enum(['100m', 'km'])
 export type PaceUnit = z.infer<typeof PaceUnit>
 
+/** Longest stored photo, as text: about 220 KB of image. */
+export const EXERCISE_PHOTO_MAX = 300_000
+
 export const Exercise = z.object({
   id,
   name: z.string().trim().min(1).max(80),
@@ -69,6 +72,12 @@ export const Exercise = z.object({
   notes: z.string().max(500).optional(),
   /** How to perform it, written by the athlete or drafted by the coach; apart from `notes`, which stay theirs. */
   description: z.string().max(4000).optional(),
+  /** A photo to recognise it (the machine, the setup): a small JPEG, inside the record so backups and syncs carry it. */
+  photo: z
+    .string()
+    .max(EXERCISE_PHOTO_MAX)
+    .regex(/^data:image\/jpeg;base64,[A-Za-z0-9+/]+=*$/)
+    .optional(),
   /** Seconds of rest between sets, over its discipline's (0: the timer only when a plan gives a rest). */
   rest: z.number().int().min(0).max(900).optional(),
   /** When it last changed on any device (ISO); what a sync keeps the newest of. Absent before version 6. */
@@ -269,9 +278,10 @@ export const DEFAULT_SETTINGS: Settings = Settings.parse({})
  * devices can be merged; earlier versions read with no date and no deletion. 7: disciplines and exercises carry their
  * rest between sets (`rest`); earlier versions read with none, the settings' rest standing for all. 8: free notes
  * (`notes`), an exercise's `description`, and sessions name their program day by id (`programRef.dayId`); earlier
- * versions read with no notes, no description, and their days by position.
+ * versions read with no notes, no description, and their days by position. 9: an exercise can hold a `photo`; earlier
+ * versions read with none.
  */
-export const BACKUP_VERSION = 8
+export const BACKUP_VERSION = 9
 export const Backup = z.object({
   app: z.literal('cadence'),
   version: z.literal(BACKUP_VERSION),

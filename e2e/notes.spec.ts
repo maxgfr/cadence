@@ -52,7 +52,50 @@ test('an exercise has its own description and notes, read while training', async
     .getByRole('button', { name: /^Full body A/ })
     .first()
     .click()
-  await page.getByText('Description and notes').first().click()
+  await page.getByText('Details').first().click()
   await expect(page.getByText('Brace, then sit between the hips.')).toBeVisible()
   await expect(page.getByText('Wider stance feels better')).toBeVisible()
+})
+
+/** A red pixel. */
+const PNG = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFBQIAX8jx0gAAAABJRU5ErkJggg=='
+
+test('an exercise keeps a photo of its machine, made small, and shows it while training', async ({ page }) => {
+  await startWithGym(page)
+  await page.goto('./#/exercises')
+  await page.getByRole('button', { name: /^Back squat/ }).click()
+  const dialog = page.getByRole('dialog')
+
+  // What is not an image says so, and nothing is kept.
+  await dialog
+    .getByLabel('Add a photo')
+    .setInputFiles({ name: 'notes.txt', mimeType: 'text/plain', buffer: Buffer.from('not an image') })
+  await expect(dialog.getByRole('alert')).toHaveText('This image could not be read. Try a JPEG or a PNG.')
+
+  await dialog
+    .getByLabel('Add a photo')
+    .setInputFiles({ name: 'machine.png', mimeType: 'image/png', buffer: Buffer.from(PNG, 'base64') })
+  const preview = dialog.getByRole('img', { name: 'Photo of Back squat' })
+  await expect(preview).toHaveAttribute('src', /^data:image\/jpeg;base64,/)
+  await expect(dialog.getByRole('alert')).toHaveCount(0)
+  await page.getByRole('button', { name: 'Save', exact: true }).click()
+  await expect(page.getByText('Exercise saved')).toBeVisible()
+
+  // It survives a reload, and is there during the session.
+  await page.reload()
+  await page.goto('./')
+  await page
+    .getByRole('button', { name: /^Full body A/ })
+    .first()
+    .click()
+  await page.getByText('Details').first().click()
+  await expect(page.getByRole('img', { name: 'Photo of Back squat' })).toBeVisible()
+
+  // Removing it holds once saved.
+  await page.goto('./#/exercises')
+  await page.getByRole('button', { name: /^Back squat/ }).click()
+  await page.getByRole('button', { name: 'Remove the photo' }).click()
+  await page.getByRole('button', { name: 'Save', exact: true }).click()
+  await page.getByRole('button', { name: /^Back squat/ }).click()
+  await expect(page.getByRole('dialog').getByRole('img', { name: 'Photo of Back squat' })).toHaveCount(0)
 })

@@ -122,7 +122,7 @@ test('two devices end with the same data, the AI settings included, never into a
   const downloading = phone.waitForEvent('download')
   await phone.getByRole('button', { name: /Export backup/ }).click()
   const backup = await readFile((await (await downloading).path()) ?? '', 'utf8')
-  expect(backup).toContain('"version": 8')
+  expect(backup).toContain('"version": 9')
   expect(backup).not.toContain('sk-sync-secret')
   expect(backup).not.toContain('127.0.0.1:9')
   await phoneContext.close()

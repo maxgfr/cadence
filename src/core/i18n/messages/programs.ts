@@ -7,7 +7,7 @@ export const programs = namespace(
     source: {
       manual: 'Your own',
       template: 'Template',
-      ai: 'AI draft, edited by you',
+      ai: 'Made with AI',
     },
     sessionsAnyOrder: (n: number) => plural(n, `${n} session, in any order`, `${n} sessions, in any order`),
     weeks: (n: number) => plural(n, `${n} week`, `${n} weeks`),
@@ -107,7 +107,7 @@ export const programs = namespace(
     source: {
       manual: 'Le vôtre',
       template: 'Modèle',
-      ai: 'Brouillon IA, modifié par vous',
+      ai: 'Créé avec l’IA',
     },
     sessionsAnyOrder: (n: number) =>
       pluralFr(n, `${n} séance, dans n’importe quel ordre`, `${n} séances, dans n’importe quel ordre`),
@@ -211,7 +211,7 @@ export const programs = namespace(
     source: {
       manual: 'Eigenes',
       template: 'Vorlage',
-      ai: 'KI-Entwurf, von dir bearbeitet',
+      ai: 'Mit KI erstellt',
     },
     sessionsAnyOrder: (n: number) =>
       plural(n, `${n} Einheit, in beliebiger Reihenfolge`, `${n} Einheiten, in beliebiger Reihenfolge`),

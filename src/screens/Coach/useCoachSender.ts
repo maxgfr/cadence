@@ -7,6 +7,7 @@ import type { CoachContext, CoachMessage, CoachTurn } from '../../core/ai/coach.
 import { generateCoachTurn } from '../../core/ai/features.ts'
 import { summarizeContext } from '../../core/ai/program.ts'
 import { newId } from '../../core/model/ids.ts'
+import { sessionInFocus } from '../../core/model/program.ts'
 
 export type SenderStatus =
   | { kind: 'idle' }
@@ -28,7 +29,7 @@ export function useCoachTurn() {
       index: data.index,
       programs: data.programs,
       goals: data.goals,
-      active: data.sessions.find((s) => s.status === 'active'),
+      active: sessionInFocus(data.sessions, screen?.sessionId),
       settings: data.settings,
       today: data.today,
       trained: data.sessions.some((s) => s.status === 'done'),

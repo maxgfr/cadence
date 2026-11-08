@@ -27,8 +27,8 @@ import styles from './Sync.module.css'
 
 /** How long a shown code waits for the other device. */
 const WAIT_MS = 5 * 60_000
-/** How long the exchange may take once connected. */
-const EXCHANGE_MS = 60_000
+/** How long the exchange may take once connected (a library full of photos is several megabytes). */
+const EXCHANGE_MS = 180_000
 
 type Phase =
   | { kind: 'choose' }

@@ -1,6 +1,7 @@
-import { ArrowLeftRight, Check, ChevronLeft, Plus, Timer, Trash2 } from 'lucide-react'
+import { ArrowLeftRight, Check, ChevronLeft, Plus, RotateCcw, Timer, Trash2, X } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useLocation, useParams } from 'wouter'
+import { useStartSession } from '../../app/actions.ts'
 import { useCoachScreen } from '../../app/coach.tsx'
 import { useData } from '../../app/data.tsx'
 import { cameFrom } from '../../app/hashLocation.ts'
@@ -52,6 +53,7 @@ export function Log() {
     session
       ? {
           where: `logging the session in progress, "${session.title}": the sets they say go there`,
+          sessionId: session.id,
           starters: [t.coach.starters.sameAsLast, t.coach.starters.nextLoad],
           raised: rest.endsAt !== null,
         }
@@ -60,6 +62,7 @@ export function Log() {
   const advanced = data.settings.mode === 'advanced'
   const units = useUnits()
   const toast = useToast()
+  const start = useStartSession()
   const saving = useRef<Promise<void>>(Promise.resolve())
   const from = cameFrom()
 
@@ -101,6 +104,21 @@ export function Log() {
   const setDone = session.entries.reduce((n, e) => n + e.sets.filter((s) => s.done).length, 0)
   const setTotal = session.entries.reduce((n, e) => n + e.sets.length, 0)
   const replacing = picking !== null && picking !== 'add' ? picking : undefined
+
+  const restart = () => {
+    const before = session
+    update(start.restarted(session))
+    rest.stop()
+    toast(t.log.restarted, [{ label: t.log.undo, onClick: () => update(before) }])
+  }
+
+  const discard = async () => {
+    await saving.current
+    await data.remove('sessions', session.id)
+    rest.stop()
+    navigate('/', { replace: true })
+    toast(t.log.discarded, [{ label: t.log.undo, onClick: () => data.put('sessions', session) }])
+  }
 
   const pickExercise = (ex: Exercise) => {
     setPicking(null)
@@ -221,6 +239,22 @@ export function Log() {
         {t.log.addExercise}
       </Button>
 
+      <div className={styles.sessionActions}>
+        {session.entries.length > 0 && (
+          <Button
+            variant="plain"
+            full
+            icon={<RotateCcw size={18} strokeWidth={1.75} aria-hidden="true" />}
+            onClick={restart}
+          >
+            {t.log.restartSession}
+          </Button>
+        )}
+        <Button variant="plain" full icon={<X size={18} strokeWidth={1.75} aria-hidden="true" />} onClick={discard}>
+          {t.log.discardSession}
+        </Button>
+      </div>
+
       <ExercisePicker
         open={picking !== null}
         disciplineId={(replacing && data.index.get(replacing.exerciseId)?.disciplineId) ?? session.disciplineId}
@@ -243,13 +277,7 @@ export function Log() {
           rest.stop()
           navigate(`/progress/sessions/${done.id}?saved=1`, { replace: true })
         }}
-        onDiscard={async () => {
-          await saving.current
-          await data.remove('sessions', session.id)
-          rest.stop()
-          navigate('/', { replace: true })
-          toast(t.log.discarded)
-        }}
+        onDiscard={discard}
       />
 
       <RestTimer timer={rest} />
@@ -325,9 +353,10 @@ function EntryCard({
           />
         </div>
       </header>
-      {(exercise?.description || exercise?.notes) && (
+      {(exercise?.description || exercise?.notes || exercise?.photo) && (
         <details className={styles.about}>
           <summary>{t.log.about}</summary>
+          {exercise.photo && <img src={exercise.photo} alt={t.forms.exercise.photoOf(exercise.name)} loading="lazy" />}
           {exercise.description && <p>{exercise.description}</p>}
           {exercise.notes && <p>{exercise.notes}</p>}
         </details>

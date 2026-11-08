@@ -375,6 +375,45 @@ export function freeSession(
   }
 }
 
+/** The sessions in progress, the latest started first. */
+export function activeSessions(sessions: readonly Session[]): Session[] {
+  const at = (s: Session) => `${s.date} ${s.startedAt ?? ''}`
+  return sessions.filter((s) => s.status === 'active').sort((a, b) => at(b).localeCompare(at(a)))
+}
+
+/** The session the coach works on: the one on screen while it is in progress, else the latest started. */
+export function sessionInFocus(sessions: readonly Session[], onScreen: string | undefined): Session | undefined {
+  const active = activeSessions(sessions)
+  return active.find((s) => s.id === onScreen) ?? active[0]
+}
+
+/**
+ * The session started over: same exercises, nothing ticked, every set back to how it starts now (from the plan and
+ * from last time). Exercises replaced or added meanwhile stay.
+ */
+export function restartSession(
+  session: Session,
+  exercises: ExerciseIndex,
+  e1rmOf: (exerciseId: string) => number | undefined,
+  lastOf: (exerciseId: string) => LastPerformance | undefined,
+  now: Date = new Date(),
+): Session {
+  return {
+    ...session,
+    startedAt: now.toISOString(),
+    entries: session.entries.map((entry) => {
+      const exercise = exercises.get(entry.exerciseId)
+      const last = lastOf(entry.exerciseId)
+      return {
+        ...entry,
+        sets: entry.planned
+          ? plannedSets(entry.planned, exercise, e1rmOf(entry.exerciseId), last)
+          : setsFromLast(exercise, last),
+      }
+    }),
+  }
+}
+
 /** The disciplines a program trains, in the order its days first use them. */
 export function programDisciplines(program: Program): string[] {
   const out: string[] = []

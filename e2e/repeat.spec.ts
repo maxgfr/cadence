@@ -43,6 +43,54 @@ test('a session done this week can be done again, starting from what was lifted'
   await expect(page).toHaveURL(session)
 })
 
+test('several sessions run at once, and each is restarted or discarded with undo', async ({ page }) => {
+  await startWithGym(page)
+  await doFullBodyA(page, '82.5')
+
+  // Two sessions in progress, the first keeping what was ticked.
+  await page
+    .getByRole('button', { name: /^Full body A/ })
+    .first()
+    .click()
+  await page.getByLabel('Back squat, set 1, kg').fill('90')
+  const first = page.url()
+  await page.getByRole('button', { name: 'Back squat, set 1 done' }).click()
+  await page.goto('./#/')
+  await page
+    .getByRole('button', { name: /^Full body B/ })
+    .first()
+    .click()
+  await expect(page.getByRole('heading', { name: /^Full body B/, level: 1 })).toBeVisible()
+  await page.goto('./#/')
+  const resume = page.getByRole('link', { name: 'Resume session' })
+  await expect(resume).toHaveCount(2)
+  await expect(page.getByRole('button', { name: /^Full body A.*In progress/ }).first()).toBeVisible()
+  await expect(page.getByRole('button', { name: /^Full body B.*In progress/ }).first()).toBeVisible()
+
+  // Coming back to one keeps it as it was left, then starting over brings it back to what was last lifted.
+  await page.goto(first)
+  await expect(page.getByLabel('Back squat, set 1, kg')).toHaveValue('90')
+  await page.getByRole('button', { name: 'Restart session' }).click()
+  await expect(page.getByLabel('Back squat, set 1, kg')).toHaveValue('82.5')
+  await expect(page.getByRole('button', { name: 'Back squat, set 1 done' })).toHaveAttribute('aria-pressed', 'false')
+  await page.getByRole('button', { name: 'Undo' }).click()
+  await expect(page.getByLabel('Back squat, set 1, kg')).toHaveValue('90')
+
+  // Discarding from Today takes that session only, and comes back on undo.
+  await page.goto('./#/')
+  await page.getByRole('button', { name: /^Discard session: Full body B/ }).click()
+  await expect(resume).toHaveCount(1)
+  await page.getByRole('button', { name: 'Undo' }).click()
+  await expect(resume).toHaveCount(2)
+
+  // Discarding from the session itself goes back to Today; what was finished is kept.
+  await page.goto(first)
+  await page.getByRole('button', { name: 'Discard session' }).click()
+  await expect(page).toHaveURL(/#\/$/)
+  await expect(resume).toHaveCount(1)
+  await expect(page.getByRole('button', { name: /^Full body A.*Done/ })).toBeVisible()
+})
+
 test('an exercise is replaced in the session, undone, or carried into the program', async ({ page }) => {
   await startWithGym(page)
   await page

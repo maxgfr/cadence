@@ -223,7 +223,7 @@ test('asked for a program, the coach describes it and the designer builds it: a 
   await coach.getByLabel('Message the coach…').fill('PPL, 7 exercises per session, machines')
   await coach.getByRole('button', { name: 'Send' }).click()
   await expect(coach.getByText('I am designing your push, pull, legs.')).toBeVisible()
-  await expect(coach.getByRole('heading', { name: 'Program draft: Push Pull Legs' })).toBeVisible()
+  await expect(coach.getByRole('heading', { name: 'Program: Push Pull Legs' })).toBeVisible()
   expect(prompts).toHaveLength(2)
   expect(prompts[1]).toContain('7 exercises per session; machines and weights')
   await coach.getByRole('button', { name: 'Open the draft' }).click()

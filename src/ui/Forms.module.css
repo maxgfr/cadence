@@ -96,3 +96,31 @@
   color: var(--ink-3);
   font-size: var(--text-footnote);
 }
+
+.photoField {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.photo {
+  display: block;
+  max-width: 100%;
+  max-height: 16rem;
+  border-radius: var(--radius-control);
+}
+
+.photoActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.photoPick {
+  cursor: pointer;
+}
+
+.photoPick:has(input:focus-visible) {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}

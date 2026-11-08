@@ -15,6 +15,8 @@ export interface CoachEntry {
 export interface CoachScreen {
   /** Where they are, for the model: in English, like every prompt ("logging the session …"). */
   where: string
+  /** The session being logged on this screen: sets the athlete tells the coach go there. */
+  sessionId?: string
   /** Requests that fit this screen, in the interface language, offered before the first message. */
   starters?: string[]
   /** Something sits at the bottom of the screen (the rest timer): the bubble moves above it. */
