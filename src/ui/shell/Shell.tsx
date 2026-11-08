@@ -1,4 +1,12 @@
-import { CalendarCheck, ClipboardList, Dumbbell, type LucideIcon, Settings, TrendingUp } from 'lucide-react'
+import {
+  CalendarCheck,
+  ClipboardList,
+  Dumbbell,
+  type LucideIcon,
+  NotebookPen,
+  Settings,
+  TrendingUp,
+} from 'lucide-react'
 import type { ReactNode } from 'react'
 import { Link, useLocation } from 'wouter'
 import { sectionOf } from '../../app/hashLocation.ts'
@@ -11,7 +19,7 @@ interface Destination {
   href: string
   label: keyof Messages['shell']['nav']
   icon: LucideIcon
-  /** Shown in the sidebar only (phones reach it from Settings). */
+  /** Shown in the sidebar only (phones reach it from another screen). */
   sidebarOnly?: boolean
 }
 
@@ -20,6 +28,7 @@ const DESTINATIONS: readonly Destination[] = [
   { href: '/programs', label: 'programs', icon: ClipboardList },
   { href: '/progress', label: 'progress', icon: TrendingUp },
   { href: '/exercises', label: 'exercises', icon: Dumbbell },
+  { href: '/notes', label: 'notes', icon: NotebookPen, sidebarOnly: true },
   { href: '/settings', label: 'settings', icon: Settings },
 ]
 

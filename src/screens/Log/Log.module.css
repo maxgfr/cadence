@@ -140,6 +140,20 @@
   font-variant-numeric: tabular-nums;
 }
 
+.about {
+  display: grid;
+  gap: var(--space-2);
+  color: var(--ink-2);
+  font-size: var(--text-footnote);
+  white-space: pre-line;
+}
+
+.about summary {
+  min-height: var(--hit-large);
+  align-content: center;
+  cursor: pointer;
+}
+
 .table {
   display: grid;
   gap: var(--space-2);

@@ -40,6 +40,7 @@ export const coachAnswer = (p: Record<string, unknown>) => ({
   addGoals: [],
   updateSettings: [],
   setRest: [],
+  describeExercise: [],
   ...p,
 })
 

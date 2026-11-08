@@ -1,5 +1,6 @@
 import { currentMessages } from '../i18n/index.ts'
 import type { ExerciseIndex } from '../library/exercises.ts'
+import type { LastPerformance } from '../stats/metrics.ts'
 import { addDays } from './dates.ts'
 import { newId } from './ids.ts'
 import type {
@@ -76,6 +77,26 @@ export function totalDays(program: Program): number {
   return program.weeks.reduce((n, w) => n + w.days.length, 0)
 }
 
+/**
+ * Where a session's day is in the program as it is now: found by its id, so a day deleted on another device does not
+ * shift the others. Undefined when that day is gone. Sessions from before version 8 have no id and read by position.
+ */
+export function locate(program: Program, ref: ProgramRef): Pick<ProgramRef, 'week' | 'day'> | undefined {
+  if (ref.dayId === undefined) return { week: ref.week, day: ref.day }
+  for (const [week, w] of program.weeks.entries()) {
+    const day = w.days.findIndex((d) => d.id === ref.dayId)
+    if (day >= 0) return { week, day }
+  }
+  return undefined
+}
+
+/** A session's reference with its day where it is now; undefined when the program or the day is gone. */
+export function currentRef(programs: readonly Program[], ref: ProgramRef | undefined): ProgramRef | undefined {
+  const program = ref && programs.find((p) => p.id === ref.programId)
+  const at = program && ref && locate(program, ref)
+  return at && ref && { ...ref, ...at }
+}
+
 const order = (r: Pick<ProgramRef, 'week' | 'day'>, program: Program) => {
   let n = 0
   for (let w = 0; w < r.week; w++) n += program.weeks[w]?.days.length ?? 0
@@ -92,17 +113,27 @@ export function nextDay(program: Program, sessions: readonly Session[]): Program
     const count = program.weeks[0]?.days.length ?? 0
     if (count === 0) return undefined
     let latest: Session | undefined
+    let latestDay = -1
     for (const s of sessions) {
       if (s.status !== 'done' || s.programRef?.programId !== program.id) continue
-      if (!latest || s.date > latest.date || (s.date === latest.date && (s.startedAt ?? '') > (latest.startedAt ?? '')))
+      const at = locate(program, s.programRef)
+      if (!at) continue
+      if (
+        !latest ||
+        s.date > latest.date ||
+        (s.date === latest.date && (s.startedAt ?? '') > (latest.startedAt ?? ''))
+      ) {
         latest = s
+        latestDay = at.day
+      }
     }
-    return { programId: program.id, week: 0, day: latest?.programRef ? (latest.programRef.day + 1) % count : 0 }
+    return { programId: program.id, week: 0, day: (latestDay + 1) % count }
   }
   let furthest = -1
   for (const s of sessions) {
     if (s.status !== 'done' || s.programRef?.programId !== program.id) continue
-    furthest = Math.max(furthest, order(s.programRef, program))
+    const at = locate(program, s.programRef)
+    if (at) furthest = Math.max(furthest, order(at, program))
   }
   let n = 0
   for (let w = 0; w < program.weeks.length; w++) {
@@ -147,13 +178,27 @@ export function suggestedWeight(block: Block, e1rm: number | undefined): number 
   return undefined
 }
 
-/** The empty sets of an entry, pre-filled from its plan so logging is mostly confirming. */
-export function plannedSets(block: Block, exercise: Exercise | undefined, e1rm: number | undefined): SetLog[] {
-  const weight = suggestedWeight(block, e1rm)
+/** The load lifted last time on the set of this rank, else on its last set. */
+function loadAt(last: LastPerformance | undefined, i: number): number | undefined {
+  return (last?.sets[i] ?? last?.sets[last.sets.length - 1])?.weight
+}
+
+/**
+ * The empty sets of an entry, pre-filled so logging is mostly confirming: reps and times from its plan, the load the
+ * athlete really lifted last time, else the plan's.
+ */
+export function plannedSets(
+  block: Block,
+  exercise: Exercise | undefined,
+  e1rm: number | undefined,
+  last?: LastPerformance,
+): SetLog[] {
+  const planned = suggestedWeight(block, e1rm)
   const distance = block.distance ?? exercise?.distance
   const rpe = block.intensity?.kind === 'rpe' ? block.intensity.value : undefined
-  return Array.from({ length: block.sets }, () => {
+  return Array.from({ length: block.sets }, (_, i) => {
     const s: SetLog = { done: false }
+    const weight = (exercise?.metric === 'weight_reps' ? loadAt(last, i) : undefined) ?? planned
     if (block.reps !== undefined) s.reps = block.reps
     if (weight !== undefined) s.weight = weight
     if (block.duration !== undefined) s.time = block.duration
@@ -170,7 +215,120 @@ export function emptySet(exercise: Exercise | undefined, previous?: SetLog): Set
   return s
 }
 
-/** A new active session for a program day, entries pre-filled from the plan. */
+/**
+ * The sets of an exercise added by hand: as many as last time, with their load and reps, none ticked. A time or a
+ * distance is a result to beat, not a setting to reuse: those start empty.
+ */
+export function setsFromLast(exercise: Exercise | undefined, last: LastPerformance | undefined): SetLog[] {
+  const metric = exercise?.metric
+  if (!last || (metric !== 'weight_reps' && metric !== 'reps')) return [emptySet(exercise)]
+  return last.sets.map((set) => ({
+    done: false,
+    ...(metric === 'weight_reps' && set.weight !== undefined ? { weight: set.weight } : {}),
+    ...(set.reps !== undefined ? { reps: set.reps } : {}),
+  }))
+}
+
+/** Sets as one short line: "3×8 · 60 kg", "2×8 · 60 kg, 1×6 · 62.5 kg", "4×1:05", "2×100 m 1:50". */
+export function describeSets(sets: readonly SetLog[], exercise: Exercise | undefined, units: UnitPrefs): string {
+  const metric = exercise?.metric ?? 'weight_reps'
+  const text = (s: SetLog) => {
+    const time = s.time !== undefined ? formatTime(s.time) : ''
+    if (metric === 'time') return time || '–'
+    if (metric === 'distance_time') {
+      const open = exercise?.distance === undefined && s.distance !== undefined
+      return [open ? formatDistance(s.distance ?? 0, units.distanceUnit) : '', time].filter(Boolean).join(' ') || '–'
+    }
+    return String(s.reps ?? '–')
+  }
+  const load = (s: SetLog) =>
+    metric === 'weight_reps' && s.weight !== undefined ? ` · ${formatWeight(s.weight, units.weightUnit)}` : ''
+  const groups: { line: string; n: number }[] = []
+  for (const s of sets) {
+    const line = `${text(s)}${load(s)}`
+    const previous = groups[groups.length - 1]
+    if (previous?.line === line) previous.n++
+    else groups.push({ line, n: 1 })
+  }
+  const counted = metric === 'weight_reps' || metric === 'reps'
+  return groups.map((g) => (counted || g.n > 1 ? `${g.n}×${g.line}` : g.line)).join(', ')
+}
+
+/** A block without its load: kilos written for one exercise mean nothing on another. */
+function withoutLoad(block: Block): Block {
+  if (block.intensity?.kind !== 'kg') return block
+  const { intensity: _load, ...rest } = block
+  return rest
+}
+
+/**
+ * An entry moved to another exercise. Measured the same way, its plan and the sets ticked stay (a wrong exercise
+ * being corrected), the others take the load last lifted on the new one. Measured differently, nothing carries over.
+ */
+export function swapEntryExercise(
+  entry: Entry,
+  from: Exercise | undefined,
+  to: Exercise,
+  last: LastPerformance | undefined,
+): Entry {
+  if (from?.metric !== to.metric) {
+    const { planned: _plan, ...rest } = entry
+    const fresh = setsFromLast(to, last)
+    return {
+      ...rest,
+      exerciseId: to.id,
+      sets: entry.sets.map((_, i) => fresh[i] ?? emptySet(to, fresh[fresh.length - 1])),
+    }
+  }
+  return {
+    ...entry,
+    exerciseId: to.id,
+    ...(entry.planned ? { planned: { ...withoutLoad(entry.planned), exerciseId: to.id } } : {}),
+    sets: entry.sets.map((set, i) => {
+      if (set.done) return set
+      const { weight: _old, distance: oldDistance, ...rest } = set
+      const load = to.metric === 'weight_reps' ? loadAt(last, i) : undefined
+      const distance = to.distance ?? (from.distance === undefined ? oldDistance : undefined)
+      return {
+        ...rest,
+        ...(load !== undefined ? { weight: load } : {}),
+        ...(distance !== undefined ? { distance } : {}),
+      }
+    }),
+  }
+}
+
+/** The program with one block of the session's day on another exercise; undefined when that block is gone. */
+export function replaceBlockExercise(
+  program: Program,
+  ref: ProgramRef,
+  blockId: string,
+  exerciseId: string,
+): Program | undefined {
+  const at = locate(program, ref)
+  const day = at && dayAt(program, at)
+  if (!at || !day?.blocks.some((b) => b.id === blockId)) return undefined
+  return {
+    ...program,
+    weeks: program.weeks.map((w, i) =>
+      i !== at.week
+        ? w
+        : {
+            ...w,
+            days: w.days.map((d, j) =>
+              j !== at.day
+                ? d
+                : {
+                    ...d,
+                    blocks: d.blocks.map((b) => (b.id === blockId ? { ...withoutLoad(b), exerciseId } : b)),
+                  },
+            ),
+          },
+    ),
+  }
+}
+
+/** A new active session for a program day, entries pre-filled from the plan and from last time. */
 export function sessionFromDay(
   program: Program,
   ref: ProgramRef,
@@ -178,13 +336,14 @@ export function sessionFromDay(
   e1rmOf: (exerciseId: string) => number | undefined,
   date: string,
   now: Date = new Date(),
+  lastOf?: (exerciseId: string) => LastPerformance | undefined,
 ): Session {
   const day = dayAt(program, ref)
   const entries: Entry[] = (day?.blocks ?? []).map((block) => ({
     id: newId(),
     exerciseId: block.exerciseId,
     planned: block,
-    sets: plannedSets(block, exercises.get(block.exerciseId), e1rmOf(block.exerciseId)),
+    sets: plannedSets(block, exercises.get(block.exerciseId), e1rmOf(block.exerciseId), lastOf?.(block.exerciseId)),
   }))
   const weekName = program.weeks[ref.week]?.name ?? currentMessages().core.week(ref.week + 1)
   return {
@@ -192,7 +351,7 @@ export function sessionFromDay(
     date,
     title: day ? (isSessionSet(program) ? day.name : `${day.name} · ${weekName}`) : program.name,
     ...(day?.disciplineId ? { disciplineId: day.disciplineId } : {}),
-    programRef: ref,
+    programRef: day ? { ...ref, dayId: day.id } : ref,
     entries,
     status: 'active',
     startedAt: now.toISOString(),
@@ -245,32 +404,40 @@ export interface WeekTodo {
  */
 export function weekTodo(program: Program, sessions: readonly Session[], weekStart: string): WeekTodo | undefined {
   const weekEnd = addDays(weekStart, 6)
-  const mine = sessions.filter((s) => s.status === 'done' && s.programRef?.programId === program.id)
-  const thisWeek = mine.filter((s) => s.date >= weekStart && s.date <= weekEnd)
+  // Each session with its day where it is now; one whose day was deleted since ticks nothing.
+  const mine = sessions.flatMap((session) => {
+    if (session.status !== 'done' || session.programRef?.programId !== program.id) return []
+    const at = locate(program, session.programRef)
+    return at ? [{ session, ...at }] : []
+  })
+  const thisWeek = mine.filter((x) => x.session.date >= weekStart && x.session.date <= weekEnd)
   const set = isSessionSet(program)
   const week = set
     ? 0
     : thisWeek.length > 0
-      ? Math.min(...thisWeek.map((s) => s.programRef?.week ?? 0))
+      ? Math.min(...thisWeek.map((x) => x.week))
       : nextDay(program, sessions)?.week
   if (week === undefined) return undefined
   const plan = program.weeks[week]?.days ?? []
   // Each session done ticks its own day, or, when that one is ticked already, a day of the same name still open: a
   // week with the same session twice (Full body A, B, A) needs it done twice.
   const pool = (set ? thisWeek : mine)
-    .filter((s) => s.programRef?.week === week)
-    .sort((a, b) => a.date.localeCompare(b.date) || (a.startedAt ?? '').localeCompare(b.startedAt ?? ''))
+    .filter((x) => x.week === week)
+    .sort(
+      (a, b) =>
+        a.session.date.localeCompare(b.session.date) ||
+        (a.session.startedAt ?? '').localeCompare(b.session.startedAt ?? ''),
+    )
   const done = new Map<number, Session>()
-  const twins: Session[] = []
+  const twins: typeof pool = []
   for (const x of pool) {
-    const d = x.programRef?.day ?? -1
-    if (plan[d] && !done.has(d)) done.set(d, x)
+    if (plan[x.day] && !done.has(x.day)) done.set(x.day, x.session)
     else twins.push(x)
   }
   for (const x of twins) {
-    const name = plan[x.programRef?.day ?? -1]?.name
+    const name = plan[x.day]?.name
     const d = plan.findIndex((day, i) => !done.has(i) && day.name === name)
-    if (d >= 0) done.set(d, x)
+    if (d >= 0) done.set(d, x.session)
   }
   const days = plan.map((day, d) => ({ ref: { programId: program.id, week, day: d }, day, done: done.get(d) }))
   return {

@@ -1,4 +1,7 @@
 import { useState } from 'react'
+import { Link } from 'wouter'
+import { useAi } from '../app/ai.tsx'
+import { useCoach } from '../app/coach.tsx'
 import { useData } from '../app/data.tsx'
 import { useT } from '../app/i18n.tsx'
 import { useToast } from '../app/toast.tsx'
@@ -15,10 +18,11 @@ import {
   type PaceUnit,
 } from '../core/model/schemas.ts'
 import { fromDisplayDistance, toDisplayDistance } from '../core/model/units.ts'
-import { Button } from './components/Button.tsx'
+import { Button, buttonClass } from './components/Button.tsx'
 import { Field } from './components/Field.tsx'
 import { Segmented } from './components/Segmented.tsx'
 import { SelectField } from './components/SelectField.tsx'
+import { TextArea } from './components/TextArea.tsx'
 import { ColorPicker, freeColor } from './DisciplineForm.tsx'
 import styles from './Forms.module.css'
 import { RestField } from './RestField.tsx'
@@ -31,6 +35,8 @@ interface ExerciseFormProps {
   initialName?: string
   /** Pre-selected discipline for a new exercise (the session's). Without it, none is selected. */
   initialDisciplineId?: string
+  /** A description the coach wrote, shown in place of the stored one until saved. */
+  initialDescription?: string
   onDone: (saved?: Exercise) => void
   /**
    * Edits an exercise of an AI draft instead: nothing is stored, the result (and a discipline created on the way)
@@ -44,8 +50,17 @@ interface ExerciseFormProps {
 }
 
 /** Creates or edits an exercise. A new discipline can be created on the way. */
-export function ExerciseForm({ exercise, initialName = '', initialDisciplineId, onDone, draft }: ExerciseFormProps) {
+export function ExerciseForm({
+  exercise,
+  initialName = '',
+  initialDisciplineId,
+  initialDescription,
+  onDone,
+  draft,
+}: ExerciseFormProps) {
   const data = useData()
+  const ai = useAi()
+  const coach = useCoach()
   const disciplines = [...data.disciplines, ...(draft?.disciplines ?? [])]
   const units = useUnits()
   const toast = useToast()
@@ -69,6 +84,8 @@ export function ExerciseForm({ exercise, initialName = '', initialDisciplineId, 
   )
   const [muscles, setMuscles] = useState<Muscle[]>(exercise?.muscles ?? [])
   const [rest, setRest] = useState<number | undefined>(exercise?.rest)
+  const [description, setDescription] = useState(initialDescription ?? exercise?.description ?? '')
+  const [notes, setNotes] = useState(exercise?.notes ?? '')
   const [error, setError] = useState<string>()
   const [newError, setNewError] = useState<string>()
   const used =
@@ -125,7 +142,8 @@ export function ExerciseForm({ exercise, initialName = '', initialDisciplineId, 
           ...(metric === 'distance_time' && !fixed ? { pace } : {}),
           ...(muscles.length > 0 ? { muscles } : {}),
           ...(exercise?.stroke ? { stroke: exercise.stroke } : {}),
-          ...(exercise?.notes ? { notes: exercise.notes } : {}),
+          ...(notes.trim() ? { notes: notes.trim().slice(0, 500) } : {}),
+          ...(description.trim() ? { description: description.trim().slice(0, 4000) } : {}),
           ...(rest !== undefined ? { rest } : {}),
         }
         if (draft) {
@@ -223,6 +241,40 @@ export function ExerciseForm({ exercise, initialName = '', initialDisciplineId, 
             : undefined
         }
         onChange={setRest}
+      />
+      <TextArea
+        label={t.forms.exercise.description}
+        hint={t.forms.exercise.descriptionHint}
+        rows={5}
+        maxLength={4000}
+        value={description}
+        onChange={(e) => setDescription(e.target.value)}
+      />
+      {/* Hands over to the coach, the only way to AI: this form closes first, being a modal over it. */}
+      {exercise &&
+        !draft &&
+        (ai.ready ? (
+          <Button
+            variant="plain"
+            full
+            onClick={() => {
+              onDone()
+              coach.show({ text: t.coach.starters.describeExercise(exercise.name) })
+            }}
+          >
+            {t.forms.exercise.askCoach}
+          </Button>
+        ) : (
+          <Link href="/settings/ai" className={buttonClass({ variant: 'plain', full: true })}>
+            {t.forms.exercise.askCoach}
+          </Link>
+        ))}
+      <TextArea
+        label={t.forms.exercise.myNotes}
+        rows={3}
+        maxLength={500}
+        value={notes}
+        onChange={(e) => setNotes(e.target.value)}
       />
       <Button type="submit" variant="primary" size="large" full>
         {exercise ? t.common.save : t.forms.exercise.add}

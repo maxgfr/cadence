@@ -8,14 +8,22 @@ import { expect, type Page, test } from '@playwright/test'
 function relay(a: Page, b: Page) {
   let ready = 0
   let release: () => void = () => {}
-  const both = new Promise<void>((r) => {
-    release = r
-  })
+  const round = () =>
+    new Promise<void>((r) => {
+      release = r
+    })
+  let both = round()
   const wire = async (from: Page, to: Page) => {
+    // Each sync waits for both devices again.
     await from.exposeFunction('__syncReady', async () => {
+      const current = both
       ready++
-      if (ready === 2) release()
-      await both
+      if (ready === 2) {
+        ready = 0
+        release()
+        both = round()
+      }
+      await current
     })
     await from.exposeFunction('__syncSend', async (b64: string) => {
       await to.evaluate((x) => (window as unknown as { __syncPush: (s: string) => void }).__syncPush(x), b64)
@@ -114,7 +122,7 @@ test('two devices end with the same data, the AI settings included, never into a
   const downloading = phone.waitForEvent('download')
   await phone.getByRole('button', { name: /Export backup/ }).click()
   const backup = await readFile((await (await downloading).path()) ?? '', 'utf8')
-  expect(backup).toContain('"version": 7')
+  expect(backup).toContain('"version": 8')
   expect(backup).not.toContain('sk-sync-secret')
   expect(backup).not.toContain('127.0.0.1:9')
   await phoneContext.close()
@@ -158,6 +166,63 @@ test('a phone never set up opens the code from its camera: it syncs, then opens 
   await expect(
     phone.getByRole('button', { name: 'Coach', exact: true }).or(phone.getByRole('complementary', { name: 'Coach' })),
   ).toBeVisible()
+  await phoneContext.close()
+})
+
+test('a session logged on the phone and a day deleted on the computer both hold after the next sync', async ({
+  page: pc,
+  browser,
+  context,
+}, testInfo) => {
+  const phoneContext = await browser.newContext({ baseURL: testInfo.project.use.baseURL })
+  const phone = await phoneContext.newPage()
+  await context.grantPermissions(['clipboard-read', 'clipboard-write'])
+  await relay(pc, phone)
+
+  // The phone starts as a copy of the computer.
+  const first = await showCode(pc)
+  await phone.goto(`./#/sync?${first.split('?')[1]}`)
+  for (const device of [pc, phone]) {
+    await expect(device.getByText('Up to date')).toBeVisible()
+    await device.getByRole('button', { name: 'Done' }).click()
+  }
+
+  // At the gym: the second day of the plan, on the phone.
+  await phone
+    .getByRole('button', { name: /^Full body B/ })
+    .first()
+    .click()
+  await phone.getByLabel('Deadlift, set 1, kg').fill('70')
+  await phone.getByRole('button', { name: 'Deadlift, set 1 done' }).click()
+  await phone.getByRole('button', { name: 'Finish', exact: true }).click()
+  await phone.getByRole('button', { name: 'Save session' }).click()
+  await expect(phone.getByText('Session saved.')).toBeVisible()
+
+  // Later, at the desk: the first day goes, which moves the second one up.
+  await pc.goto('./#/programs')
+  await pc
+    .getByRole('link', { name: /^Beginner full body/ })
+    .first()
+    .click()
+  await pc
+    .getByRole('button', { name: /^Delete Full body A/ })
+    .first()
+    .click()
+  await pc.getByRole('button', { name: 'Save changes' }).click()
+  await expect(pc.getByRole('button', { name: 'Saved' })).toBeVisible()
+
+  await pc.goto('./#/settings/sync')
+  await pc.getByRole('button', { name: /^Show a code/ }).click()
+  await pc.getByRole('button', { name: 'Copy link' }).click()
+  const second = await pc.evaluate(() => navigator.clipboard.readText())
+  await phone.goto(`./#/sync?${second.split('?')[1]}`)
+  for (const device of [pc, phone]) {
+    await expect(device.getByText('Up to date')).toBeVisible()
+    await device.goto('./#/')
+    // The session still ticks the day it was logged on, not the one now in its place.
+    await expect(device.getByRole('button', { name: /^Full body B.*Done/ }).first()).toBeVisible()
+    await expect(device.getByRole('button', { name: /^Full body A.*Done/ })).toHaveCount(0)
+  }
   await phoneContext.close()
 })
 

@@ -13,6 +13,7 @@ import { CoachBubble, OpenCoach } from './screens/Coach/CoachBubble.tsx'
 import { Exercises } from './screens/Exercises/Exercises.tsx'
 import { SessionDetail } from './screens/History/SessionDetail.tsx'
 import { Log } from './screens/Log/Log.tsx'
+import { Notes } from './screens/Notes/Notes.tsx'
 import { NotFound } from './screens/NotFound.tsx'
 import { Welcome } from './screens/Onboarding/Welcome.tsx'
 import { DraftEditor, ProgramEditor } from './screens/Programs/ProgramEditor.tsx'
@@ -57,6 +58,7 @@ function Routes() {
             <Route path="/progress/sessions/:id" component={SessionDetail} />
             <Route path="/exercises" component={Exercises} />
             <Route path="/exercises/review" component={ReviewExercises} />
+            <Route path="/notes" component={Notes} />
             <Route path="/settings" component={Settings} />
             <Route path="/settings/ai" component={AiSettings} />
             {/* The coach opens over any screen; an older link to it lands on Today with it open. */}

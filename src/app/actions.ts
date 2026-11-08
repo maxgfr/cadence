@@ -1,7 +1,7 @@
 import { useLocation } from 'wouter'
 import { freeSession, sessionFromDay } from '../core/model/program.ts'
 import type { Program, ProgramRef } from '../core/model/schemas.ts'
-import { currentE1rm } from '../core/stats/metrics.ts'
+import { currentE1rm, lastPerformance } from '../core/stats/metrics.ts'
 import { useData } from './data.tsx'
 
 /** Starting a session: from a program day, pre-filled, or free. Opens the logging screen. */
@@ -14,7 +14,11 @@ export function useStartSession() {
   }
   return {
     async fromDay(program: Program, ref: ProgramRef) {
-      const s = sessionFromDay(program, ref, data.index, e1rmOf, data.today)
+      const now = new Date()
+      const before = { date: data.today, startedAt: now.toISOString() }
+      const s = sessionFromDay(program, ref, data.index, e1rmOf, data.today, now, (exerciseId) =>
+        lastPerformance(data.sessions, exerciseId, before),
+      )
       await data.put('sessions', s)
       navigate(`/log/${s.id}`)
     },

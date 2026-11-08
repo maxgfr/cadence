@@ -85,6 +85,32 @@ export function completed(sessions: readonly Session[]): Session[] {
     .sort((a, b) => a.date.localeCompare(b.date) || a.id.localeCompare(b.id))
 }
 
+/** What was done on an exercise the last time: the sets ticked, nothing else. */
+export interface LastPerformance {
+  date: string
+  sets: SetLog[]
+}
+
+/**
+ * The latest finished session strictly before `before` with a set ticked on this exercise, so a second session the
+ * same day sees the first, and a past session reopened sees what came before it.
+ */
+export function lastPerformance(
+  sessions: readonly Session[],
+  exerciseId: string,
+  before: Pick<Session, 'date' | 'startedAt'>,
+): LastPerformance | undefined {
+  const at = (s: Pick<Session, 'date' | 'startedAt'>) => `${s.date} ${s.startedAt ?? ''}`
+  let latest: { session: Session; sets: SetLog[] } | undefined
+  for (const s of sessions) {
+    if (s.status !== 'done' || at(s) >= at(before)) continue
+    if (latest && at(s) <= at(latest.session)) continue
+    const sets = s.entries.filter((e) => e.exerciseId === exerciseId).flatMap(doneSets)
+    if (sets.length > 0) latest = { session: s, sets }
+  }
+  return latest && { date: latest.session.date, sets: latest.sets }
+}
+
 /** The exercise's best per session, oldest first. */
 export function exerciseSeries(sessions: readonly Session[], exercise: Exercise): Point[] {
   const kind = measureOf(exercise)

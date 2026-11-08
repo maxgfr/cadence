@@ -253,6 +253,7 @@ export function Settings() {
                     programs: [],
                     sessions: [],
                     goals: [],
+                    notes: [],
                     // Nothing is kept as deleted: a sync brings back what another device has rather than erase it there.
                     deleted: [],
                   })

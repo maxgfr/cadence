@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 import { openDB } from 'idb'
 import { instantiate, TEMPLATES } from '../demo/programs.ts'
-import { DEFAULT_SETTINGS } from '../model/schemas.ts'
+import { BACKUP_VERSION, DEFAULT_SETTINGS } from '../model/schemas.ts'
 import { entry, IDX, must, session, set } from '../testkit.test.ts'
 import { BackupError, exportBackup, importBackup, parseBackup, sessionsCsv } from './backup.ts'
 import { idbStore } from './idb.ts'
@@ -25,6 +25,18 @@ for (const [name, make] of stores) {
       expect((await s.all('programs'))[0]?.name).toBe('Renamed')
       await s.remove('programs', p.id)
       expect(await s.all('programs')).toEqual([])
+    })
+
+    test('notes are kept, exported, and read back', async () => {
+      const s = await make()
+      const note = { id: 'n1', text: 'Seat at 4 on the leg press', createdAt: '2026-11-06T10:00:00.000Z' }
+      await s.put('notes', note)
+      expect(await s.all('notes')).toEqual([note])
+      const b = parseBackup(JSON.stringify(await exportBackup(s)))
+      expect(b.notes).toEqual([note])
+      await s.remove('notes', note.id)
+      await importBackup(s, b)
+      expect(await s.all('notes')).toEqual([note])
     })
 
     test('settings and secrets', async () => {
@@ -116,9 +128,18 @@ describe('parseBackup', () => {
     await store.put('programs', instantiate(must(TEMPLATES[0]), new Set(['gym'] as const)))
     const b = parseBackup(JSON.stringify({ ...(await exportBackup(store)), version: 2 }))
     expect(b.programs).toHaveLength(1)
-    expect(b.version).toBe(7)
+    expect(b.version).toBe(BACKUP_VERSION)
     expect(b.programs.every((p) => p.layout === undefined)).toBe(true)
   })
+})
+
+test('a version 7 backup reads with no notes, its sessions naming their days by position', async () => {
+  const { notes: _none, ...v7 } = { ...(await exportBackup(memoryStore())), version: 7 }
+  const ref = { programId: 'p', week: 0, day: 1 }
+  const b = parseBackup(JSON.stringify({ ...v7, sessions: [{ ...session('2026-09-01', []), programRef: ref }] }))
+  expect(b.version).toBe(BACKUP_VERSION)
+  expect(b.notes).toEqual([])
+  expect(b.sessions[0]?.programRef).toEqual(ref)
 })
 
 test('a version 4 backup reads with the language of the system', async () => {
@@ -126,7 +147,7 @@ test('a version 4 backup reads with the language of the system', async () => {
   const v4 = { ...(await exportBackup(store)), version: 4 } as Record<string, unknown>
   const { language: _, ...settings } = v4.settings as Record<string, unknown>
   const b = parseBackup(JSON.stringify({ ...v4, settings }))
-  expect(b.version).toBe(7)
+  expect(b.version).toBe(BACKUP_VERSION)
   expect(b.settings.language).toBe('system')
 })
 
@@ -178,7 +199,7 @@ describe('version 1 backups', () => {
       ],
     }
     const b = parseBackup(JSON.stringify(v1))
-    expect(b.version).toBe(7)
+    expect(b.version).toBe(BACKUP_VERSION)
     expect(b.disciplines.map((d) => d.name).sort()).toEqual(['Gym', 'Swimming', 'Track and field'])
     expect(b.exercises.find((e) => e.id === 'my-run')).toMatchObject({ disciplineId: 'demo-track', pace: 'km' })
     expect(b.exercises.find((e) => e.id === 'back-squat')?.disciplineId).toBe('demo-gym')

@@ -94,6 +94,7 @@ const answer = (p: Partial<AiCoachReply>): AiCoachReply => ({
   addGoals: [],
   updateSettings: [],
   setRest: [],
+  describeExercise: [],
   ...p,
 })
 const set = (p: Partial<AiSetIn>): AiSetIn => ({ reps: 0, weight: 0, timeSeconds: 0, distance: 0, rpe: 0, ...p })
@@ -182,6 +183,29 @@ describe('sets said aloud', () => {
 })
 
 describe('other proposals', () => {
+  test('a description is proposed on an exercise of the library; an unknown one or an empty text is left out', () => {
+    const turn = coachFromAi(
+      answer({ describeExercise: [{ exercise: 'back-squat', description: `  Brace. ${'x'.repeat(5000)}` }] }),
+      ctx(),
+    )
+    expect(turn.proposals).toEqual([
+      {
+        id: expect.any(String),
+        kind: 'exercise_description',
+        exercise: expect.objectContaining({ id: 'back-squat' }),
+        description: expect.stringMatching(/^Brace\./),
+      },
+    ])
+    const proposal = turn.proposals[0]
+    expect(proposal?.kind === 'exercise_description' && proposal.description.length).toBe(4000)
+    expect(
+      coachFromAi(answer({ describeExercise: [{ exercise: 'nope', description: 'Text' }] }), ctx()).proposals,
+    ).toEqual([])
+    expect(
+      coachFromAi(answer({ describeExercise: [{ exercise: 'back-squat', description: ' ' }] }), ctx()).proposals,
+    ).toEqual([])
+  })
+
   test('settings: only what was asked, the others unchanged', () => {
     const turn = coachFromAi(
       answer({

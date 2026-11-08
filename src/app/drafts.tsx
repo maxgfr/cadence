@@ -17,6 +17,14 @@ interface Drafts {
   /** Exercises the coach proposed, picked and edited before they reach the library. */
   exercises: ExercisesDraft | null
   setExercises(d: ExercisesDraft | null): void
+  /** A description the coach wrote for an exercise, read and edited in its form before it is saved. */
+  description: ExerciseDescriptionDraft | null
+  setDescription(d: ExerciseDescriptionDraft | null): void
+}
+
+export interface ExerciseDescriptionDraft {
+  exerciseId: string
+  text: string
 }
 
 const DraftContext = createContext<Drafts>({
@@ -24,6 +32,8 @@ const DraftContext = createContext<Drafts>({
   setDraft: () => {},
   exercises: null,
   setExercises: () => {},
+  description: null,
+  setDescription: () => {},
 })
 
 export function useDraft(): Drafts {
@@ -33,6 +43,10 @@ export function useDraft(): Drafts {
 export function DraftProvider({ children }: { children: ReactNode }) {
   const [draft, setDraft] = useState<ProgramDraft | null>(null)
   const [exercises, setExercises] = useState<ExercisesDraft | null>(null)
-  const value = useMemo(() => ({ draft, setDraft, exercises, setExercises }), [draft, exercises])
+  const [description, setDescription] = useState<ExerciseDescriptionDraft | null>(null)
+  const value = useMemo(
+    () => ({ draft, setDraft, exercises, setExercises, description, setDescription }),
+    [draft, exercises, description],
+  )
   return <DraftContext.Provider value={value}>{children}</DraftContext.Provider>
 }

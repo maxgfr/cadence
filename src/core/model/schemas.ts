@@ -67,6 +67,8 @@ export const Exercise = z.object({
   /** Fixed distance in metres for distance events (60 m sprint, 50 m free): logged sets then only need a time. */
   distance: positive.optional(),
   notes: z.string().max(500).optional(),
+  /** How to perform it, written by the athlete or drafted by the coach; apart from `notes`, which stay theirs. */
+  description: z.string().max(4000).optional(),
   /** Seconds of rest between sets, over its discipline's (0: the timer only when a plan gives a rest). */
   rest: z.number().int().min(0).max(900).optional(),
   /** When it last changed on any device (ISO); what a sync keeps the newest of. Absent before version 6. */
@@ -163,7 +165,13 @@ export const Entry = z.object({
 })
 export type Entry = z.infer<typeof Entry>
 
-export const ProgramRef = z.object({ programId: id, week: z.number().int().min(0), day: z.number().int().min(0) })
+export const ProgramRef = z.object({
+  programId: id,
+  week: z.number().int().min(0),
+  day: z.number().int().min(0),
+  /** The day's id, which follows it when the program is edited afterwards. Absent before version 8: read by position. */
+  dayId: z.string().optional(),
+})
 export type ProgramRef = z.infer<typeof ProgramRef>
 
 export const Session = z.object({
@@ -209,8 +217,18 @@ export const Goal = z.object({
 })
 export type Goal = z.infer<typeof Goal>
 
+/** A free note of the athlete's, about anything. One record each, so notes written on two devices all stay. */
+export const Note = z.object({
+  id,
+  text: z.string().trim().min(1).max(5000),
+  createdAt: z.string(),
+  /** When it last changed on any device (ISO); what a sync keeps the newest of. */
+  updatedAt: z.string().optional(),
+})
+export type Note = z.infer<typeof Note>
+
 /** The collections a record can be deleted from. */
-export const COLLECTION_NAMES = ['disciplines', 'exercises', 'programs', 'sessions', 'goals'] as const
+export const COLLECTION_NAMES = ['disciplines', 'exercises', 'programs', 'sessions', 'goals', 'notes'] as const
 
 /** A record deleted on a device: kept so a sync deletes it on the other device too, unless changed there since. */
 export const Deleted = z.object({ collection: z.enum(COLLECTION_NAMES), id, deletedAt: z.string() })
@@ -249,9 +267,11 @@ export const DEFAULT_SETTINGS: Settings = Settings.parse({})
  * had `e1rm` and `best_time`, read as `exercise`). 5: settings hold the interface language (`language`; earlier
  * versions read as `system`). 6: records carry `updatedAt` and deletions are kept as tombstones (`deleted`), so two
  * devices can be merged; earlier versions read with no date and no deletion. 7: disciplines and exercises carry their
- * rest between sets (`rest`); earlier versions read with none, the settings' rest standing for all.
+ * rest between sets (`rest`); earlier versions read with none, the settings' rest standing for all. 8: free notes
+ * (`notes`), an exercise's `description`, and sessions name their program day by id (`programRef.dayId`); earlier
+ * versions read with no notes, no description, and their days by position.
  */
-export const BACKUP_VERSION = 7
+export const BACKUP_VERSION = 8
 export const Backup = z.object({
   app: z.literal('cadence'),
   version: z.literal(BACKUP_VERSION),
@@ -262,6 +282,7 @@ export const Backup = z.object({
   programs: z.array(Program),
   sessions: z.array(Session),
   goals: z.array(Goal),
+  notes: z.array(Note).default([]),
   deleted: z.array(Deleted).default([]),
 })
 export type Backup = z.infer<typeof Backup>

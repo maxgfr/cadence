@@ -90,7 +90,7 @@ function Conversation({ docked = false }: { docked?: boolean }) {
     await apply(p)
     outcome(entryId, p.id, 'applied')
     // A draft opens on its screen, and the conversation over it steps aside; anything else is done here.
-    if (p.kind === 'program' || p.kind === 'add_exercises') coach.hide()
+    if (p.kind === 'program' || p.kind === 'add_exercises' || p.kind === 'exercise_description') coach.hide()
     else toast(t.coach.appliedToast)
   }
 

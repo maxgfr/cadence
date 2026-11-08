@@ -1,0 +1,46 @@
+.compose {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.empty {
+  color: var(--ink-2);
+  font-size: var(--text-footnote);
+}
+
+.list {
+  display: grid;
+  gap: var(--space-2);
+  padding: 0;
+  list-style: none;
+}
+
+.note {
+  display: grid;
+  gap: var(--space-2);
+  width: 100%;
+  padding: var(--space-3);
+  border: 0;
+  border-radius: var(--radius-surface);
+  background: var(--surface);
+  box-shadow: var(--lift);
+  color: var(--ink);
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+.text {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 6;
+  line-clamp: 6;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+
+.date {
+  color: var(--ink-2);
+  font-size: var(--text-footnote);
+}

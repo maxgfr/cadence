@@ -25,11 +25,14 @@ const Envelope = z.object({
   backupVersion: z.number(),
   backup: z.unknown(),
   ai: AiSecrets.optional(),
+  syncedAt: z.string().optional(),
 })
 
 export interface SyncPayload {
   backup: Backup
   ai?: AiSecrets
+  /** When the sender last completed a sync: what it changed after that is new to the other device. */
+  syncedAt?: string
 }
 
 export class SyncError extends Error {
@@ -45,6 +48,7 @@ export async function sealPayload(key: string, p: SyncPayload): Promise<Uint8Arr
     backupVersion: BACKUP_VERSION,
     backup: p.backup,
     ...(p.ai ? { ai: p.ai } : {}),
+    ...(p.syncedAt ? { syncedAt: p.syncedAt } : {}),
   }
   return seal(key, new TextEncoder().encode(JSON.stringify(envelope)))
 }
@@ -61,7 +65,11 @@ export async function openPayload(key: string, bytes: Uint8Array): Promise<SyncP
   if (e.data.protocol !== SYNC_PROTOCOL || e.data.backupVersion !== BACKUP_VERSION) throw new SyncError('version')
   try {
     const backup = parseBackup(JSON.stringify(e.data.backup))
-    return { backup, ...(e.data.ai ? { ai: e.data.ai } : {}) }
+    return {
+      backup,
+      ...(e.data.ai ? { ai: e.data.ai } : {}),
+      ...(e.data.syncedAt ? { syncedAt: e.data.syncedAt } : {}),
+    }
   } catch {
     throw new SyncError('damaged')
   }
@@ -127,7 +135,7 @@ export async function runSync(channel: Channel, key: string, side: SyncSide, now
   const mine = await side.snapshot()
   channel.send(await sealPayload(key, mine))
   const theirs = await openPayload(key, await channel.receive())
-  const result = mergeSnapshots(mine.backup, theirs.backup, now)
+  const result = mergeSnapshots(mine.backup, theirs.backup, now, { local: mine.syncedAt, remote: theirs.syncedAt })
   const ai = newerAi(mine.ai, theirs.ai)
   await side.apply(result.merged, ai)
   return { ...result, tookAi: ai !== undefined }

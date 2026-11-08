@@ -106,9 +106,11 @@ export function Sync() {
         setPhase({ kind: 'working' })
         setStep('syncing')
         // Everything goes, the AI settings and key included (sealed end to end); the newest win on both devices.
+        const previous = lastSynced()
         const exchange = runSync(link.channel, pairing.key, {
           snapshot: async () => ({
             backup: await exportBackup(data.store),
+            ...(previous ? { syncedAt: previous.toISOString() } : {}),
             ...(ai.ready
               ? {
                   ai: {

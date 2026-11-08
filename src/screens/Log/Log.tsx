@@ -1,4 +1,4 @@
-import { Check, ChevronLeft, Plus, Timer, Trash2 } from 'lucide-react'
+import { ArrowLeftRight, Check, ChevronLeft, Plus, Timer, Trash2 } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useLocation, useParams } from 'wouter'
 import { useCoachScreen } from '../../app/coach.tsx'
@@ -6,10 +6,20 @@ import { useData } from '../../app/data.tsx'
 import { cameFrom } from '../../app/hashLocation.ts'
 import { useT } from '../../app/i18n.tsx'
 import { useToast } from '../../app/toast.tsx'
+import { formatShortDay } from '../../core/model/dates.ts'
 import { newId } from '../../core/model/ids.ts'
-import { describeBlock, emptySet, restFor } from '../../core/model/program.ts'
+import {
+  describeBlock,
+  describeSets,
+  emptySet,
+  replaceBlockExercise,
+  restFor,
+  setsFromLast,
+  swapEntryExercise,
+} from '../../core/model/program.ts'
 import type { Entry, Exercise, Session, SetLog } from '../../core/model/schemas.ts'
 import { formatTime } from '../../core/model/units.ts'
+import { lastPerformance } from '../../core/stats/metrics.ts'
 import { Button } from '../../ui/components/Button.tsx'
 import { DisciplineTag } from '../../ui/components/Discipline.tsx'
 import { EmptyState } from '../../ui/components/EmptyState.tsx'
@@ -33,7 +43,8 @@ export function Log() {
   const [, navigate] = useLocation()
   const stored = data.sessions.find((s) => s.id === id)
   const [session, setSession] = useState<Session | undefined>(stored)
-  const [picking, setPicking] = useState(false)
+  // The exercise picker: for one more exercise, or for the entry being replaced.
+  const [picking, setPicking] = useState<'add' | Entry | null>(null)
   const [finishing, setFinishing] = useState(false)
   const rest = useRestTimer()
   // The coach logs what the athlete tells it into this session, even while they rest.
@@ -89,6 +100,47 @@ export function Log() {
 
   const setDone = session.entries.reduce((n, e) => n + e.sets.filter((s) => s.done).length, 0)
   const setTotal = session.entries.reduce((n, e) => n + e.sets.length, 0)
+  const replacing = picking !== null && picking !== 'add' ? picking : undefined
+
+  const pickExercise = (ex: Exercise) => {
+    setPicking(null)
+    const last = lastPerformance(data.sessions, ex.id, session)
+    if (!replacing) {
+      update({
+        ...session,
+        entries: [...session.entries, { id: newId(), exerciseId: ex.id, sets: setsFromLast(ex, last) }],
+      })
+      return
+    }
+    if (replacing.exerciseId === ex.id) return
+    const before = session
+    const from = data.index.get(replacing.exerciseId)
+    update({
+      ...session,
+      entries: session.entries.map((e) => (e.id === replacing.id ? swapEntryExercise(e, from, ex, last) : e)),
+    })
+    // The program can follow only when the block's sets and reps still mean something on the new exercise.
+    const ref = session.programRef
+    const program = ref && data.programs.find((p) => p.id === ref.programId)
+    const updated =
+      program && ref && replacing.planned && from?.metric === ex.metric
+        ? replaceBlockExercise(program, ref, replacing.planned.id, ex.id)
+        : undefined
+    toast(t.log.swapped(from?.name ?? t.common.exercise, ex.name), [
+      { label: t.log.undo, onClick: () => update(before) },
+      ...(updated
+        ? [
+            {
+              label: t.log.alsoInProgram,
+              onClick: async () => {
+                await data.put('programs', updated)
+                toast(t.log.programUpdated)
+              },
+            },
+          ]
+        : []),
+    ])
+  }
 
   return (
     <main className={styles.log} aria-labelledby="log-title">
@@ -128,6 +180,7 @@ export function Log() {
       <ol className={styles.entries}>
         {session.entries.map((entry) => {
           const ex = data.index.get(entry.exerciseId)
+          const last = lastPerformance(data.sessions, entry.exerciseId, session)
           return (
             <li key={entry.id}>
               <EntryCard
@@ -135,6 +188,8 @@ export function Log() {
                 exercise={ex}
                 advanced={advanced}
                 plan={entry.planned ? describeBlock(entry.planned, ex, units, advanced) : undefined}
+                last={last ? t.log.lastTime(formatShortDay(last.date), describeSets(last.sets, ex, units)) : undefined}
+                onSwap={() => setPicking(entry)}
                 onChange={(fn) => updateEntry(entry.id, fn)}
                 onRemove={() => {
                   const before = session
@@ -161,22 +216,17 @@ export function Log() {
         size="large"
         full
         icon={<Plus size={20} strokeWidth={2} aria-hidden="true" />}
-        onClick={() => setPicking(true)}
+        onClick={() => setPicking('add')}
       >
         {t.log.addExercise}
       </Button>
 
       <ExercisePicker
-        open={picking}
-        disciplineId={session.disciplineId}
-        onClose={() => setPicking(false)}
-        onPick={(ex) => {
-          setPicking(false)
-          update({
-            ...session,
-            entries: [...session.entries, { id: newId(), exerciseId: ex.id, sets: [emptySet(ex)] }],
-          })
-        }}
+        open={picking !== null}
+        disciplineId={(replacing && data.index.get(replacing.exerciseId)?.disciplineId) ?? session.disciplineId}
+        {...(replacing ? { title: t.programs.block.changeExercise } : {})}
+        onClose={() => setPicking(null)}
+        onPick={pickExercise}
       />
 
       <FinishSheet
@@ -212,14 +262,28 @@ interface EntryCardProps {
   exercise: Exercise | undefined
   advanced: boolean
   plan: string | undefined
+  /** What was done on this exercise the last time, as a line. */
+  last: string | undefined
   onChange: (fn: (e: Entry) => Entry) => void
+  onSwap: () => void
   onRemove: () => void
   /** Seconds of rest for this exercise (its plan's, or the default); 0 for none. */
   rest: number
   onRest: (seconds: number) => void
 }
 
-function EntryCard({ entry, exercise, advanced, plan, onChange, onRemove, rest, onRest }: EntryCardProps) {
+function EntryCard({
+  entry,
+  exercise,
+  advanced,
+  plan,
+  last,
+  onChange,
+  onSwap,
+  onRemove,
+  rest,
+  onRest,
+}: EntryCardProps) {
   const cols = setColumns(exercise, advanced)
   const units = useUnits()
   const t = useT()
@@ -236,6 +300,7 @@ function EntryCard({ entry, exercise, advanced, plan, onChange, onRemove, rest, 
           </h2>
           {plan && <p className={styles.plan}>{t.log.plan(plan)}</p>}
           {entry.planned?.notes && <p className={styles.plan}>{entry.planned.notes}</p>}
+          {last && <p className={styles.plan}>{last}</p>}
         </div>
         <div className={styles.entryTools}>
           {rest > 0 && (
@@ -249,12 +314,24 @@ function EntryCard({ entry, exercise, advanced, plan, onChange, onRemove, rest, 
             </Button>
           )}
           <IconButton
+            icon={ArrowLeftRight}
+            label={t.log.swapExercise(exercise?.name ?? t.log.exerciseLower)}
+            onClick={onSwap}
+          />
+          <IconButton
             icon={Trash2}
             label={t.log.removeExercise(exercise?.name ?? t.log.exerciseLower)}
             onClick={onRemove}
           />
         </div>
       </header>
+      {(exercise?.description || exercise?.notes) && (
+        <details className={styles.about}>
+          <summary>{t.log.about}</summary>
+          {exercise.description && <p>{exercise.description}</p>}
+          {exercise.notes && <p>{exercise.notes}</p>}
+        </details>
+      )}
       <div className={styles.table}>
         <div
           className={cx(styles.row, styles.headRow)}

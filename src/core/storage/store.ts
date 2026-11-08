@@ -1,4 +1,4 @@
-import type { Deleted, Discipline, Exercise, Goal, Program, Session, Settings } from '../model/schemas.ts'
+import type { Deleted, Discipline, Exercise, Goal, Note, Program, Session, Settings } from '../model/schemas.ts'
 
 /** Collections kept on the device. Each record is keyed by its `id`. */
 export interface Collections {
@@ -7,9 +7,17 @@ export interface Collections {
   programs: Program
   sessions: Session
   goals: Goal
+  notes: Note
 }
 export type CollectionName = keyof Collections
-export const COLLECTIONS: readonly CollectionName[] = ['disciplines', 'exercises', 'programs', 'sessions', 'goals']
+export const COLLECTIONS: readonly CollectionName[] = [
+  'disciplines',
+  'exercises',
+  'programs',
+  'sessions',
+  'goals',
+  'notes',
+]
 
 /**
  * Device-only values (API keys, the AI endpoint). Kept apart from training data so they can never leave in an
@@ -42,6 +50,7 @@ export function memoryStore(): Store {
     programs: new Map(),
     sessions: new Map(),
     goals: new Map(),
+    notes: new Map(),
   }
   let settings: Settings | undefined
   const secrets = new Map<string, string>()

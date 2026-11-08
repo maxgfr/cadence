@@ -4,7 +4,7 @@ import { exportBackup, parseBackup } from '../storage/backup.ts'
 import { memoryStore } from '../storage/store.ts'
 import { ATHLETE, GYM, IDX } from '../testkit.test.ts'
 import { restFor } from './program.ts'
-import { DEFAULT_SETTINGS, type Exercise } from './schemas.ts'
+import { BACKUP_VERSION, DEFAULT_SETTINGS, type Exercise } from './schemas.ts'
 
 const squat: Exercise = { id: 'sq', name: 'Squat', metric: 'weight_reps' }
 
@@ -22,7 +22,7 @@ describe('the rest between sets', () => {
   test('a version 6 backup reads with no rest of its own: the settings rest stands for all', async () => {
     const v6 = { ...(await exportBackup(memoryStore())), version: 6 }
     const b = parseBackup(JSON.stringify({ ...v6, settings: { ...DEFAULT_SETTINGS, defaultRest: 120 } }))
-    expect(b.version).toBe(7)
+    expect(b.version).toBe(BACKUP_VERSION)
     expect(b.settings.defaultRest).toBe(120)
   })
 
@@ -36,6 +36,7 @@ describe('the rest between sets', () => {
       addExercises: [],
       addGoals: [],
       updateSettings: [],
+      describeExercise: [],
       setRest: [
         { exercise: 'back-squat', discipline: '', seconds: 180 },
         { exercise: '', discipline: gym, seconds: 90.4 },

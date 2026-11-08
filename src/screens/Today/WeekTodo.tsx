@@ -34,23 +34,24 @@ export function WeekTodoCard({
           <ListRow
             key={day.id}
             leading={
-              done ? (
-                <CheckCircle2 className={styles.done} size={22} strokeWidth={2} />
-              ) : running ? (
+              running ? (
                 <Play className={styles.running} size={20} strokeWidth={2} />
+              ) : done ? (
+                <CheckCircle2 className={styles.done} size={22} strokeWidth={2} />
               ) : (
                 <Circle className={styles.todo} size={22} strokeWidth={1.75} />
               )
             }
             title={day.name}
             subtitle={
-              done
-                ? t.today.doneOn(formatShortDay(done.date))
-                : running
-                  ? t.today.inProgress
+              running
+                ? t.today.inProgress
+                : done
+                  ? t.today.doneOn(formatShortDay(done.date))
                   : t.today.toDo(day.blocks.length)
             }
-            {...(done ? {} : { onClick: () => onStart(ref), chevron: true })}
+            onClick={() => onStart(ref)}
+            chevron
           />
         )
       })}

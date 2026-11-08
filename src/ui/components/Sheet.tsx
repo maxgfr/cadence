@@ -47,7 +47,15 @@ export function Sheet({ open, title, onClose, children, initialFocus, fill = fal
   }, [open, initialFocus])
 
   return (
-    <dialog ref={ref} className={cx(styles.sheet, fill && styles.fill)} aria-labelledby={id} onClose={onClose}>
+    <dialog
+      ref={ref}
+      className={cx(styles.sheet, fill && styles.fill)}
+      aria-labelledby={id}
+      // React passes a sheet's close on to the sheets around it: only this one's own closes it.
+      onClose={(e) => {
+        if (e.target === e.currentTarget) onClose()
+      }}
+    >
       {fill ? (
         <h2 id={id} className="sr-only">
           {title}

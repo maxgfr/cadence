@@ -112,6 +112,11 @@ const AiRest = z.object({
   seconds: z.number().describe('Seconds between sets; 0 for no timer'),
 })
 
+const AiExerciseDescription = z.object({
+  exercise: z.string().describe('The exercise, by its id in the library, else by name'),
+  description: z.string().describe('How to perform it, in plain text: setup, execution, key cues, common mistakes'),
+})
+
 export const AiCoachReply = z.object({
   reply: z.string().describe('What you say to the athlete'),
   logSets: z.array(AiLogSets).describe('Sets they say they did; empty unless they told you'),
@@ -121,6 +126,9 @@ export const AiCoachReply = z.object({
   addGoals: z.array(AiGoalsRequest).describe('Goals to propose, only when asked: at most one'),
   updateSettings: z.array(AiSettingsPatch).describe('Settings to change, only when asked: at most one'),
   setRest: z.array(AiRest).describe('The rest between sets of an exercise or a sport, only when asked'),
+  describeExercise: z
+    .array(AiExerciseDescription)
+    .describe('A description of an exercise, only when asked: at most one'),
 })
 export type AiCoachReply = z.infer<typeof AiCoachReply>
 
@@ -158,6 +166,7 @@ export type CoachProposal = { id: string } & (
       target: { exercise: Exercise } | { discipline: Discipline }
       seconds: number
     }
+  | { kind: 'exercise_description'; exercise: Exercise; description: string }
 )
 
 export interface CoachTurn {
@@ -267,6 +276,12 @@ function restOf(a: z.infer<typeof AiRest>, c: CoachContext): CoachProposal | und
   return discipline ? { id, kind: 'rest', target: { discipline }, seconds } : undefined
 }
 
+function descriptionOf(a: z.infer<typeof AiExerciseDescription>, c: CoachContext): CoachProposal | undefined {
+  const exercise = findExercise(c.library.exercises, a.exercise.trim())
+  const description = a.description.trim().slice(0, 4000)
+  return exercise && description ? { id: newId(), kind: 'exercise_description', exercise, description } : undefined
+}
+
 /**
  * The model's answer as a reply, the proposals ready to apply, and what is still to be designed (`builds`): what
  * cannot be applied safely is left out.
@@ -278,6 +293,7 @@ export function coachFromAi(ai: AiCoachReply, c: CoachContext): CoachTurn & { bu
   }
   for (const a of ai.logSets) add(logSetsOf(a, c))
   for (const a of ai.setRest) add(restOf(a, c))
+  for (const a of ai.describeExercise.slice(0, 1)) add(descriptionOf(a, c))
   const patch = ai.updateSettings[0] ? settingsFromAi(ai.updateSettings[0]) : {}
   if (Object.keys(patch).length > 0) add({ id: newId(), kind: 'settings', patch })
 
@@ -358,6 +374,8 @@ what to change.
 - addGoals: only when asked for goals: what they are about, for the goal designer.
 - updateSettings: only the settings they asked to change, "unchanged" for the others.
 - setRest: the rest between sets of one exercise or of a whole sport (discipline), in seconds.
+- describeExercise: only when asked to describe an exercise of their library: a detailed description in plain text \
+(setup, execution, key cues, common mistakes), at most 400 words; they review and edit it before it is saved.
 
 Advice: when asked whether an exercise, a change or a plan is a good idea, give the verdict first (good, adjust it, or \
 avoid it) and the reasons from their program, the day it goes in (muscle balance, volume already planned, overlap with \

@@ -1,8 +1,9 @@
 import { Dumbbell, Plus, Search } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'wouter'
 import { useCoachScreen } from '../../app/coach.tsx'
 import { useData } from '../../app/data.tsx'
+import { useDraft } from '../../app/drafts.tsx'
 import { useT } from '../../app/i18n.tsx'
 import type { Discipline, Exercise } from '../../core/model/schemas.ts'
 import { formatTime, toDisplayDistance } from '../../core/model/units.ts'
@@ -28,6 +29,16 @@ export function Exercises() {
   useCoachScreen({ where: 'their exercise library', starters: [t.coach.starters.exercises, t.coach.starters.advice] })
   const [query, setQuery] = useState('')
   const [editing, setEditing] = useState<Editing>(null)
+  // A description the coach wrote opens in its exercise's form, to be read, edited and saved there.
+  const { description, setDescription } = useDraft()
+  useEffect(() => {
+    const exercise = description && data.index.get(description.exerciseId)
+    if (exercise) setEditing({ kind: 'exercise', value: exercise })
+  }, [description, data.index])
+  const close = () => {
+    setEditing(null)
+    setDescription(null)
+  }
   const trained = useMemo(
     () => new Set(trainedExercises(data.sessions, data.index).map((e) => e.id)),
     [data.sessions, data.index],
@@ -164,14 +175,17 @@ export function Exercises() {
               ? x.editExercise
               : x.newExercise
         }
-        onClose={() => setEditing(null)}
+        onClose={close}
       >
         {editing?.kind === 'exercise' && (
           <ExerciseForm
-            key={editing.value?.id ?? 'new'}
+            key={`${editing.value?.id ?? 'new'}${description ? ':coach' : ''}`}
             exercise={editing.value}
             initialName={editing.value ? '' : query.trim()}
-            onDone={() => setEditing(null)}
+            {...(description?.exerciseId === editing.value?.id && description
+              ? { initialDescription: description.text }
+              : {})}
+            onDone={close}
           />
         )}
         {editing?.kind === 'discipline' && (

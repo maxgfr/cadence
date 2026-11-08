@@ -1,7 +1,7 @@
 import { type DBSchema, type IDBPDatabase, openDB } from 'idb'
 import { sealedStore } from 'llm-connect'
 import { currentMessages } from '../i18n/index.ts'
-import type { Deleted, Discipline, Exercise, Goal, Program, Session, Settings } from '../model/schemas.ts'
+import type { Deleted, Discipline, Exercise, Goal, Note, Program, Session, Settings } from '../model/schemas.ts'
 import { dropLegacyKeys, type LegacySealed, openLegacy } from './legacy-secrets.ts'
 import { COLLECTIONS, type Store } from './store.ts'
 
@@ -11,6 +11,7 @@ interface CadenceDB extends DBSchema {
   programs: { key: string; value: Program }
   sessions: { key: string; value: Session; indexes: { date: string } }
   goals: { key: string; value: Goal }
+  notes: { key: string; value: Note }
   meta: { key: string; value: Settings }
   /** Tombstones of deleted records, keyed by collection and id. */
   deleted: { key: [string, string]; value: Deleted }
@@ -20,9 +21,9 @@ interface CadenceDB extends DBSchema {
 
 /**
  * 2: the user's own disciplines (records of version 1 are migrated when the app loads them). 3: tombstones of deleted
- * records, for sync.
+ * records, for sync. 4: free notes.
  */
-const DB_VERSION = 3
+const DB_VERSION = 4
 
 /**
  * Secrets live in `sealedDb` (`llm-connect`'s `sealedStore`: AES-GCM under a non-extractable key, the name bound to
@@ -45,6 +46,7 @@ export async function idbStore(
       }
       if (oldVersion < 2) d.createObjectStore('disciplines', { keyPath: 'id' })
       if (oldVersion < 3) d.createObjectStore('deleted', { keyPath: ['collection', 'id'] })
+      if (oldVersion < 4) d.createObjectStore('notes', { keyPath: 'id' })
     },
   })
   const sealed = sealedStore({ dbName: sealedDb })
@@ -73,11 +75,11 @@ export async function idbStore(
     },
     async replaceAll(next) {
       const tx = db.transaction(
-        ['disciplines', 'exercises', 'programs', 'sessions', 'goals', 'meta', 'deleted'],
+        ['disciplines', 'exercises', 'programs', 'sessions', 'goals', 'notes', 'meta', 'deleted'],
         'readwrite',
       )
       for (const c of COLLECTIONS) {
-        // One store type for all five: the values were validated against their own schema by the caller.
+        // One store type for all of them: the values were validated against their own schema by the caller.
         const store = tx.objectStore(c as 'goals')
         await store.clear()
         for (const v of next[c]) await store.put(v as Goal)

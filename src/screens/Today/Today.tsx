@@ -1,4 +1,4 @@
-import { ClipboardList, Play, Plus, Target } from 'lucide-react'
+import { ClipboardList, NotebookPen, Play, Plus, Target } from 'lucide-react'
 import { useState } from 'react'
 import { Link, useLocation } from 'wouter'
 import { useStartSession } from '../../app/actions.ts'
@@ -7,12 +7,13 @@ import { useCoach, useCoachScreen } from '../../app/coach.tsx'
 import { useData } from '../../app/data.tsx'
 import { useT } from '../../app/i18n.tsx'
 import { formatDay, startOfWeek } from '../../core/model/dates.ts'
-import { dayToStart, programsUnderWay } from '../../core/model/program.ts'
+import { currentRef, dayToStart, programsUnderWay } from '../../core/model/program.ts'
 import type { Program, ProgramRef } from '../../core/model/schemas.ts'
 import { goalProgress } from '../../core/stats/trends.ts'
 import { Button, buttonClass } from '../../ui/components/Button.tsx'
 import { DisciplineDot } from '../../ui/components/Discipline.tsx'
 import { EmptyState } from '../../ui/components/EmptyState.tsx'
+import { ListGroup, ListRow } from '../../ui/components/List.tsx'
 import { Sheet } from '../../ui/components/Sheet.tsx'
 import { Screen } from '../../ui/shell/Screen.tsx'
 import { GoalLine } from '../Progress/Goals.tsx'
@@ -29,6 +30,12 @@ export function Today() {
   useCoachScreen({ where: 'Today: their week, and the sessions they can start' })
   const start = useStartSession()
   const active = data.sessions.find((s) => s.status === 'active')
+  // Where the day in progress is now: the program may have been edited on another device since it started.
+  const activeRef = currentRef(data.programs, active?.programRef)
+  const latestNote = data.notes.reduce<(typeof data.notes)[number] | undefined>(
+    (latest, n) => (!latest || (n.updatedAt ?? n.createdAt) > (latest.updatedAt ?? latest.createdAt) ? n : latest),
+    undefined,
+  )
   const choices = useChoosableSessions()
   const [, navigate] = useLocation()
   // A session to start while another is in progress, waiting for what to do with that one.
@@ -52,7 +59,7 @@ export function Today() {
       todos.find((todo) => todo.program.id === program.id),
       picked,
     )
-    if (active && sameRef(active.programRef, ref)) navigate(`/log/${active.id}`)
+    if (active && sameRef(activeRef, ref)) navigate(`/log/${active.id}`)
     else switchTo(program.weeks[ref.week]?.days[ref.day]?.name ?? program.name, () => start.fromDay(program, ref))
   }
 
@@ -111,7 +118,7 @@ export function Today() {
               <WeekTodoCard
                 key={todo.program.id}
                 todo={todo}
-                activeRef={active?.programRef}
+                activeRef={activeRef}
                 onStart={(ref) => pick(todo.program, ref)}
               />
             ))
@@ -129,7 +136,7 @@ export function Today() {
           {t.today.newSession}
         </h2>
         {choices.length > 0 ? (
-          <SessionList activeRef={active?.programRef} onPick={pick} />
+          <SessionList activeRef={activeRef} onPick={pick} />
         ) : (
           data.exercises.length > 0 && (
             <p className={styles.nudge}>
@@ -222,6 +229,16 @@ export function Today() {
           </p>
         )}
       </section>
+
+      <ListGroup>
+        <ListRow
+          leading={<NotebookPen size={20} strokeWidth={1.75} />}
+          title={t.notes.title}
+          subtitle={latestNote ? latestNote.text.slice(0, 80) : t.notes.todayHint}
+          href="/notes"
+          chevron
+        />
+      </ListGroup>
     </Screen>
   )
 }

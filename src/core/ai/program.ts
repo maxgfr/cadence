@@ -274,7 +274,10 @@ export function draftWeekFromAi(
   const r = resolver(library)
   const week = toWeek(ai, r, notes, index)
   if (!week) throw new Error('The model returned a week with no training days.')
-  const weeks = program.weeks.map((w, i) => (i === index ? week : w))
+  // A rewritten day stays the same day: the sessions already logged on it keep ticking it.
+  const before = program.weeks[index]?.days ?? []
+  const rewritten = { ...week, days: week.days.map((d, i) => ({ ...d, id: before[i]?.id ?? d.id })) }
+  const weeks = program.weeks.map((w, i) => (i === index ? rewritten : w))
   return {
     program: { ...program, weeks, updatedAt: now.toISOString() },
     newExercises: r.added,

@@ -1,5 +1,15 @@
 import { describe, expect, test } from 'bun:test'
-import { BACKUP_VERSION, type Backup, DEFAULT_SETTINGS, type Exercise, type Session } from '../model/schemas.ts'
+import { weekTodo } from '../model/program.ts'
+import {
+  BACKUP_VERSION,
+  type Backup,
+  type Day,
+  DEFAULT_SETTINGS,
+  type Discipline,
+  type Exercise,
+  type Program,
+  type Session,
+} from '../model/schemas.ts'
 import { exportBackup } from '../storage/backup.ts'
 import { memoryStore } from '../storage/store.ts'
 import { newPairingKey, open, seal } from './crypto.ts'
@@ -27,6 +37,7 @@ const snapshot = (p: Partial<Backup> = {}): Backup => ({
   programs: [],
   sessions: [],
   goals: [],
+  notes: [],
   deleted: [],
   ...p,
 })
@@ -112,6 +123,113 @@ describe('merging two devices', () => {
     const again = mergeSnapshots(ab.merged, ab.merged)
     expect(total(again.received) + total(again.sent)).toBe(0)
     expect(strip(again.merged)).toEqual(strip(ab.merged))
+  })
+})
+
+describe('training on the phone, editing programs on the computer', () => {
+  const day = (id: string, name: string): Day => ({
+    id,
+    name,
+    blocks: [{ id: `${id}-b`, exerciseId: 'a', sets: 3, reps: 8 }],
+  })
+  const program = (name: string, updatedAt: string, days: Day[] = [day('d1', 'Push'), day('d2', 'Pull')]): Program => ({
+    id: 'p',
+    name,
+    goal: '',
+    source: 'manual',
+    weeks: [{ id: 'w', days }],
+    createdAt: T1,
+    updatedAt,
+  })
+  const onDay = (id: string, dayIndex: number, dayId: string, at: string): Session => ({
+    ...session(id, at),
+    date: '2026-11-03',
+    startedAt: at,
+    programRef: { programId: 'p', week: 0, day: dayIndex, dayId },
+  })
+  const LAST_SYNC = '2026-11-06T09:00:00.000Z'
+
+  test('a session logged on one side and a program edited on the other are both kept', () => {
+    const beforeSync = '2026-11-06T08:00:00.000Z'
+    const phone = snapshot({ programs: [program('Plan', beforeSync)], sessions: [onDay('s', 1, 'd2', T2)] })
+    const pc = snapshot({ programs: [program('Plan, reworked', T3)] })
+    const { merged } = mergeSnapshots(phone, pc, new Date(), { local: LAST_SYNC, remote: LAST_SYNC })
+    expect(merged.programs.map((p) => p.name)).toEqual(['Plan, reworked'])
+    expect(merged.sessions.map((s) => s.id)).toEqual(['s'])
+  })
+
+  test('a day deleted on the computer does not shift what the phone logged', () => {
+    const phone = snapshot({ programs: [program('Plan', T1)], sessions: [onDay('s', 1, 'd2', T2)] })
+    const pc = snapshot({ programs: [program('Plan', T3, [day('d2', 'Pull')])] })
+    const { merged } = mergeSnapshots(phone, pc)
+    const todo = weekTodo(merged.programs[0] as Program, merged.sessions, '2026-11-02')
+    expect(todo?.days.map((d) => [d.day.name, d.done?.id])).toEqual([['Pull', 's']])
+  })
+
+  test('an exercise deleted on one side stays while the other still uses it, and goes when nothing does', () => {
+    const used: Session = {
+      ...session('s', T1),
+      entries: [{ id: 'e', exerciseId: 'a', sets: [{ done: true, reps: 5 }] }],
+    }
+    const pc = snapshot({ deleted: [{ collection: 'exercises', id: 'a', deletedAt: T3 }] })
+    const phone = snapshot({ exercises: [ex('a', 'Squat', T1)], sessions: [used] })
+    const kept = mergeSnapshots(pc, phone).merged
+    expect(kept.exercises.map((e) => e.id)).toEqual(['a'])
+    expect(kept.deleted).toEqual([])
+    expect(strip(mergeSnapshots(phone, pc).merged)).toEqual(strip(kept))
+
+    const gone = mergeSnapshots(pc, snapshot({ exercises: [ex('a', 'Squat', T1)] })).merged
+    expect(gone.exercises).toEqual([])
+  })
+
+  test('a discipline deleted on one side stays while an exercise kept by the merge uses it', () => {
+    const swim: Discipline = { id: 'swim', name: 'Swim', color: 'blue', updatedAt: T1 }
+    const pc = snapshot({ deleted: [{ collection: 'disciplines', id: 'swim', deletedAt: T3 }] })
+    const phone = snapshot({ disciplines: [swim], exercises: [{ ...ex('a', 'Free', T1), disciplineId: 'swim' }] })
+    expect(mergeSnapshots(pc, phone).merged.disciplines.map((d) => d.id)).toEqual(['swim'])
+  })
+
+  describe('a program changed on both devices since they last synced', () => {
+    const phone = snapshot({ programs: [program('Phone version', T2)] })
+    const pc = snapshot({ programs: [program('PC version', T3)] })
+    const since = { local: LAST_SYNC, remote: LAST_SYNC }
+
+    test('the newest stays and the other is kept as a dated copy, the same on both devices', () => {
+      const ab = mergeSnapshots(phone, pc, new Date(), since)
+      const ba = mergeSnapshots(pc, phone, new Date(), since)
+      expect(ab.merged.programs.map((p) => p.name)).toEqual(['PC version', 'Phone version · 2026-11-06'])
+      expect(strip(ab.merged)).toEqual(strip(ba.merged))
+      expect(ab.received.programs).toBe(ba.sent.programs)
+    })
+
+    test('merging again changes nothing', () => {
+      const once = mergeSnapshots(phone, pc, new Date(), since).merged
+      const again = mergeSnapshots(once, once, new Date(), since)
+      expect(total(again.received) + total(again.sent)).toBe(0)
+      expect(again.merged.programs).toHaveLength(2)
+    })
+
+    test('no copy when only one side changed since, or before a first sync', () => {
+      const older = { local: T3, remote: LAST_SYNC }
+      expect(mergeSnapshots(phone, pc, new Date(), older).merged.programs.map((p) => p.name)).toEqual(['PC version'])
+      expect(mergeSnapshots(phone, pc).merged.programs.map((p) => p.name)).toEqual(['PC version'])
+    })
+
+    test('a sync carries when each device last synced', async () => {
+      const key = newPairingKey()
+      const sealed = await sealPayload(key, { backup: phone, syncedAt: LAST_SYNC })
+      expect((await openPayload(key, sealed)).syncedAt).toBe(LAST_SYNC)
+    })
+  })
+
+  test('notes written on two devices all stay', () => {
+    const note = (id: string, updatedAt: string) => ({ id, text: id, createdAt: T1, updatedAt })
+    const { merged } = mergeSnapshots(
+      snapshot({ notes: [note('phone', T2)] }),
+      snapshot({ notes: [note('pc', T3)], deleted: [{ collection: 'notes', id: 'old', deletedAt: T1 }] }),
+    )
+    expect(merged.notes.map((n) => n.id)).toEqual(['pc', 'phone'])
+    expect(merged.deleted.map((d) => d.id)).toEqual(['old'])
   })
 })
 

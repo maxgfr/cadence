@@ -55,6 +55,8 @@ export function useProposalText(p: CoachProposal): { title: string; lines: strin
           goalTitle(g.goal, data.index, units, (id) => (id ? data.disciplineIndex.get(id)?.name : undefined)),
         ),
       }
+    case 'exercise_description':
+      return { title: x.describeExercise(p.exercise.name), lines: [p.description] }
     case 'rest': {
       const name = 'exercise' in p.target ? p.target.exercise.name : p.target.discipline.name
       return { title: x.restFor(name, p.seconds === 0 ? t.forms.rest.none : formatTime(p.seconds, false)), lines: [] }
@@ -98,7 +100,7 @@ export function ProposalCard({
   const label =
     proposal.kind === 'program'
       ? t.coach.openDraft
-      : proposal.kind === 'add_exercises'
+      : proposal.kind === 'add_exercises' || proposal.kind === 'exercise_description'
         ? t.coach.review
         : ticked
           ? t.coach.proposal.addGoals(ticked.length)

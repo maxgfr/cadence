@@ -7,11 +7,11 @@ import { applyLoggedSets, freeSession } from '../../core/model/program.ts'
 
 /**
  * Applies one proposal the athlete confirmed: the only place the coach's work reaches their data. A program opens as
- * a draft in the editor, exercises in their review, saved only from there.
+ * a draft in the editor, exercises in their review, a description in the exercise's form, saved only from there.
  */
 export function useApplyProposal() {
   const data = useData()
-  const { setDraft, setExercises } = useDraft()
+  const { setDraft, setExercises, setDescription } = useDraft()
   const [, navigate] = useLocation()
   return useCallback(
     async (p: CoachProposal) => {
@@ -26,6 +26,10 @@ export function useApplyProposal() {
         case 'add_exercises':
           setExercises(p.draft)
           navigate('/exercises/review')
+          return
+        case 'exercise_description':
+          setDescription({ exerciseId: p.exercise.id, text: p.description })
+          navigate('/exercises')
           return
         case 'program':
           setDraft({ ...p.draft, origin: p.origin })
@@ -43,6 +47,6 @@ export function useApplyProposal() {
           return
       }
     },
-    [data, setDraft, setExercises, navigate],
+    [data, setDraft, setExercises, setDescription, navigate],
   )
 }

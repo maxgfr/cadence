@@ -48,6 +48,44 @@ test('the coach logs what was said, only once applied', async ({ page }) => {
   await expect(page.getByRole('button', { name: 'Back squat, set 3 done' })).toHaveAttribute('aria-pressed', 'true')
 })
 
+test('the coach writes an exercise description, read and edited before it is saved', async ({ page }) => {
+  await setUp(page)
+  await answerWith(page, () =>
+    coachAnswer({
+      reply: 'Here it is.',
+      describeExercise: [{ exercise: 'back-squat', description: 'Brace, then sit between the hips.' }],
+    }),
+  )
+  await page.goto('./#/exercises')
+  await page.getByRole('button', { name: /^Back squat/ }).click()
+  await page.getByRole('button', { name: 'Ask the coach to write the description' }).click()
+
+  // The form makes way, and the request waits in the coach, ready to send or edit.
+  const coach = docked(page)
+    ? page.getByRole('complementary', { name: 'Coach' })
+    : page.getByRole('dialog', { name: 'Coach' })
+  await expect(coach.getByLabel('Message the coach…')).toHaveValue(/detailed description of Back squat/)
+  await coach.getByRole('button', { name: 'Send' }).click()
+  await expect(coach.getByRole('heading', { name: 'Description of Back squat' })).toBeVisible()
+
+  await coach.getByRole('button', { name: 'Review' }).click()
+  const description = page.getByRole('dialog').getByLabel('Description')
+  await expect(description).toHaveValue('Brace, then sit between the hips.')
+
+  // Closing without saving keeps nothing.
+  await page.getByRole('dialog').getByRole('button', { name: 'Close' }).click()
+  await page.getByRole('button', { name: /^Back squat/ }).click()
+  await expect(description).toHaveValue('')
+
+  await page.getByRole('dialog').getByRole('button', { name: 'Close' }).click()
+  await page.reload()
+  await page.getByRole('button', { name: /^Back squat/ }).click()
+  await description.fill('Brace, then sit between the hips. Knees out.')
+  await page.getByRole('button', { name: 'Save', exact: true }).click()
+  await page.getByRole('button', { name: /^Back squat/ }).click()
+  await expect(description).toHaveValue('Brace, then sit between the hips. Knees out.')
+})
+
 test('asked from a program, the coach reads the week on show and answers over the editor', async ({ page }) => {
   await setUp(page)
   let asked = ''

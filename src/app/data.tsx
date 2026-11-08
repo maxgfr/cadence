@@ -9,6 +9,7 @@ import {
   type Discipline,
   type Exercise,
   type Goal,
+  type Note,
   type Program,
   type Session,
   Settings,
@@ -33,6 +34,8 @@ export interface Data {
   programs: Program[]
   sessions: Session[]
   goals: Goal[]
+  /** Free notes, in no order. */
+  notes: Note[]
   /** Today's date, refreshed when the app comes back to the foreground. */
   today: string
   put<C extends CollectionName>(name: C, value: Collections[C]): Promise<void>
@@ -62,9 +65,10 @@ interface Loaded {
   programs: Program[]
   sessions: Session[]
   goals: Goal[]
+  notes: Note[]
 }
 
-type ListKey = 'disciplines' | 'exercises' | 'programs' | 'sessions' | 'goals'
+type ListKey = 'disciplines' | 'exercises' | 'programs' | 'sessions' | 'goals' | 'notes'
 
 async function open(): Promise<{ store: Store; persistent: boolean }> {
   try {
@@ -85,13 +89,14 @@ async function load(): Promise<Loaded> {
 }
 
 async function loadFrom(store: Store, persistent: boolean): Promise<Loaded> {
-  const [stored, disciplines, exercises, programs, sessions, goals] = await Promise.all([
+  const [stored, disciplines, exercises, programs, sessions, goals, notes] = await Promise.all([
     store.getSettings(),
     store.all('disciplines'),
     store.all('exercises'),
     store.all('programs'),
     store.all('sessions'),
     store.all('goals'),
+    store.all('notes'),
   ])
   const settings = Settings.parse({ ...DEFAULT_SETTINGS, ...stored })
   let lists = { disciplines, exercises, programs, sessions, goals }
@@ -103,9 +108,9 @@ async function loadFrom(store: Store, persistent: boolean): Promise<Loaded> {
   if (v1 || needsGoalMigration(lists.goals)) {
     lists = { ...lists, goals: migrateGoals(lists.goals) }
     // Migrated in memory either way; a refused write is retried on the next load.
-    await store.replaceAll({ ...lists, settings }).catch(() => {})
+    await store.replaceAll({ ...lists, notes, settings }).catch(() => {})
   }
-  return { store, persistent, settings, ...lists }
+  return { store, persistent, settings, ...lists, notes }
 }
 
 function useToday(): string {
@@ -215,6 +220,7 @@ export function DataProvider({ children, fallback }: { children: ReactNode; fall
               programs: backup.programs,
               sessions: backup.sessions,
               goals: backup.goals,
+              notes: backup.notes,
             }
           : l,
       )

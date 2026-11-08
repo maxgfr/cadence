@@ -6,12 +6,13 @@ import type { Store } from './store.ts'
 
 /** Everything but secrets, as one JSON document. */
 export async function exportBackup(store: Store, now: Date = new Date()): Promise<Backup> {
-  const [disciplines, exercises, programs, sessions, goals, settings, deleted] = await Promise.all([
+  const [disciplines, exercises, programs, sessions, goals, notes, settings, deleted] = await Promise.all([
     store.all('disciplines'),
     store.all('exercises'),
     store.all('programs'),
     store.all('sessions'),
     store.all('goals'),
+    store.all('notes'),
     store.getSettings(),
     store.tombstones(),
   ])
@@ -25,6 +26,7 @@ export async function exportBackup(store: Store, now: Date = new Date()): Promis
     programs,
     sessions,
     goals,
+    notes,
     deleted,
   }
 }
@@ -44,6 +46,7 @@ export function parseBackup(text: string): Backup {
   const version = (raw as { version?: unknown }).version
   if (
     version !== BACKUP_VERSION &&
+    version !== 7 &&
     version !== 6 &&
     version !== 5 &&
     version !== 4 &&
@@ -56,7 +59,8 @@ export function parseBackup(text: string): Backup {
   // Versions 2 to 4 differ by what they cannot hold (program layouts, the language) and the names of exercise
   // goals; the language they lack reads as the system's.
   // Before version 6, records have no date and nothing deleted was kept: they read as such.
-  if (version === 2 || version === 3 || version === 4 || version === 5 || version === 6)
+  // Before version 8, no notes, no exercise description, and sessions name their program day by position.
+  if (version === 2 || version === 3 || version === 4 || version === 5 || version === 6 || version === 7)
     raw = { ...(raw as object), version: BACKUP_VERSION }
   if (version === 1) {
     try {
