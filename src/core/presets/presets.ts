@@ -1,7 +1,17 @@
 import { currentMessages, LOCALES, type Messages, messagesFor } from '../i18n/index.ts'
 import { normalizeName } from '../library/exercises.ts'
 import { newId } from '../model/ids.ts'
-import type { Block, Day, Discipline, Exercise, ExerciseLanguage, Program, SetTarget, Week } from '../model/schemas.ts'
+import type {
+  Block,
+  Day,
+  Discipline,
+  Exercise,
+  ExerciseLanguage,
+  Intensity,
+  Program,
+  SetTarget,
+  Week,
+} from '../model/schemas.ts'
 import {
   PRESET_COLORS,
   PRESET_EXERCISES,
@@ -27,11 +37,15 @@ interface PresetProgram {
 const rpe = (value: number) => ({ kind: 'rpe' as const, value })
 const pct = (value: number) => ({ kind: 'pct1rm' as const, value })
 
-/** A pyramid of % of 1RM, `[reps, percent]` for each set, heaviest last. */
-const pyramid = (sets: readonly (readonly [number, number])[], rest: number): BlockSpec => {
+/** A pyramid, `[reps, value]` for each set, heaviest last; in % of 1RM unless said. */
+const pyramid = (
+  sets: readonly (readonly [number, number])[],
+  rest: number,
+  at: (value: number) => Intensity = pct,
+): BlockSpec => {
   const perSet: SetTarget[] = sets.map(([reps, value]) => ({ reps, value }))
   const [first] = sets
-  return { reps: first?.[0] ?? 1, intensity: pct(first?.[1] ?? 1), perSet, rest }
+  return { reps: first?.[0] ?? 1, intensity: at(first?.[1] ?? 1), perSet, rest }
 }
 
 const MAIN_LIFT = [
@@ -39,6 +53,14 @@ const MAIN_LIFT = [
   [10, 65],
   [8, 75],
   [6, 82],
+] as const
+
+/** By effort, for a lift whose one-rep max few athletes know. */
+const MAIN_LIFT_EFFORT = [
+  [15, 6.5],
+  [10, 7],
+  [8, 7.5],
+  [6, 8],
 ] as const
 
 export const PRESET_PROGRAMS: readonly PresetProgram[] = [
@@ -79,7 +101,7 @@ export const PRESET_PROGRAMS: readonly PresetProgram[] = [
           b('triceps-pushdown', 3, { reps: 12, rest: 60 }),
         ]),
         d(days.pull, [
-          b('barbell-row', 4, pyramid(MAIN_LIFT, 150)),
+          b('barbell-row', 4, pyramid(MAIN_LIFT_EFFORT, 150, rpe)),
           b('lat-pulldown', 3, { reps: 10, intensity: rpe(8), rest: 90 }),
           b('seated-cable-row', 3, { reps: 12, intensity: rpe(8), rest: 90 }),
           b('face-pull', 3, { reps: 15, rest: 60 }),

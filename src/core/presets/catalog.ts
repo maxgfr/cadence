@@ -24,7 +24,12 @@ export interface PresetExercise extends Pick<Exercise, 'metric' | 'pace' | 'dist
 
 const gym =
   (metric: 'weight_reps' | 'reps' | 'time') =>
-  (slug: PresetSlug, ...muscles: Muscle[]): PresetExercise => ({ slug, sport: 'gym', metric, muscles })
+  (slug: PresetSlug, ...muscles: Muscle[]): PresetExercise => ({
+    slug,
+    sport: 'gym',
+    metric,
+    ...(muscles.length > 0 ? { muscles } : {}),
+  })
 const load = gym('weight_reps')
 const body = gym('reps')
 const hold = gym('time')
@@ -101,7 +106,6 @@ export const PRESET_EXERCISES: readonly PresetExercise[] = [
   load('overhead-triceps-extension', 'triceps'),
   load('skull-crusher', 'triceps'),
   load('close-grip-bench-press', 'triceps', 'chest'),
-  body('triceps-dip', 'triceps', 'chest'),
   // Legs and glutes.
   load('back-squat', 'quads', 'glutes'),
   load('front-squat', 'quads', 'core'),
@@ -121,7 +125,8 @@ export const PRESET_EXERCISES: readonly PresetExercise[] = [
   body('glute-bridge', 'glutes', 'hamstrings'),
   load('cable-kickback', 'glutes'),
   load('hip-abduction-machine', 'glutes'),
-  load('hip-adduction-machine', 'quads'),
+  // No muscle: the model has no adductors, and counting them as another would skew its volume.
+  load('hip-adduction-machine'),
   load('standing-calf-raise', 'calves'),
   load('seated-calf-raise', 'calves'),
   body('nordic-curl', 'hamstrings'),
@@ -143,8 +148,9 @@ export const PRESET_EXERCISES: readonly PresetExercise[] = [
   body('glute-ham-raise', 'hamstrings', 'glutes'),
   load('incline-machine-press', 'chest', 'shoulders'),
   load('machine-lateral-raise', 'shoulders'),
-  load('assisted-pull-up', 'back', 'biceps'),
-  load('assisted-dip', 'chest', 'triceps'),
+  // Counted in reps: the counterweight makes them easier, so it must not read as a load.
+  body('assisted-pull-up', 'back', 'biceps'),
+  body('assisted-dip', 'chest', 'triceps'),
   load('machine-biceps-curl', 'biceps'),
   load('machine-triceps-extension', 'triceps'),
   load('ab-crunch-machine', 'core'),
@@ -165,20 +171,17 @@ export const PRESET_EXERCISES: readonly PresetExercise[] = [
   swim('drill-sculling', 'drill'),
   swim('drill-closed-fist', 'drill'),
   swim('drill-side-kick', 'drill'),
-  swim('drill-distance-per-stroke', 'drill'),
   swimEvent('swim-50-free', 50),
   swimEvent('swim-100-free', 100),
   swimEvent('swim-400-free', 400),
   // Running.
   run('run-easy'),
-  run('run-recovery'),
   run('run-long'),
   run('run-tempo'),
   run('run-fartlek'),
   run('run-hills'),
   run('run-strides'),
   run('run-progression'),
-  run('run-cruise-intervals'),
   runEvent('run-200', 200),
   runEvent('run-400', 400),
   runEvent('run-800', 800),

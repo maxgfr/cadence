@@ -77,6 +77,20 @@ describe('presets', () => {
     expect(again.programs.map((p) => p.id)).toEqual(first.programs.map((p) => p.id))
   })
 
+  test('assistance is not a load, and no exercise counts for a muscle it does not train', () => {
+    const metric = (slug: string) => PRESET_EXERCISES.find((e) => e.slug === slug)?.metric
+    expect(metric('assisted-pull-up')).toBe('reps')
+    expect(metric('assisted-dip')).toBe('reps')
+    expect(PRESET_EXERCISES.find((e) => e.slug === 'hip-adduction-machine')?.muscles).toBeUndefined()
+  })
+
+  test('a lift few know the max of is planned by effort, set by set', () => {
+    const pull = all({ sports: ['gym'] }).programs.find((p) => p.id === 'preset-program-gym-push-pull-legs')
+    const row = pull?.weeks[0]?.days[1]?.blocks[0]
+    expect(row?.intensity?.kind).toBe('rpe')
+    expect(row?.perSet?.map((s) => s.reps)).toEqual([15, 10, 8, 6])
+  })
+
   test('programs can be left out', () => {
     expect(all({ withPrograms: false }).programs).toEqual([])
   })
