@@ -31,6 +31,7 @@ const block = (exercise: string, p: Partial<AiProgram['weeks'][number]['days'][n
   newExercise: null,
   sets: 3,
   reps: null,
+  perSet: [],
   distanceMeters: null,
   durationSeconds: null,
   intensity: null,

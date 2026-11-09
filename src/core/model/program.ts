@@ -37,23 +37,47 @@ export function formatIntensity(i: Intensity, units: UnitPrefs): string {
   }
 }
 
+/** What set `i` of a block asks for: its own reps and intensity where it has them, else the block's. */
+export function setTargetAt(block: Block, i: number): Pick<Block, 'reps' | 'intensity'> {
+  const own = block.perSet?.[i] ?? block.perSet?.[block.perSet.length - 1]
+  const reps = own?.reps ?? block.reps
+  const intensity =
+    block.intensity && own?.value !== undefined ? { kind: block.intensity.kind, value: own.value } : block.intensity
+  return { ...(reps !== undefined ? { reps } : {}), ...(intensity ? { intensity } : {}) }
+}
+
+/** Sets that differ, as a coach writes them: "1×15 @60%, 1×10 @70%, 2×6 @85%". */
+function describePerSet(block: Block, units: UnitPrefs, detail: boolean): string {
+  const groups: { line: string; n: number }[] = []
+  for (let i = 0; i < block.sets; i++) {
+    const { reps, intensity } = setTargetAt(block, i)
+    const line = `${reps ?? '–'}${detail && intensity ? ` @${formatIntensity(intensity, units)}` : ''}`
+    const previous = groups[groups.length - 1]
+    if (previous?.line === line) previous.n++
+    else groups.push({ line, n: 1 })
+  }
+  return groups.map((g) => `${g.n}×${g.line}`).join(', ')
+}
+
 /**
  * The block as a coach writes it: "5×5 @80%", "8×50 m @1:50", "6×60 m @95% max · rest 3:00".
  * Normal mode leaves out intensity, rest and tempo (`detail` false).
  */
 export function describeBlock(block: Block, exercise: Exercise | undefined, units: UnitPrefs, detail = true): string {
   const fixed = exercise?.distance
+  const varied = Boolean(block.perSet?.length) && block.distance === undefined && fixed === undefined
   let volume: string
   if (block.distance !== undefined || fixed !== undefined) {
     volume = `${block.sets}×${formatDistance(block.distance ?? fixed ?? 0, units.distanceUnit)}`
-  } else if (block.reps !== undefined) volume = `${block.sets}×${block.reps}`
+  } else if (varied) volume = describePerSet(block, units, detail)
+  else if (block.reps !== undefined) volume = `${block.sets}×${block.reps}`
   else if (block.duration !== undefined) volume = `${block.sets}×${formatTime(block.duration, false)}`
   else volume = currentMessages().core.reps(block.sets)
   if (block.sets === 1 && (block.distance !== undefined || fixed !== undefined))
     volume = formatDistance(block.distance ?? fixed ?? 0, units.distanceUnit)
   const parts = [volume]
   if (block.interval !== undefined) parts[0] += ` @${formatTime(block.interval, false)}`
-  if (detail && block.intensity)
+  if (detail && block.intensity && !varied)
     parts[0] +=
       block.interval !== undefined
         ? ` · ${formatIntensity(block.intensity, units)}`
@@ -204,13 +228,14 @@ export function plannedSets(
   e1rm: number | undefined,
   last?: LastPerformance,
 ): SetLog[] {
-  const planned = suggestedWeight(block, e1rm)
   const distance = block.distance ?? exercise?.distance
-  const rpe = block.intensity?.kind === 'rpe' ? block.intensity.value : undefined
   return Array.from({ length: block.sets }, (_, i) => {
     const s: SetLog = { done: false }
+    const target = setTargetAt(block, i)
+    const planned = suggestedWeight(target.intensity ? { ...block, intensity: target.intensity } : block, e1rm)
+    const rpe = target.intensity?.kind === 'rpe' ? target.intensity.value : undefined
     const weight = (exercise?.metric === 'weight_reps' ? loadAt(last, i) : undefined) ?? planned
-    if (block.reps !== undefined) s.reps = block.reps
+    if (target.reps !== undefined) s.reps = target.reps
     if (weight !== undefined) s.weight = weight
     if (block.duration !== undefined) s.time = block.duration
     if (distance !== undefined && exercise?.metric === 'distance_time') s.distance = distance
@@ -268,8 +293,10 @@ export function describeSets(sets: readonly SetLog[], exercise: Exercise | undef
 /** A block without its load: kilos written for one exercise mean nothing on another. */
 function withoutLoad(block: Block): Block {
   if (block.intensity?.kind !== 'kg') return block
-  const { intensity: _load, ...rest } = block
-  return rest
+  const { intensity: _load, perSet, ...rest } = block
+  // Only the loads go: reps that differ set by set still hold on the other exercise.
+  const reps = perSet?.flatMap((t) => (t.reps !== undefined ? [{ reps: t.reps }] : [])) ?? []
+  return reps.length > 0 ? { ...rest, perSet: reps } : rest
 }
 
 /**

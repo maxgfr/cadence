@@ -1,6 +1,6 @@
 import type { ModelMessage } from 'ai'
 import { z } from 'zod'
-import { currentMessages } from '../i18n/index.ts'
+import { currentMessages, displayLocale } from '../i18n/index.ts'
 import { type ExerciseIndex, findExercise, normalizeName } from '../library/exercises.ts'
 import { newId } from '../model/ids.ts'
 import type { UnitPrefs } from '../model/program.ts'
@@ -76,7 +76,7 @@ const AiProgramRequest = z.object({
   brief: z
     .string()
     .describe(
-      'Everything they asked for, for the program designer: the split, how many exercises per session, the equipment, the goal, limitations',
+      'Everything they asked for, for the program designer: the split, how many exercises per session, the equipment, the goal, limitations; a program they gave, copied whole with the reps and load of every set',
     ),
   layout: z
     .enum(['weeks', 'sessions'])
@@ -98,7 +98,11 @@ const AiWeekRequest = z.object({
 const AiExercisesRequest = z.object({
   sports: z.array(z.string()).describe('The sports, by name'),
   level: Level,
-  size: z.enum(['essentials', 'complete']).describe('essentials: the few that matter; complete: a full library'),
+  size: z
+    .enum(['essentials', 'complete', 'all'])
+    .describe(
+      'essentials: the few that matter; complete: a full library; all: every exercise of the sport, machines included',
+    ),
   equipment: z.string().describe('What they have, "" when not said'),
   notes: z.string().describe('Anything else they asked for, "" when nothing'),
 })
@@ -326,7 +330,7 @@ export function coachFromAi(ai: AiCoachReply, c: CoachContext): CoachTurn & { bu
   if (Object.keys(patch).length > 0) add({ id: newId(), kind: 'settings', patch })
 
   const builds: CoachBuild[] = []
-  const brief = (v: string) => v.trim().slice(0, 2000)
+  const brief = (v: string) => v.trim().slice(0, 6000)
   const names = (v: readonly string[]) => v.map((x) => x.trim().slice(0, 80)).filter(Boolean)
   const exercises = ai.addExercises[0]
   if (exercises)
@@ -360,19 +364,36 @@ export function coachFromAi(ai: AiCoachReply, c: CoachContext): CoachTurn & { bu
   return { reply: ai.reply.trim().slice(0, 4000), proposals, builds }
 }
 
+/** What the athlete last wrote, oldest first: what a designer reads as they said it, whatever the coach kept of it. */
+export function athleteWords(history: readonly CoachMessage[], input: CoachInput): string {
+  const said = [...history.filter((m) => m.role === 'user').map((m) => m.text), input.text]
+  return said.slice(-4).join('\n---\n').trim().slice(-6000)
+}
+
+function withAthleteWords(pair: PromptPair, words: string): PromptPair {
+  if (!words) return pair
+  return {
+    ...pair,
+    prompt: `${pair.prompt}\n\nWhat the athlete wrote, which comes first: any exercise, set, rep or load given here stands exactly as written.\n${words}`,
+  }
+}
+
 /**
  * What the designer of a build is asked: the prompts of the program, week, exercises and goals features, with what
  * the athlete told the coach. A program builds on their history when they have one.
  */
-export function buildPrompt(b: CoachBuild, c: CoachContext, history: string): PromptPair {
+export function buildPrompt(b: CoachBuild, c: CoachContext, history: string, words = ''): PromptPair {
   switch (b.kind) {
     case 'program': {
-      return c.trained
-        ? contextPrompt({ shape: b.shape, focus: b.brief, sports: b.sports }, history, c.library)
-        : scratchPrompt({ sports: b.sports, level: b.level, shape: b.shape, goal: b.brief }, c.library, c.today)
+      return withAthleteWords(
+        c.trained
+          ? contextPrompt({ shape: b.shape, focus: b.brief, sports: b.sports }, history, c.library)
+          : scratchPrompt({ sports: b.sports, level: b.level, shape: b.shape, goal: b.brief }, c.library, c.today),
+        words,
+      )
     }
     case 'week':
-      return adjustWeekPrompt(b.program, b.index, history, c.library, c.index, b.brief)
+      return withAthleteWords(adjustWeekPrompt(b.program, b.index, history, c.library, c.index, b.brief), words)
     case 'exercises':
       return exercisesPrompt(b.answers, c.library)
     case 'goals':
@@ -392,10 +413,11 @@ Changes:
 their units (given below), 0 for what they did not say. "Same as last time" means their last logged sets on that \
 exercise. An exercise not in the library may be named; it is created with the sets.
 - addExercises: only when asked for exercises for their library: the sports, level and equipment, for the \
-exercise designer.
+exercise designer. "All", "every" or a preset of a sport is size all, which is checked on the web.
 - createProgram: only when asked to design a program. Do not write the program: describe it for the program designer, \
 who sees their library and history. Put in the brief everything they asked for (the split, how many sessions and how \
-many exercises per session, the equipment, their level, goal and limitations), and say in your reply that you are \
+many exercises per session, the equipment, their level, goal and limitations; a program they gave you, copied whole \
+with the reps and load of every set), and say in your reply that you are \
 designing it. The same goes for adjustWeek, addExercises and addGoals: you describe, a designer builds.
 - adjustWeek: rewrite one week of one of their programs (its id and the week number), only when asked; the brief says \
 what to change.
@@ -452,7 +474,7 @@ export function coachSystem({ context: c, history }: CoachPromptInput): string {
   const units = { weightUnit: c.settings.weightUnit, distanceUnit: c.settings.distanceUnit }
   return [
     SYSTEM,
-    languageRule(),
+    languageRule(displayLocale(), c.library.exerciseLanguage),
     '',
     `Their units: weight in ${units.weightUnit}, distance in ${units.distanceUnit}, times in seconds. Mode: ${c.settings.mode}.`,
     '',

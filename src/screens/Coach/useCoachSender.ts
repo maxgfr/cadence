@@ -25,7 +25,11 @@ export function useCoachTurn() {
 
   const context = useCallback(
     (): CoachContext => ({
-      library: { exercises: data.exercises, disciplines: data.disciplines },
+      library: {
+        exercises: data.exercises,
+        disciplines: data.disciplines,
+        exerciseLanguage: data.settings.exerciseLanguage,
+      },
       index: data.index,
       programs: data.programs,
       goals: data.goals,

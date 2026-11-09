@@ -337,6 +337,7 @@ describe('sessions follow their day when the program changes', () => {
               intensityKind: 'none',
               intensityValue: 0,
               restSeconds: 0,
+              perSet: [],
               intervalSeconds: 0,
               tempo: '',
               notes: '',

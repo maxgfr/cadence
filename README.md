@@ -21,6 +21,9 @@ starting point. AI, to design programs and propose exercises, is optional and us
   100 m sprinter block). Ten weeks of example
   sessions and a goal per sport can be added to see the charts. Everything stays editable, and *Remove the demo* takes
   it away again, keeping what your own records use.
+- **Presets**: in *Settings › Presets*, add real exercise libraries (machines included) and programs for gym, swimming
+  and running. Exercises you already have are reused. New exercise and machine names are in English unless changed in
+  *Settings › Language*; the coach can also list every exercise of a sport, checked on the web when the model can search.
 - **Today**: *Resume session* when one is in progress; *This week* (Monday to Sunday by default): the sessions
   logged each day, then, for each program under way, its todo for the week (the days of its week under way, or each
   session of a set once), ticked off as they are done, with what is left to finish the program; *New session*: every

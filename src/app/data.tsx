@@ -14,6 +14,8 @@ import {
   type Session,
   Settings,
 } from '../core/model/schemas.ts'
+import type { PresetSport } from '../core/presets/catalog.ts'
+import { buildPreset } from '../core/presets/presets.ts'
 import { idbStore } from '../core/storage/idb.ts'
 import { migrateGoals, migrateV1, needsGoalMigration, needsMigration } from '../core/storage/migrate.ts'
 import { type CollectionName, type Collections, memoryStore, type Store } from '../core/storage/store.ts'
@@ -44,6 +46,8 @@ export interface Data {
   replaceAll(backup: Backup): Promise<void>
   /** Adds the demo for these sports; what already exists (edited demo records included) is left as it is. */
   loadDemo(sports: readonly DemoSport[], withSessions: boolean): Promise<void>
+  /** Adds these sports' presets, dated so a sync carries them; returns how many records were new. */
+  loadPreset(sports: readonly PresetSport[], withPrograms: boolean): Promise<{ exercises: number; programs: number }>
   /** Removes what the demo added, except what the user's own records still use. */
   removeDemo(): Promise<void>
 }
@@ -247,6 +251,32 @@ export function DataProvider({ children, fallback }: { children: ReactNode; fall
     [setLoaded, write],
   )
 
+  const loadPreset = useCallback(
+    async (sports: readonly PresetSport[], withPrograms: boolean) => {
+      const loaded = current.current
+      if (!loaded) return { exercises: 0, programs: 0 }
+      const preset = buildPreset({
+        sports,
+        withPrograms,
+        library: loaded,
+        exerciseLanguage: loaded.settings.exerciseLanguage,
+      })
+      const updatedAt = new Date().toISOString()
+      const next = { ...loaded }
+      const added = { exercises: 0, programs: 0 }
+      for (const key of ['disciplines', 'exercises', 'programs'] as const) {
+        const have = new Set(loaded[key].map((x) => x.id))
+        const fresh = (preset[key] as { id: string }[]).filter((x) => !have.has(x.id)).map((x) => ({ ...x, updatedAt }))
+        for (const x of fresh) await write(() => loaded.store.put(key, x as never))
+        ;(next as Record<ListKey, unknown[]>)[key] = [...loaded[key], ...fresh]
+        if (key !== 'disciplines') added[key] = fresh.length
+      }
+      setLoaded({ ...next })
+      return added
+    },
+    [setLoaded, write],
+  )
+
   const removeDemo = useCallback(async () => {
     const loaded = current.current
     if (!loaded) return
@@ -279,9 +309,10 @@ export function DataProvider({ children, fallback }: { children: ReactNode; fall
       updateSettings,
       replaceAll,
       loadDemo,
+      loadPreset,
       removeDemo,
     }
-  }, [state, saveFailures, today, put, remove, updateSettings, replaceAll, loadDemo, removeDemo])
+  }, [state, saveFailures, today, put, remove, updateSettings, replaceAll, loadDemo, loadPreset, removeDemo])
 
   if (!value) return <>{fallback}</>
   return <DataContext.Provider value={value}>{children}</DataContext.Provider>

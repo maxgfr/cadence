@@ -180,6 +180,7 @@ test('asked for a program, the coach describes it and the designer builds it: a 
     durationSeconds: null,
     intensity: null,
     restSeconds: 90,
+    perSet: [],
     intervalSeconds: null,
     tempo: null,
     notes: null,

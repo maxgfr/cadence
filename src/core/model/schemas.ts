@@ -95,12 +95,21 @@ export type IntensityKind = z.infer<typeof IntensityKind>
 export const Intensity = z.object({ kind: IntensityKind, value: positive })
 export type Intensity = z.infer<typeof Intensity>
 
+/** One set's own target where a block's sets differ: its reps, and its intensity value in the block's kind. */
+export const SetTarget = z.object({
+  reps: z.number().int().min(1).max(500).optional(),
+  value: positive.optional(),
+})
+export type SetTarget = z.infer<typeof SetTarget>
+
 /** One planned line of a day: "5×5 @80%", "8×50 m free @1:00", "6×60 m @95%, rest 3'". */
 export const Block = z.object({
   id,
   exerciseId: id,
   sets: z.number().int().min(1).max(50),
   reps: z.number().int().min(1).max(500).optional(),
+  /** Set by set, in order, when they differ ("15 light, then 6 heavy"); what an entry leaves out is the block's. */
+  perSet: z.array(SetTarget).max(50).optional(),
   /** Metres per repetition. */
   distance: positive.optional(),
   /** Seconds per repetition (holds, timed efforts). */
@@ -255,9 +264,14 @@ export type Mode = z.infer<typeof Mode>
 export const Language = z.enum(['system', 'en', 'fr', 'de'])
 export type Language = z.infer<typeof Language>
 
+/** The language exercises and machines are named in when the coach or a preset adds them. */
+export const ExerciseLanguage = z.enum(['en', 'fr', 'de'])
+export type ExerciseLanguage = z.infer<typeof ExerciseLanguage>
+
 export const Settings = z.object({
   mode: Mode.default('normal'),
   language: Language.default('system'),
+  exerciseLanguage: ExerciseLanguage.default('en'),
   weightUnit: z.enum(['kg', 'lb']).default('kg'),
   distanceUnit: z.enum(['m', 'yd']).default('m'),
   /** 1 = Monday, 0 = Sunday. */
@@ -285,8 +299,10 @@ export const DEFAULT_SETTINGS: Settings = Settings.parse({})
  * (`notes`), an exercise's `description`, and sessions name their program day by id (`programRef.dayId`); earlier
  * versions read with no notes, no description, and their days by position. 9: an exercise can hold a `photo`; earlier
  * versions read with none. 10: a program can hold `resets` of its progress; earlier versions read with none.
+ * 11: a block can differ set by set (`perSet`) and settings hold the language of exercise names (`exerciseLanguage`);
+ * earlier versions read with the same sets throughout and English names.
  */
-export const BACKUP_VERSION = 10
+export const BACKUP_VERSION = 11
 export const Backup = z.object({
   app: z.literal('cadence'),
   version: z.literal(BACKUP_VERSION),

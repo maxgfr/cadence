@@ -10,6 +10,7 @@ import { history } from './history.ts'
 import { labels } from './labels.ts'
 import { log } from './log.ts'
 import { notes } from './notes.ts'
+import { presets } from './presets.ts'
 import { programs } from './programs.ts'
 import { progress } from './progress.ts'
 import { settings } from './settings.ts'
@@ -32,6 +33,7 @@ export const namespaces = {
   labels,
   log,
   notes,
+  presets,
   programs,
   progress,
   settings,

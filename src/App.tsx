@@ -20,6 +20,7 @@ import { DraftEditor, ProgramEditor } from './screens/Programs/ProgramEditor.tsx
 import { Programs } from './screens/Programs/Programs.tsx'
 import { Progress } from './screens/Progress/Progress.tsx'
 import { Demo } from './screens/Settings/Demo.tsx'
+import { Presets } from './screens/Settings/Presets.tsx'
 import { Settings } from './screens/Settings/Settings.tsx'
 import { Today } from './screens/Today/Today.tsx'
 import { Shell } from './ui/shell/Shell.tsx'
@@ -64,6 +65,7 @@ function Routes() {
             {/* The coach opens over any screen; an older link to it lands on Today with it open. */}
             <Route path="/coach" component={OpenCoach} />
             <Route path="/settings/demo" component={Demo} />
+            <Route path="/settings/presets" component={Presets} />
             <Route path="/settings/sync" component={Sync} />
             {/* The QR code's link: opening it on the other device starts the sync. */}
             <Route path="/sync" component={Sync} />

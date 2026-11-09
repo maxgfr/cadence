@@ -26,6 +26,10 @@ under `/cadence/`, no server.
 - Disciplines are user data: nothing in the app may assume a sport. Demo content lives in `src/core/demo` (stable
   `demo-*` ids so it can be removed), never in defaults. Stored data of an older shape is migrated in
   `core/storage/migrate.ts`, both on load and on backup import.
+- Presets (`src/core/presets`) are real exercise libraries and programs the athlete adds on purpose, apart from the demo's
+  example data: stable `preset-*` ids, written through `app/data.tsx`, and an exercise or discipline they already have
+  (under any language's name) is reused, not duplicated. New exercise and machine names follow
+  `settings.exerciseLanguage` (English by default), for presets and AI alike; a preset's other text follows the interface.
 - AI is optional and never writes data: every AI result is a draft the user edits and saves. Keys and the endpoint live
   in `llm-connect`'s `sealedStore` (database `cadence-sealed`), encrypted at rest, never in clear text, and never appear in exports; a sync always sends them (user request: sync everything),
   sealed with the pairing key, and the most recently saved (`savedAt`) win on both devices. The Anthropic browser header goes to Anthropic's own host only.

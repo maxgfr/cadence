@@ -288,6 +288,7 @@ describe('what the coach has built', () => {
                 durationSeconds: null,
                 intensity: null,
                 restSeconds: 90,
+                perSet: [],
                 intervalSeconds: null,
                 tempo: null,
                 notes: null,

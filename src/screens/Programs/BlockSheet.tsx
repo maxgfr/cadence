@@ -3,7 +3,7 @@ import { useState } from 'react'
 import { useData } from '../../app/data.tsx'
 import { useT } from '../../app/i18n.tsx'
 import { formatDecimal } from '../../core/i18n/locale.ts'
-import type { Block, IntensityKind } from '../../core/model/schemas.ts'
+import type { Block, IntensityKind, SetTarget } from '../../core/model/schemas.ts'
 import {
   formatTime,
   fromDisplayDistance,
@@ -17,6 +17,7 @@ import { Button } from '../../ui/components/Button.tsx'
 import { Field } from '../../ui/components/Field.tsx'
 import { SelectField } from '../../ui/components/SelectField.tsx'
 import { Sheet } from '../../ui/components/Sheet.tsx'
+import picker from '../../ui/DemoPicker.module.css'
 import { ExercisePicker } from '../../ui/ExercisePicker.tsx'
 import { useUnits } from '../../ui/units.ts'
 import styles from './Programs.module.css'
@@ -70,6 +71,18 @@ function BlockForm({ block, onSave, onDelete }: { block: Block; onSave: (b: Bloc
     if (i.kind === 'pace') return clock(i.value)
     return str(i.value)
   })
+  // How an intensity value reads in a field, and what a field's text stores.
+  const shownValue = (k: IntensityKind | '', v: number | undefined) =>
+    k === 'kg' && v !== undefined ? str(toDisplayWeight(v, units.weightUnit)) : k === 'pace' ? clock(v) : str(v)
+  const storedValue = (k: IntensityKind | '', text: string) => {
+    const v = k === 'pace' ? parseTime(text) : num(text)
+    if (!k || v === undefined || v <= 0) return undefined
+    return k === 'kg' ? fromDisplayWeight(v, units.weightUnit) : v
+  }
+  const [varied, setVaried] = useState(Boolean(block.perSet?.length))
+  const [rows, setRows] = useState(() =>
+    (block.perSet ?? []).map((s) => ({ reps: str(s.reps ?? block.reps, 0), value: shownValue(kind, s.value) })),
+  )
   const [rest, setRest] = useState(clock(block.rest))
   const [interval, setSendOff] = useState(clock(block.interval))
   const [tempo, setTempo] = useState(block.tempo ?? '')
@@ -78,6 +91,17 @@ function BlockForm({ block, onSave, onDelete }: { block: Block; onSave: (b: Bloc
   const showReps = metric === 'weight_reps' || metric === 'reps'
   const showDistance = metric === 'distance_time' && ex?.distance === undefined
   const showDuration = metric === 'time'
+  const setCount = Math.min(50, Math.max(1, Math.round(num(sets) ?? 1)))
+  const canVary = showReps && setCount > 1
+  const perSetOn = varied && canVary
+  const setTargets = Array.from({ length: perSetOn ? setCount : 0 }, (_, i) => ({
+    n: i + 1,
+    ...(rows[i] ?? rows[rows.length - 1] ?? { reps, value: intensity }),
+  }))
+  const editRow = (n: number, patch: Partial<{ reps: string; value: string }>) =>
+    setRows(setTargets.map(({ n: at, ...r }) => (at === n ? { ...r, ...patch } : r)))
+  const valueLabel =
+    kind === 'pace' ? m.paceValue : kind === 'rpe' ? m.rpeValue : kind === 'kg' ? units.weightUnit : m.percent
 
   return (
     <>
@@ -85,7 +109,7 @@ function BlockForm({ block, onSave, onDelete }: { block: Block; onSave: (b: Bloc
         className={styles.form}
         onSubmit={(e) => {
           e.preventDefault()
-          const next: Block = { id: block.id, exerciseId, sets: Math.min(50, Math.max(1, Math.round(num(sets) ?? 1))) }
+          const next: Block = { id: block.id, exerciseId, sets: setCount }
           const r = num(reps)
           if (showReps && r !== undefined) next.reps = Math.round(r)
           const d = num(distance)
@@ -93,9 +117,22 @@ function BlockForm({ block, onSave, onDelete }: { block: Block; onSave: (b: Bloc
           const du = parseTime(duration)
           if (showDuration && du !== undefined && du > 0) next.duration = du
           if (kind) {
-            const v = kind === 'pace' ? parseTime(intensity) : num(intensity)
-            if (v !== undefined && v > 0)
-              next.intensity = { kind, value: kind === 'kg' ? fromDisplayWeight(v, units.weightUnit) : v }
+            const v = storedValue(kind, intensity)
+            if (v !== undefined) next.intensity = { kind, value: v }
+          }
+          if (perSetOn) {
+            const targets = setTargets.map((row): SetTarget => {
+              const rowReps = num(row.reps)
+              const value = storedValue(kind, row.value)
+              return {
+                ...(rowReps !== undefined ? { reps: Math.min(500, Math.round(rowReps)) } : {}),
+                ...(value !== undefined ? { value } : {}),
+              }
+            })
+            const first = targets[0]
+            if (first?.reps !== undefined) next.reps = first.reps
+            if (kind && first?.value !== undefined) next.intensity = { kind, value: first.value }
+            if (targets.some((s) => s.reps !== first?.reps || s.value !== first?.value)) next.perSet = targets
           }
           const rs = parseTime(rest)
           if (rs !== undefined && rs > 0) next.rest = Math.round(rs)
@@ -126,7 +163,7 @@ function BlockForm({ block, onSave, onDelete }: { block: Block; onSave: (b: Bloc
             value={sets}
             onChange={(e) => setSets(e.target.value)}
           />
-          {showReps && (
+          {showReps && !perSetOn && (
             <Field label={m.repsPerSet} inputMode="numeric" value={reps} onChange={(e) => setReps(e.target.value)} />
           )}
           {showDistance && (
@@ -146,6 +183,30 @@ function BlockForm({ block, onSave, onDelete }: { block: Block; onSave: (b: Bloc
             />
           )}
         </div>
+        {canVary && (
+          <label className={picker.toggle}>
+            <input type="checkbox" checked={varied} onChange={(e) => setVaried(e.target.checked)} />
+            <span>{m.differentSets}</span>
+          </label>
+        )}
+        {setTargets.map((row) => (
+          <div key={row.n} className={styles.pair}>
+            <Field
+              label={m.setNumber(row.n)}
+              inputMode="numeric"
+              value={row.reps}
+              onChange={(e) => editRow(row.n, { reps: e.target.value })}
+            />
+            {advanced && kind && (
+              <Field
+                label={valueLabel}
+                inputMode="decimal"
+                value={row.value}
+                onChange={(e) => editRow(row.n, { value: e.target.value })}
+              />
+            )}
+          </div>
+        ))}
         {ex?.metric === 'distance_time' && (
           <Field
             label={m.sendOff}
@@ -171,17 +232,9 @@ function BlockForm({ block, onSave, onDelete }: { block: Block; onSave: (b: Bloc
                 ]}
                 onChange={(e) => setKind(e.target.value as IntensityKind | '')}
               />
-              {kind && (
+              {kind && !perSetOn && (
                 <Field
-                  label={
-                    kind === 'pace'
-                      ? m.paceValue
-                      : kind === 'rpe'
-                        ? m.rpeValue
-                        : kind === 'kg'
-                          ? units.weightUnit
-                          : m.percent
-                  }
+                  label={valueLabel}
                   inputMode="decimal"
                   value={intensity}
                   onChange={(e) => setIntensity(e.target.value)}

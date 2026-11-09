@@ -46,6 +46,7 @@ export function parseBackup(text: string): Backup {
   const version = (raw as { version?: unknown }).version
   if (
     version !== BACKUP_VERSION &&
+    version !== 10 &&
     version !== 9 &&
     version !== 8 &&
     version !== 7 &&
@@ -63,6 +64,7 @@ export function parseBackup(text: string): Backup {
   // Before version 6, records have no date and nothing deleted was kept: they read as such.
   // Before version 8, no notes, no exercise description, and sessions name their program day by position.
   // Before version 9, exercises have no photo. Before version 10, programs have no resets.
+  // Before version 11, blocks have the same sets throughout and exercise names read as English.
   if (
     version === 2 ||
     version === 3 ||
@@ -71,7 +73,8 @@ export function parseBackup(text: string): Backup {
     version === 6 ||
     version === 7 ||
     version === 8 ||
-    version === 9
+    version === 9 ||
+    version === 10
   )
     raw = { ...(raw as object), version: BACKUP_VERSION }
   if (version === 1) {

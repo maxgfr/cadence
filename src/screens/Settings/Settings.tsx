@@ -1,6 +1,7 @@
 import {
   Database,
   Download,
+  Dumbbell,
   ExternalLink,
   Info,
   LayoutTemplate,
@@ -17,7 +18,7 @@ import { useT } from '../../app/i18n.tsx'
 import { lastSynced } from '../../app/sync/lastSync.ts'
 import { useToast } from '../../app/toast.tsx'
 import { LANGUAGE_NAMES, LOCALES } from '../../core/i18n/locale.ts'
-import { BACKUP_VERSION, DEFAULT_SETTINGS, Language } from '../../core/model/schemas.ts'
+import { BACKUP_VERSION, DEFAULT_SETTINGS, ExerciseLanguage, Language } from '../../core/model/schemas.ts'
 import { BackupError, exportBackup, parseBackup, sessionsCsv } from '../../core/storage/backup.ts'
 import { Button } from '../../ui/components/Button.tsx'
 import { ListGroup, ListRow } from '../../ui/components/List.tsx'
@@ -71,6 +72,13 @@ export function Settings() {
               ...LOCALES.map((l) => ({ value: l, label: LANGUAGE_NAMES[l] })),
             ]}
             onChange={(e) => data.updateSettings({ language: Language.parse(e.target.value) })}
+          />
+          <SelectField
+            label={t.settings.exerciseLanguage}
+            hint={t.settings.exerciseLanguageHint}
+            value={s.exerciseLanguage}
+            options={LOCALES.map((l) => ({ value: l, label: LANGUAGE_NAMES[l] }))}
+            onChange={(e) => data.updateSettings({ exerciseLanguage: ExerciseLanguage.parse(e.target.value) })}
           />
         </div>
       </section>
@@ -143,6 +151,12 @@ export function Settings() {
           title={t.settings.aiDesign}
           subtitle={ai.ready ? (ai.config.modelId ?? t.settings.aiOn) : t.settings.aiOff}
           href="/settings/ai"
+        />
+        <ListRow
+          leading={<Dumbbell size={20} strokeWidth={1.75} />}
+          title={t.presets.title}
+          subtitle={t.presets.row}
+          href="/settings/presets"
         />
         <ListRow
           leading={<LayoutTemplate size={20} strokeWidth={1.75} />}

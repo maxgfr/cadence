@@ -4,6 +4,7 @@ import type { Goal, Program, ProgramLayout } from '../model/schemas.ts'
 import { generateStructured } from './client.ts'
 import {
   AiCoachReply,
+  athleteWords,
   buildPrompt,
   type CoachBuild,
   type CoachInput,
@@ -17,7 +18,14 @@ import {
   describedWithSources,
   researchPrompt,
 } from './coach.ts'
-import { AiExercises, type ExercisesDraft, exercisesFromAi } from './exercises.ts'
+import {
+  AiExercises,
+  type ExercisesAnswers,
+  type ExercisesDraft,
+  exercisesFromAi,
+  exercisesResearchPrompt,
+  withExercisesReference,
+} from './exercises.ts'
 import { AiGoals, type GoalProposal, goalsFromAi } from './goals.ts'
 import {
   AiProgram,
@@ -86,9 +94,11 @@ async function runBuild(
   b: CoachBuild,
   prompt: CoachPromptInput,
   signal: AbortSignal | undefined,
+  words: string,
+  search: ToolSet,
 ): Promise<CoachProposal | undefined> {
   const c = prompt.context
-  const pair = buildPrompt(b, c, prompt.history)
+  const pair = buildPrompt(b, c, prompt.history, words)
   const id = newId()
   switch (b.kind) {
     case 'program': {
@@ -100,13 +110,36 @@ async function runBuild(
       return { id, kind: 'program', origin: 'adjust', draft, week: b.index + 1 }
     }
     case 'exercises': {
-      const draft = await generateExercisesDraft(model, pair, c.library, signal)
+      const reference = b.answers.size === 'all' ? await exercisesFound(model, search, b.answers, signal) : ''
+      const draft = await generateExercisesDraft(model, withExercisesReference(pair, reference), c.library, signal)
       return draft.exercises.length > 0 ? { id, kind: 'add_exercises', draft } : undefined
     }
     case 'goals': {
       const goals = await generateGoalsDraft(model, pair, c.library, c.goals, c.today, signal)
       return goals.length > 0 ? { id, kind: 'add_goals', goals } : undefined
     }
+  }
+}
+
+/** Exercises of these sports found on the web; none when the model cannot search or the search fails. */
+async function exercisesFound(
+  model: LanguageModel,
+  tools: ToolSet,
+  answers: ExercisesAnswers,
+  signal: AbortSignal | undefined,
+): Promise<string> {
+  if (Object.keys(tools).length === 0) return ''
+  try {
+    const { text } = await generateText({
+      model,
+      tools,
+      ...exercisesResearchPrompt(answers),
+      ...(signal ? { abortSignal: signal } : {}),
+    })
+    return text
+  } catch {
+    signal?.throwIfAborted()
+    return ''
   }
 }
 
@@ -156,7 +189,7 @@ export async function generateCoachTurn(
   onBuilding?.(builds.length + (toCheck ? 1 : 0))
   const [checked, ...built] = await Promise.allSettled([
     toCheck ? researched(model, search, toCheck, signal) : undefined,
-    ...builds.map((b) => runBuild(model, b, prompt, signal)),
+    ...builds.map((b) => runBuild(model, b, prompt, signal, athleteWords(history, input), search)),
   ])
   signal?.throwIfAborted()
   let failed: unknown

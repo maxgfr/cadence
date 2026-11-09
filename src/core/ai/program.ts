@@ -10,12 +10,14 @@ import {
   DISCIPLINE_COLORS,
   type Discipline,
   type Exercise,
+  type ExerciseLanguage,
   type Goal,
   IntensityKind,
   Metric,
   type Program,
   type ProgramLayout,
   type Session,
+  type SetTarget,
   type Week,
 } from '../model/schemas.ts'
 import { type MeasureKind, measureOf } from '../stats/metrics.ts'
@@ -36,7 +38,15 @@ const AiBlock = z.object({
     .nullable()
     .describe('Only for an exercise not in the library: its discipline and how it is measured'),
   sets: z.number().describe('Number of sets or repetitions of the block'),
-  reps: z.number().nullable().describe('Reps per set (lifts, jumps)'),
+  reps: z.number().nullable().describe("Reps per set (lifts, jumps); the first set's when they differ"),
+  perSet: z
+    .array(
+      z.object({
+        reps: z.number().describe('Reps of this set'),
+        intensityValue: z.number().describe("This set's value, in the kind given in intensity; 0 when it has none"),
+      }),
+    )
+    .describe('Only when the sets differ (15 light, then 6 heavy): one entry per set, in order; empty otherwise'),
   distanceMeters: z.number().nullable().describe('Metres per repetition (swim and run)'),
   durationSeconds: z.number().nullable().describe('Seconds per set for timed holds'),
   intensity: z
@@ -99,6 +109,8 @@ interface Resolver {
 export interface AthleteLibrary {
   exercises: readonly Exercise[]
   disciplines: readonly Discipline[]
+  /** The language new exercises and machines are named in; English when not said. */
+  exerciseLanguage?: ExerciseLanguage
 }
 
 /**
@@ -178,14 +190,15 @@ function toWeek(w: AiWeek, r: Resolver, notes: string[], index: number): Week | 
         if (distance !== undefined) out.distance = distance
         const duration = pos(blk.durationSeconds)
         if (duration !== undefined) out.duration = duration
-        const iv = pos(blk.intensity?.value)
+        const iv = pos(blk.intensity?.value) ?? pos(blk.perSet.find((s) => pos(s.intensityValue))?.intensityValue)
+        let intensityOf: (v: number) => number = (v) => v
         if (blk.intensity && iv !== undefined) {
           // Small models write percentages as fractions (0.8) or put an effort rating (8) under a percentage.
           let kind = blk.intensity.kind
-          let value = iv
+          let scale = 1
           if (kind === 'pct1rm' || kind === 'pctmax') {
             if (iv <= 1.5) {
-              value = Math.round(iv * 100)
+              scale = 100
               notes.push('Percentages given as fractions (0.8) were read as 80%.')
             } else if (iv <= 10) {
               kind = 'rpe'
@@ -193,7 +206,8 @@ function toWeek(w: AiWeek, r: Resolver, notes: string[], index: number): Week | 
             }
           }
           const max = { kg: 1000, pct1rm: 110, rpe: 10, pace: 3600, pctmax: 100 }[kind]
-          out.intensity = { kind, value: Math.min(value, max) }
+          intensityOf = (v) => Math.min(scale === 1 ? v : Math.round(v * scale), max)
+          out.intensity = { kind, value: intensityOf(iv) }
         }
         const rest = pos(blk.restSeconds)
         if (rest !== undefined) out.rest = Math.round(rest)
@@ -208,6 +222,22 @@ function toWeek(w: AiWeek, r: Resolver, notes: string[], index: number): Week | 
           notes.push('Timed exercises given in reps were read as seconds.')
         }
         if (metric === 'distance_time') delete out.reps
+        // Set by set, for what is counted in reps: one entry per set, kept only when they differ.
+        const perSet = blk.perSet.slice(0, 50).map((s): SetTarget => {
+          const r = pos(s.reps)
+          const v = out.intensity ? pos(s.intensityValue) : undefined
+          return {
+            ...(r !== undefined ? { reps: clampInt(r, 1, 500) } : {}),
+            ...(v !== undefined ? { value: intensityOf(v) } : {}),
+          }
+        })
+        const first = perSet[0]
+        if (first && perSet.length > 1 && (metric === undefined || metric === 'weight_reps' || metric === 'reps')) {
+          out.sets = perSet.length
+          if (first.reps !== undefined) out.reps = first.reps
+          if (out.intensity && first.value !== undefined) out.intensity = { ...out.intensity, value: first.value }
+          if (perSet.some((s) => s.reps !== first.reps || s.value !== first.value)) out.perSet = perSet
+        }
         const tempo = text(blk.tempo, 20)
         // A tempo is digits ("3-1-1-0"); "-" or "n/a" means none.
         if (tempo && /\d/.test(tempo)) out.tempo = tempo
@@ -292,22 +322,31 @@ export function draftWeekFromAi(
  * What the model writes goes straight into the athlete's app: names, goals and notes in the language they read it
  * in (the prompts themselves stay in English, which every model follows best).
  */
-export function languageRule(locale: Locale = displayLocale()): string {
-  return `Write every name, goal and note in ${languageName(locale)}, as athletes who speak it write them.`
+export function languageRule(locale: Locale = displayLocale(), exerciseNames: Locale = 'en'): string {
+  return `Write every goal, note and session name in ${languageName(locale)}, as athletes who speak it write them. Name every exercise and machine in ${languageName(exerciseNames)}, as athletes who speak it name them, whatever language the athlete writes in.`
 }
+
+/** The language rule of a prompt about this athlete's library. */
+const libraryLanguageRule = (library: AthleteLibrary) => languageRule(displayLocale(), library.exerciseLanguage)
 
 const SYSTEM = `You are an experienced coach across sports: strength training, swimming, track and field, running and \
 others. You write safe, progressive, realistic programs that a self-coached athlete can follow without supervision.
 
 Rules:
 - Use exercises from the athlete's library below by their id whenever one fits: the exercise field is the id alone. \
-Only invent an exercise when nothing in the library fits; then give its name and fill newExercise.
+Match by meaning, across languages and synonyms ("Développé couché" is "Bench press"): never add an exercise that is \
+another name for one in the library. Only invent an exercise when nothing in the library fits; then give its name and \
+fill newExercise.
+- What the athlete specifies comes first: when they give a program of their own, keep its exercises, sets, reps and \
+loads exactly as written, and only fill in what they left out.
 - Give each day the discipline it trains, by the name of one of the athlete's disciplines; name a new one only for a \
 sport the athlete does not have yet.
 - Percentages are whole numbers: 80 means 80%. RPE is from 1 to 10.
 - Leave rest days out: list training days only.
 - Units are metric: kilograms, metres, seconds.
-- Strength: give sets and reps; give intensity as pct1rm or rpe (or kg only when a load is known).
+- Strength: give sets and reps; give intensity as pct1rm or rpe (or kg only when a load is known). When the sets of an \
+exercise differ (15 light, then 6 heavy; a pyramid; a top set and back-offs), fill perSet with one entry per set, its \
+reps and its intensity value, in order: never average them or keep only one.
 - Sprint: give the distance per repetition (or use a fixed-distance sprint exercise), intensity as pctmax, and full \
 recovery rest (2 to 8 minutes).
 - Swim: give distance per repetition and either a send-off interval (intervalSeconds) or rest, with an rpe intensity.
@@ -385,7 +424,7 @@ export function scratchPrompt(a: ScratchAnswers, library: AthleteLibrary, today:
   if (a.intensityStyle)
     lines.push(`Prescribe strength intensity as ${a.intensityStyle === 'pct1rm' ? '% of 1RM' : 'RPE'}.`)
   if (a.notes?.trim()) lines.push(`Other notes: ${a.notes.trim()}`)
-  return { system: `${SYSTEM}\n${languageRule()}\n\n${libraryText(library)}`, prompt: lines.join('\n') }
+  return { system: `${SYSTEM}\n${libraryLanguageRule(library)}\n\n${libraryText(library)}`, prompt: lines.join('\n') }
 }
 
 export interface ContextInput {
@@ -510,7 +549,7 @@ export interface ContextAnswers {
 
 export function contextPrompt(a: ContextAnswers, context: string, library: AthleteLibrary): PromptPair {
   return {
-    system: `${SYSTEM}\n${languageRule()}\n\n${libraryText(library)}`,
+    system: `${SYSTEM}\n${libraryLanguageRule(library)}\n\n${libraryText(library)}`,
     prompt: [
       ...shapeLines(a.shape),
       "Base it on the athlete's own training history below.",
@@ -548,7 +587,7 @@ export function adjustWeekPrompt(
         .join('\n')
     : '(none)'
   return {
-    system: `${SYSTEM}\n${languageRule()}\n\n${libraryText(library)}`,
+    system: `${SYSTEM}\n${libraryLanguageRule(library)}\n\n${libraryText(library)}`,
     prompt: [
       `The athlete follows "${program.name}" (goal: ${program.goal || 'not stated'}).`,
       `Rewrite week ${index + 1} so it fits what they actually did: if sets were missed or the effort was higher`,
