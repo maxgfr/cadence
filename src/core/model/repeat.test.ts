@@ -11,6 +11,8 @@ import {
   nextDay,
   plannedSets,
   replaceBlockExercise,
+  resetWeek,
+  restartProgram,
   restartSession,
   sessionFromDay,
   sessionInFocus,
@@ -92,6 +94,56 @@ describe('sessions in progress', () => {
     ])
     expect(after.entries[1]?.sets).toEqual([{ done: false }])
     expect(started.entries[0]?.sets[0]?.done).toBe(true)
+  })
+})
+
+describe('resetting progress', () => {
+  const plan = program([day('a'), day('b'), day('c')])
+  const set_ = program([day('a'), day('b')], { layout: 'sessions' })
+  const monday = '2026-11-02'
+  const doneOn = (date: string, d: number, startedAt: string) =>
+    session(date, [], { programRef: ref(d), startedAt: `${date}T${startedAt}:00.000Z` })
+  const resetAt = new Date('2026-11-04T12:00:00.000Z')
+
+  test('a week to do again: its sessions tick nothing, what comes after does', () => {
+    const sessions = [doneOn('2026-11-03', 0, '10:00'), doneOn('2026-11-03', 1, '18:00')]
+    const todo = must(weekTodo(set_, sessions, monday))
+    expect(todo.left).toBe(0)
+    const reset = resetWeek(todo, resetAt)
+    expect(must(weekTodo(reset, sessions, monday)).left).toBe(2)
+    const after = [...sessions, doneOn('2026-11-05', 0, '10:00')]
+    expect(must(weekTodo(reset, after, monday)).left).toBe(1)
+  })
+
+  test('a week reset leaves the weeks before it counted', () => {
+    const twoWeeks = program([], {
+      weeks: [
+        { id: 'w1', days: [day('a')] },
+        { id: 'w2', days: [day('b'), day('c')] },
+      ],
+    })
+    const earlier = doneOn('2026-10-27', 0, '10:00')
+    const secondWeek = { programId: 'p', week: 1, day: 0 }
+    const thisWeek = { ...doneOn('2026-11-03', 0, '10:00'), programRef: secondWeek }
+    const reset = resetWeek(must(weekTodo(twoWeeks, [earlier, thisWeek], monday)), resetAt)
+    expect(reset.resets).toEqual([{ from: '2026-11-03', at: resetAt.toISOString() }])
+    expect(nextDay(reset, [earlier, thisWeek])).toEqual(secondWeek)
+  })
+
+  test('a program restarted starts from its first day, and a later reset does not bring the old sessions back', () => {
+    const old = doneOn('2026-10-27', 2, '10:00')
+    expect(nextDay(plan, [old])).toBeUndefined()
+    const restarted = restartProgram(plan, resetAt)
+    expect(nextDay(restarted, [old])).toEqual(ref(0))
+    const today = doneOn('2026-11-05', 0, '10:00')
+    const reset = resetWeek(must(weekTodo(restarted, [old, today], monday)), new Date('2026-11-05T12:00:00.000Z'))
+    expect(reset.resets).toHaveLength(2)
+    expect(nextDay(reset, [old, today])).toEqual(ref(0))
+  })
+
+  test('a reset with nothing done changes nothing', () => {
+    const todo = must(weekTodo(plan, [], monday))
+    expect(resetWeek(todo, resetAt)).toBe(plan)
   })
 })
 

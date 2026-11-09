@@ -1,5 +1,13 @@
-import { generateText, type LanguageModel, type ModelMessage, NoObjectGeneratedError, Output } from 'ai'
-import { describeError, hasProvider, type LlmSettings, loadModel, registerProvider } from 'llm-connect'
+import { generateText, type LanguageModel, type ModelMessage, NoObjectGeneratedError, Output, type ToolSet } from 'ai'
+import {
+  describeError,
+  hasProvider,
+  type LlmSettings,
+  loadModel,
+  registerProvider,
+  resolveCapabilities,
+  webSearchTools,
+} from 'llm-connect'
 import type { z } from 'zod'
 import { currentMessages } from '../i18n/index.ts'
 import { type CatalogProvider, type ClientKind, CUSTOM_PROVIDER } from './catalog.ts'
@@ -73,6 +81,21 @@ export async function createModel(ref: ModelRef): Promise<LanguageModel> {
   const settings = toLlmSettings(ref)
   if (ref.provider.client === 'openrouter' && ref.provider.id !== CUSTOM_PROVIDER) await registerOpenRouter()
   return loadModel(settings)
+}
+
+/**
+ * The provider's own web search for this model, or nothing when it has none. A user's own address may not be the
+ * provider, so it gets none either.
+ */
+export async function searchToolsFor(ref: ModelRef): Promise<ToolSet> {
+  if (ref.provider.id === CUSTOM_PROVIDER || ref.baseUrl?.trim()) return {}
+  const model = ref.provider.models.find((m) => m.id === ref.modelId)
+  const { webSearch } = resolveCapabilities({
+    kind: ref.provider.client,
+    modelId: ref.modelId,
+    catalog: { toolCall: model?.structured ?? false },
+  })
+  return webSearchTools(webSearch, { maxUses: 3 })
 }
 
 export interface StructuredRequest<T> {

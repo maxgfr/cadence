@@ -26,6 +26,7 @@ import { TextArea } from './components/TextArea.tsx'
 import { cx } from './cx.ts'
 import { ColorPicker, freeColor } from './DisciplineForm.tsx'
 import styles from './Forms.module.css'
+import { linksIn, WebLink } from './links.tsx'
 import { compressPhoto } from './photo.ts'
 import { RestField } from './RestField.tsx'
 import { useUnits } from './units.ts'
@@ -255,6 +256,13 @@ export function ExerciseForm({
         value={description}
         onChange={(e) => setDescription(e.target.value)}
       />
+      {linksIn(description).length > 0 && (
+        <div className={styles.links}>
+          {linksIn(description).map((url) => (
+            <WebLink key={url} href={url} />
+          ))}
+        </div>
+      )}
       {/* Hands over to the coach, the only way to AI: this form closes first, being a modal over it. */}
       {exercise &&
         !draft &&

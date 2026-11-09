@@ -7,7 +7,7 @@ import { useData } from '../../app/data.tsx'
 import { useT } from '../../app/i18n.tsx'
 import { useToast } from '../../app/toast.tsx'
 import { formatDay, startOfWeek } from '../../core/model/dates.ts'
-import { activeSessions, currentRef, dayToStart, programsUnderWay } from '../../core/model/program.ts'
+import { activeSessions, currentRef, dayToStart, programsUnderWay, resetWeek } from '../../core/model/program.ts'
 import type { Program, ProgramRef, Session } from '../../core/model/schemas.ts'
 import { goalProgress } from '../../core/stats/trends.ts'
 import { Button, buttonClass } from '../../ui/components/Button.tsx'
@@ -61,6 +61,7 @@ export function Today() {
   const t = useT()
   const ai = useAi()
   const coach = useCoach()
+  const toast = useToast()
   useCoachScreen({ where: 'Today: their week, and the sessions they can start' })
   const start = useStartSession()
   const actives = activeSessions(data.sessions)
@@ -137,6 +138,12 @@ export function Today() {
                 todo={todo}
                 isRunning={isRunning}
                 onStart={(ref) => pick(todo.program, ref)}
+                onReset={async () => {
+                  await data.put('programs', resetWeek(todo))
+                  toast(t.today.weekWasReset, [
+                    { label: t.log.undo, onClick: () => data.put('programs', todo.program) },
+                  ])
+                }}
               />
             ))
           ) : (

@@ -97,6 +97,17 @@
   font-size: var(--text-footnote);
 }
 
+.links {
+  display: grid;
+  gap: var(--space-2);
+  font-size: var(--text-footnote);
+  overflow-wrap: anywhere;
+}
+
+.links a {
+  color: var(--accent);
+}
+
 .photoField {
   display: grid;
   gap: var(--space-2);

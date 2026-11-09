@@ -42,7 +42,8 @@ test('an exercise has its own description and notes, read while training', async
   await startWithGym(page)
   await page.goto('./#/exercises')
   await page.getByRole('button', { name: /^Back squat/ }).click()
-  await page.getByLabel('Description').fill('Brace, then sit between the hips.')
+  await page.getByLabel('Description').fill('Brace, then sit between the hips.\nhttps://example.com/squat-rack')
+  await expect(page.getByRole('dialog').getByRole('link', { name: 'https://example.com/squat-rack' })).toBeVisible()
   await page.getByLabel('My notes').fill('Wider stance feels better')
   await page.getByRole('button', { name: 'Save', exact: true }).click()
   await expect(page.getByText('Exercise saved')).toBeVisible()
@@ -54,6 +55,10 @@ test('an exercise has its own description and notes, read while training', async
     .click()
   await page.getByText('Details').first().click()
   await expect(page.getByText('Brace, then sit between the hips.')).toBeVisible()
+  await expect(page.getByRole('link', { name: 'https://example.com/squat-rack' })).toHaveAttribute(
+    'href',
+    'https://example.com/squat-rack',
+  )
   await expect(page.getByText('Wider stance feels better')).toBeVisible()
 })
 

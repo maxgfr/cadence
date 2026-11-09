@@ -27,6 +27,7 @@ import { EmptyState } from '../../ui/components/EmptyState.tsx'
 import { IconButton } from '../../ui/components/IconButton.tsx'
 import { cx } from '../../ui/cx.ts'
 import { ExercisePicker } from '../../ui/ExercisePicker.tsx'
+import { LinkedText } from '../../ui/links.tsx'
 import { useUnits } from '../../ui/units.ts'
 import { FinishSheet } from './FinishSheet.tsx'
 import styles from './Log.module.css'
@@ -357,8 +358,16 @@ function EntryCard({
         <details className={styles.about}>
           <summary>{t.log.about}</summary>
           {exercise.photo && <img src={exercise.photo} alt={t.forms.exercise.photoOf(exercise.name)} loading="lazy" />}
-          {exercise.description && <p>{exercise.description}</p>}
-          {exercise.notes && <p>{exercise.notes}</p>}
+          {exercise.description && (
+            <p>
+              <LinkedText text={exercise.description} />
+            </p>
+          )}
+          {exercise.notes && (
+            <p>
+              <LinkedText text={exercise.notes} />
+            </p>
+          )}
         </details>
       )}
       <div className={styles.table}>

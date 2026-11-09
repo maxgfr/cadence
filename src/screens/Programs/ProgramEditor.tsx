@@ -8,7 +8,14 @@ import { type ProgramDraft, useDraft } from '../../app/drafts.tsx'
 import { useT } from '../../app/i18n.tsx'
 import { useToast } from '../../app/toast.tsx'
 import { newId } from '../../core/model/ids.ts'
-import { cloneWeek, describeBlock, isSessionSet, nextDay } from '../../core/model/program.ts'
+import {
+  cloneWeek,
+  completedDays,
+  describeBlock,
+  isSessionSet,
+  nextDay,
+  restartProgram,
+} from '../../core/model/program.ts'
 import type { Block, Day, Program } from '../../core/model/schemas.ts'
 import { Button, buttonClass } from '../../ui/components/Button.tsx'
 import { EmptyState } from '../../ui/components/EmptyState.tsx'
@@ -393,6 +400,29 @@ function ProgramForm({ initial, draft, saved }: { initial: Program; draft?: Prog
 
       {saved && (
         <div className={styles.danger}>
+          {/* Only on what is stored: unsaved edits are not written by the way. */}
+          {!dirty && completedDays(program, data.sessions) > 0 && (
+            <Button
+              variant="plain"
+              onClick={async () => {
+                const before = program
+                const restarted = restartProgram(before)
+                await data.put('programs', restarted)
+                setProgram(restarted)
+                toast(m.programRestarted, [
+                  {
+                    label: m.undo,
+                    onClick: async () => {
+                      await data.put('programs', before)
+                      setProgram(before)
+                    },
+                  },
+                ])
+              }}
+            >
+              {m.restartProgram}
+            </Button>
+          )}
           {confirmDelete ? (
             <>
               <p>{m.confirmDelete}</p>

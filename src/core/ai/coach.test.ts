@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, test } from 'bun:test'
+import { type ToolSet, tool } from 'ai'
 import { MockLanguageModelV4 } from 'ai/test'
 import { z } from 'zod'
 import { setDisplayLocale } from '../i18n/locale.ts'
@@ -12,6 +13,7 @@ import {
   type CoachContext,
   coachFromAi,
   coachSystem,
+  describedWithSources,
   sessionText,
   setsFromAi,
 } from './coach.ts'
@@ -342,6 +344,88 @@ describe('what the coach has built', () => {
     expect(turn.reply).toBe('Here you go.')
     expect(turn.proposals.map((p) => p.kind)).toEqual(['log_sets'])
     expect(turn.failed).toBeInstanceOf(Error)
+  })
+})
+
+describe('a description checked on the web', () => {
+  const search: ToolSet = { web_search: tool({ description: 'search', inputSchema: z.object({}) }) }
+  const usage = {
+    inputTokens: { total: 1, noCache: 1, cacheRead: undefined, cacheWrite: undefined },
+    outputTokens: { total: 1, text: 1, reasoning: undefined },
+  }
+  const asked = answer({
+    reply: 'Here it is.',
+    describeExercise: [{ exercise: 'back-squat', description: 'From memory.' }],
+  })
+  /** The coach answers, then the search behind the description gives `found`. */
+  const searching = (found: () => { text: string; urls: string[] }) =>
+    new MockLanguageModelV4({
+      doGenerate: async (options) => {
+        const coach = JSON.stringify(options.prompt).includes('You are the coach inside Cadence')
+        const { text, urls } = coach ? { text: JSON.stringify(asked), urls: [] } : found()
+        return {
+          content: [
+            { type: 'text' as const, text },
+            ...urls.map((url, i) => ({ type: 'source' as const, sourceType: 'url' as const, id: `s${i}`, url })),
+          ],
+          finishReason: { unified: 'stop' as const, raw: undefined },
+          usage,
+          warnings: [],
+        }
+      },
+    })
+  const describedBy = (turn: { proposals: readonly { kind: string; description?: string }[] }) =>
+    turn.proposals.find((p) => p.kind === 'exercise_description')?.description
+
+  test('its text comes from the search, followed by its https sources, once each', async () => {
+    const model = searching(() => ({
+      text: 'Checked text.',
+      urls: ['https://a.example/rack', 'http://b.example/x', 'https://a.example/rack'],
+    }))
+    const turn = await generateCoachTurn(
+      model,
+      { context: ctx(), history: '' },
+      [],
+      { text: 'describe' },
+      undefined,
+      undefined,
+      search,
+    )
+    expect(describedBy(turn)).toBe('Checked text.\n\nSources\nhttps://a.example/rack')
+    expect(model.doGenerateCalls).toHaveLength(2)
+    expect(model.doGenerateCalls[0]?.tools).toBeUndefined()
+    expect(model.doGenerateCalls[1]?.tools?.map((t) => t.name)).toEqual(['web_search'])
+  })
+
+  test('no search tool, no search: one call, the coach’s own text', async () => {
+    const model = searching(() => ({ text: 'never', urls: [] }))
+    const turn = await generateCoachTurn(model, { context: ctx(), history: '' }, [], { text: 'describe' })
+    expect(describedBy(turn)).toBe('From memory.')
+    expect(model.doGenerateCalls).toHaveLength(1)
+  })
+
+  test('a search that fails keeps the description and says why', async () => {
+    const model = searching(() => {
+      throw new Error('overloaded')
+    })
+    const turn = await generateCoachTurn(
+      model,
+      { context: ctx(), history: '' },
+      [],
+      { text: 'describe' },
+      undefined,
+      undefined,
+      search,
+    )
+    expect(describedBy(turn)).toBe('From memory.')
+    expect(turn.failed).toBeInstanceOf(Error)
+  })
+
+  test('sources always fit in what a description can hold', () => {
+    const urls = Array.from({ length: 8 }, (_, i) => ({ sourceType: 'url', url: `https://e.example/${i}` }))
+    const out = describedWithSources('x'.repeat(5000), urls)
+    expect(out.length).toBeLessThanOrEqual(4000)
+    expect(out.endsWith('https://e.example/4')).toBe(true)
   })
 })
 

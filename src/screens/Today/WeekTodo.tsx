@@ -3,6 +3,7 @@ import { useT } from '../../app/i18n.tsx'
 import { formatShortDay } from '../../core/model/dates.ts'
 import type { WeekTodo } from '../../core/model/program.ts'
 import type { ProgramRef } from '../../core/model/schemas.ts'
+import { Button } from '../../ui/components/Button.tsx'
 import { ListGroup, ListRow } from '../../ui/components/List.tsx'
 import styles from './Today.module.css'
 
@@ -11,10 +12,12 @@ export function WeekTodoCard({
   todo,
   isRunning,
   onStart,
+  onReset,
 }: {
   todo: WeekTodo
   isRunning: (ref: ProgramRef) => boolean
   onStart: (ref: ProgramRef) => void
+  onReset: () => void
 }) {
   const t = useT()
   const { program, week, days, left, programLeft } = todo
@@ -26,34 +29,41 @@ export function WeekTodoCard({
     .filter(Boolean)
     .join(' · ')
   return (
-    <ListGroup title={program.name} footer={summary}>
-      {days.map(({ ref, day, done }) => {
-        const running = isRunning(ref)
-        return (
-          <ListRow
-            key={day.id}
-            leading={
-              running ? (
-                <Play className={styles.running} size={20} strokeWidth={2} />
-              ) : done ? (
-                <CheckCircle2 className={styles.done} size={22} strokeWidth={2} />
-              ) : (
-                <Circle className={styles.todo} size={22} strokeWidth={1.75} />
-              )
-            }
-            title={day.name}
-            subtitle={
-              running
-                ? t.today.inProgress
-                : done
-                  ? t.today.doneOn(formatShortDay(done.date))
-                  : t.today.toDo(day.blocks.length)
-            }
-            onClick={() => onStart(ref)}
-            chevron
-          />
-        )
-      })}
-    </ListGroup>
+    <>
+      <ListGroup title={program.name} footer={summary}>
+        {days.map(({ ref, day, done }) => {
+          const running = isRunning(ref)
+          return (
+            <ListRow
+              key={day.id}
+              leading={
+                running ? (
+                  <Play className={styles.running} size={20} strokeWidth={2} />
+                ) : done ? (
+                  <CheckCircle2 className={styles.done} size={22} strokeWidth={2} />
+                ) : (
+                  <Circle className={styles.todo} size={22} strokeWidth={1.75} />
+                )
+              }
+              title={day.name}
+              subtitle={
+                running
+                  ? t.today.inProgress
+                  : done
+                    ? t.today.doneOn(formatShortDay(done.date))
+                    : t.today.toDo(day.blocks.length)
+              }
+              onClick={() => onStart(ref)}
+              chevron
+            />
+          )
+        })}
+      </ListGroup>
+      {left < days.length && (
+        <Button variant="plain" full aria-label={t.today.resetWeekOf(program.name)} onClick={onReset}>
+          {t.today.resetWeek}
+        </Button>
+      )}
+    </>
   )
 }

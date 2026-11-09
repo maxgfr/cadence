@@ -146,6 +146,11 @@ export const Program = z.object({
   weeks: z.array(Week).min(1),
   source: ProgramSource,
   templateId: z.string().optional(),
+  /**
+   * Resets of its progress: the sessions dated from `from` and started before `at` no longer tick anything. They stay
+   * in the history and the stats.
+   */
+  resets: z.array(z.object({ from: z.string(), at: z.string() })).optional(),
   createdAt: z.string(),
   updatedAt: z.string(),
 })
@@ -279,9 +284,9 @@ export const DEFAULT_SETTINGS: Settings = Settings.parse({})
  * rest between sets (`rest`); earlier versions read with none, the settings' rest standing for all. 8: free notes
  * (`notes`), an exercise's `description`, and sessions name their program day by id (`programRef.dayId`); earlier
  * versions read with no notes, no description, and their days by position. 9: an exercise can hold a `photo`; earlier
- * versions read with none.
+ * versions read with none. 10: a program can hold `resets` of its progress; earlier versions read with none.
  */
-export const BACKUP_VERSION = 9
+export const BACKUP_VERSION = 10
 export const Backup = z.object({
   app: z.literal('cadence'),
   version: z.literal(BACKUP_VERSION),

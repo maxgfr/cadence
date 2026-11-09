@@ -140,6 +140,11 @@
   font-variant-numeric: tabular-nums;
 }
 
+.about a {
+  color: var(--accent);
+  overflow-wrap: anywhere;
+}
+
 .sessionActions {
   display: grid;
   gap: var(--space-1);

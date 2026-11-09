@@ -1,4 +1,4 @@
-import type { LanguageModel } from 'ai'
+import { generateText, type LanguageModel, type ToolSet } from 'ai'
 import { newId } from '../model/ids.ts'
 import type { Goal, Program, ProgramLayout } from '../model/schemas.ts'
 import { generateStructured } from './client.ts'
@@ -14,6 +14,8 @@ import {
   coachFromAi,
   coachMessages,
   coachSystem,
+  describedWithSources,
+  researchPrompt,
 } from './coach.ts'
 import { AiExercises, type ExercisesDraft, exercisesFromAi } from './exercises.ts'
 import { AiGoals, type GoalProposal, goalsFromAi } from './goals.ts'
@@ -26,6 +28,8 @@ import {
   draftWeekFromAi,
   type PromptPair,
 } from './program.ts'
+
+type DescriptionProposal = Extract<CoachProposal, { kind: 'exercise_description' }>
 
 /** Generates a whole program; the result is a draft the user edits and saves (nothing is stored here). */
 export async function generateProgramDraft(
@@ -106,10 +110,27 @@ async function runBuild(
   }
 }
 
+/** A description the coach proposed, checked on the web and followed by its sources; as it was when nothing came back. */
+async function researched(
+  model: LanguageModel,
+  tools: ToolSet,
+  p: DescriptionProposal,
+  signal: AbortSignal | undefined,
+): Promise<DescriptionProposal> {
+  const { text, sources } = await generateText({
+    model,
+    tools,
+    ...researchPrompt(p.exercise.name, p.description),
+    ...(signal ? { abortSignal: signal } : {}),
+  })
+  return text.trim() ? { ...p, description: describedWithSources(text, sources) } : p
+}
+
 /**
  * One turn with the coach: its reply and the changes it proposes, none applied. What it was asked to build (a
- * program, a week, exercises, goals) is then designed by that feature's own call, all at once; `onBuilding` says when
- * that starts. One that fails leaves the others, its error in `failed`.
+ * program, a week, exercises, goals) is then designed by that feature's own call, all at once, and a description is
+ * checked on the web when `search` holds the model's search tool; `onBuilding` says when that starts. One that fails
+ * leaves the others, its error in `failed`, and a description that could not be checked stays as written.
  */
 export async function generateCoachTurn(
   model: LanguageModel,
@@ -118,6 +139,7 @@ export async function generateCoachTurn(
   input: CoachInput,
   signal?: AbortSignal,
   onBuilding?: (count: number) => void,
+  search: ToolSet = {},
 ): Promise<CoachTurn> {
   const ai = await generateStructured(model, {
     system: coachSystem(prompt),
@@ -127,11 +149,19 @@ export async function generateCoachTurn(
     ...(signal ? { signal } : {}),
   })
   const { reply, proposals, builds } = coachFromAi(ai, prompt.context)
-  if (builds.length === 0) return { reply, proposals }
-  onBuilding?.(builds.length)
-  const built = await Promise.allSettled(builds.map((b) => runBuild(model, b, prompt, signal)))
+  const at = Object.keys(search).length > 0 ? proposals.findIndex((p) => p.kind === 'exercise_description') : -1
+  const description = proposals[at]
+  const toCheck = description?.kind === 'exercise_description' ? description : undefined
+  if (builds.length === 0 && !toCheck) return { reply, proposals }
+  onBuilding?.(builds.length + (toCheck ? 1 : 0))
+  const [checked, ...built] = await Promise.allSettled([
+    toCheck ? researched(model, search, toCheck, signal) : undefined,
+    ...builds.map((b) => runBuild(model, b, prompt, signal)),
+  ])
   signal?.throwIfAborted()
   let failed: unknown
+  if (checked.status === 'rejected') failed = checked.reason
+  else if (checked.value) proposals[at] = checked.value
   for (const r of built) {
     if (r.status === 'rejected') failed ??= r.reason
     else if (r.value) proposals.push(r.value)

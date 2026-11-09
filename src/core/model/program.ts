@@ -97,6 +97,15 @@ export function currentRef(programs: readonly Program[], ref: ProgramRef | undef
   return at && ref && { ...ref, ...at }
 }
 
+/** A reset took this session out of its program's progress; it stays in the history and the stats. */
+const wasReset = (program: Program, s: Session) =>
+  (program.resets ?? []).some((r) => s.date >= r.from && (s.startedAt ?? s.date) < r.at)
+
+/** The program from its start again: everything done so far no longer counts for it. */
+export function restartProgram(program: Program, now: Date = new Date()): Program {
+  return { ...program, resets: [{ from: '', at: now.toISOString() }] }
+}
+
 const order = (r: Pick<ProgramRef, 'week' | 'day'>, program: Program) => {
   let n = 0
   for (let w = 0; w < r.week; w++) n += program.weeks[w]?.days.length ?? 0
@@ -115,7 +124,7 @@ export function nextDay(program: Program, sessions: readonly Session[]): Program
     let latest: Session | undefined
     let latestDay = -1
     for (const s of sessions) {
-      if (s.status !== 'done' || s.programRef?.programId !== program.id) continue
+      if (s.status !== 'done' || s.programRef?.programId !== program.id || wasReset(program, s)) continue
       const at = locate(program, s.programRef)
       if (!at) continue
       if (
@@ -131,7 +140,7 @@ export function nextDay(program: Program, sessions: readonly Session[]): Program
   }
   let furthest = -1
   for (const s of sessions) {
-    if (s.status !== 'done' || s.programRef?.programId !== program.id) continue
+    if (s.status !== 'done' || s.programRef?.programId !== program.id || wasReset(program, s)) continue
     const at = locate(program, s.programRef)
     if (at) furthest = Math.max(furthest, order(at, program))
   }
@@ -146,7 +155,9 @@ export function nextDay(program: Program, sessions: readonly Session[]): Program
 /** Days done so far: up to the next one for a plan of weeks, every session logged for a set of sessions. */
 export function completedDays(program: Program, sessions: readonly Session[]): number {
   if (isSessionSet(program))
-    return sessions.filter((s) => s.status === 'done' && s.programRef?.programId === program.id).length
+    return sessions.filter(
+      (s) => s.status === 'done' && s.programRef?.programId === program.id && !wasReset(program, s),
+    ).length
   const next = nextDay(program, sessions)
   return next ? order(next, program) : totalDays(program)
 }
@@ -445,7 +456,8 @@ export function weekTodo(program: Program, sessions: readonly Session[], weekSta
   const weekEnd = addDays(weekStart, 6)
   // Each session with its day where it is now; one whose day was deleted since ticks nothing.
   const mine = sessions.flatMap((session) => {
-    if (session.status !== 'done' || session.programRef?.programId !== program.id) return []
+    if (session.status !== 'done' || session.programRef?.programId !== program.id || wasReset(program, session))
+      return []
     const at = locate(program, session.programRef)
     return at ? [{ session, ...at }] : []
   })
@@ -486,6 +498,13 @@ export function weekTodo(program: Program, sessions: readonly Session[], weekSta
     left: days.filter((x) => !x.done).length,
     programLeft: set ? undefined : totalDays(program) - completedDays(program, sessions),
   }
+}
+
+/** The program with this week's sessions to do again: those done since the first one ticked no longer count. */
+export function resetWeek(todo: WeekTodo, now: Date = new Date()): Program {
+  const from = todo.days.flatMap((x) => (x.done ? [x.done.date] : [])).sort()[0]
+  if (from === undefined) return todo.program
+  return { ...todo.program, resets: [...(todo.program.resets ?? []), { from, at: now.toISOString() }] }
 }
 
 /**

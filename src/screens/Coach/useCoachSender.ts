@@ -60,6 +60,7 @@ export function useCoachTurn() {
           { text },
           ctrl.signal,
           () => setStatus({ kind: 'building' }),
+          await ai.searchTools(),
         )
       } finally {
         abort.current = null

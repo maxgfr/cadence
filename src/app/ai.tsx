@@ -1,4 +1,4 @@
-import type { LanguageModel } from 'ai'
+import type { LanguageModel, ToolSet } from 'ai'
 import { createContext, type ReactNode, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import type { ModelRef } from '../core/ai/client.ts'
 import { currentMessages } from '../core/i18n/index.ts'
@@ -27,6 +27,8 @@ interface Ai {
   getKey(): Promise<string>
   /** Builds the configured model; loads the AI code on first use. */
   model(): Promise<LanguageModel>
+  /** The configured model's own web search; empty when it has none. */
+  searchTools(): Promise<ToolSet>
 }
 
 const AiContext = createContext<Ai | null>(null)
@@ -100,10 +102,15 @@ export function AiProvider({ children }: { children: ReactNode }) {
     return createModel(await modelRef())
   }, [modelRef])
 
+  const searchTools = useCallback(async () => {
+    const { searchToolsFor } = await import('../core/ai/client.ts')
+    return searchToolsFor(await modelRef())
+  }, [modelRef])
+
   const value = useMemo<Ai>(() => {
     const ready = Boolean(config.providerId && config.modelId && (hasKey || config.providerId === 'custom'))
-    return { config, hasKey, ready, save, getKey, model }
-  }, [config, hasKey, save, getKey, model])
+    return { config, hasKey, ready, save, getKey, model, searchTools }
+  }, [config, hasKey, save, getKey, model, searchTools])
 
   return <AiContext.Provider value={value}>{children}</AiContext.Provider>
 }

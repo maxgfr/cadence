@@ -91,6 +91,32 @@ test('several sessions run at once, and each is restarted or discarded with undo
   await expect(page.getByRole('button', { name: /^Full body A.*Done/ })).toBeVisible()
 })
 
+test('a week is reset and a program restarted, the history staying whole', async ({ page }) => {
+  await startWithGym(page)
+  await doFullBodyA(page, '82.5')
+  const week = page.getByRole('region', { name: 'Beginner full body' })
+  await expect(week.getByText(/1 of 3 done/)).toBeVisible()
+
+  await page.getByRole('button', { name: 'Reset this week: Beginner full body' }).click()
+  await expect(week.getByText(/0 of 3 done/)).toBeVisible()
+  await page.getByRole('button', { name: 'Undo' }).click()
+  await expect(week.getByText(/1 of 3 done/)).toBeVisible()
+
+  await page.goto('./#/programs')
+  await page
+    .getByRole('link', { name: /^Beginner full body/ })
+    .first()
+    .click()
+  await page.getByRole('button', { name: 'Restart program' }).click()
+  await expect(page.getByText('Program restarted. Your history is kept.')).toBeVisible()
+
+  await page.goto('./#/')
+  await expect(week.getByText(/0 of 3 done/)).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Reset this week: Beginner full body' })).toHaveCount(0)
+  await page.goto('./#/progress?view=history')
+  await expect(page.getByRole('link', { name: /^Full body A/ })).toBeVisible()
+})
+
 test('an exercise is replaced in the session, undone, or carried into the program', async ({ page }) => {
   await startWithGym(page)
   await page
