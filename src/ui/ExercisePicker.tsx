@@ -1,5 +1,5 @@
 import { Plus, Search } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useData } from '../app/data.tsx'
 import { useT } from '../app/i18n.tsx'
 import { searchExercises } from '../core/library/search.ts'
@@ -31,6 +31,12 @@ export function ExercisePicker({ open, onClose, onPick, disciplineId, title }: E
   const [query, setQuery] = useState('')
   const [creating, setCreating] = useState(false)
   const [adding, setAdding] = useState<PresetSlug | null>(null)
+  // Back to an empty search once closed, however it was closed.
+  useEffect(() => {
+    if (open) return
+    setCreating(false)
+    setQuery('')
+  }, [open])
   const found = useMemo(
     () => searchExercises(query, exercises, settings.exerciseLanguage),
     [query, exercises, settings.exerciseLanguage],
@@ -94,9 +100,9 @@ export function ExercisePicker({ open, onClose, onPick, disciplineId, title }: E
           initialName={query.trim()}
           {...(disciplineId ? { initialDisciplineId: disciplineId } : {})}
           onDone={(saved) => {
-            setCreating(false)
-            setQuery('')
+            // Picked: the sheet closes straight from the form; going back to the list first would flash it.
             if (saved) onPick(saved)
+            else setCreating(false)
           }}
         />
       ) : (
