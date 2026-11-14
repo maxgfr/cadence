@@ -2,6 +2,9 @@ import './ui/global.css'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { App } from './App.tsx'
+import { trackKeyboard } from './ui/keyboard.ts'
+
+trackKeyboard()
 
 // Voice notes are gone: the database where an earlier version kept those recorded offline goes with them.
 globalThis.indexedDB?.deleteDatabase('cadence-voice')

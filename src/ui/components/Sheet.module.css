@@ -60,6 +60,25 @@
   }
 }
 
+/* Tall: the height it may take, kept while its content changes; the body scrolls its own parts. */
+.sheet.tall {
+  height: min(90dvh, calc(100dvh - var(--kb-inset) - 2rem));
+  overflow: hidden;
+}
+
+.tall[open] {
+  display: flex;
+  flex-direction: column;
+}
+
+.tall .body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  overflow-y: auto;
+}
+
 /*
  * Filled: the whole screen on phones, down to the keyboard's top edge, inside the safe areas. Its body fills it and
  * scrolls its own parts; the sheet itself never scrolls.

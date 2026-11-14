@@ -18,13 +18,18 @@ export interface SheetProps {
    * names the sheet.
    */
   fill?: boolean
+  /**
+   * Keeps its full height while its content changes (a search narrowing its results) and lets its body scroll its own
+   * parts: the search stays in place and only the results scroll.
+   */
+  tall?: boolean
 }
 
 const FIELD = 'input:not([type="hidden"]):not([disabled]), textarea:not([disabled]), select:not([disabled])'
 const CONTROL = 'button:not([disabled]), [href], [tabindex]:not([tabindex="-1"])'
 
 /** Native modal <dialog>: bottom sheet on phones, centred panel elsewhere (see `fill`). Escape closes it. */
-export function Sheet({ open, title, onClose, children, initialFocus, fill = false }: SheetProps) {
+export function Sheet({ open, title, onClose, children, initialFocus, fill = false, tall = false }: SheetProps) {
   const ref = useRef<HTMLDialogElement>(null)
   const bodyRef = useRef<HTMLDivElement>(null)
   const t = useT()
@@ -49,7 +54,7 @@ export function Sheet({ open, title, onClose, children, initialFocus, fill = fal
   return (
     <dialog
       ref={ref}
-      className={cx(styles.sheet, fill && styles.fill)}
+      className={cx(styles.sheet, fill && styles.fill, tall && styles.tall)}
       aria-labelledby={id}
       // React passes a sheet's close on to the sheets around it: only this one's own closes it.
       onClose={(e) => {
