@@ -74,6 +74,8 @@ export const PRESET_EXERCISES: readonly PresetExercise[] = [
   load('barbell-row', 'back', 'biceps'),
   load('dumbbell-row', 'back', 'biceps'),
   load('t-bar-row', 'back', 'biceps'),
+  load('trap-bar-deadlift', 'quads', 'glutes', 'hamstrings', 'back'),
+  load('good-morning', 'hamstrings', 'glutes', 'back'),
   load('seated-cable-row', 'back', 'biceps'),
   load('machine-row', 'back', 'biceps'),
   load('lat-pulldown', 'back', 'biceps'),
@@ -85,6 +87,7 @@ export const PRESET_EXERCISES: readonly PresetExercise[] = [
   load('shrug', 'back'),
   // Shoulders.
   load('overhead-press', 'shoulders', 'triceps'),
+  load('push-press', 'shoulders', 'triceps', 'quads'),
   load('seated-dumbbell-press', 'shoulders', 'triceps'),
   load('arnold-press', 'shoulders', 'triceps'),
   load('machine-shoulder-press', 'shoulders', 'triceps'),
@@ -98,6 +101,8 @@ export const PRESET_EXERCISES: readonly PresetExercise[] = [
   // Arms.
   load('barbell-curl', 'biceps'),
   load('dumbbell-curl', 'biceps'),
+  load('incline-dumbbell-curl', 'biceps'),
+  load('reverse-curl', 'biceps'),
   load('hammer-curl', 'biceps'),
   load('preacher-curl', 'biceps'),
   load('cable-curl', 'biceps'),
@@ -157,6 +162,22 @@ export const PRESET_EXERCISES: readonly PresetExercise[] = [
   load('dumbbell-pullover', 'chest', 'back'),
   load('cable-pull-through', 'glutes', 'hamstrings'),
   load('cable-wood-chop', 'core'),
+  // Machines of gym80's range (weight stack and plate-loaded) that the movements above do not already cover.
+  load('machine-high-row', 'back', 'shoulders', 'biceps'),
+  load('pullover-machine', 'back', 'chest'),
+  load('decline-machine-press', 'chest', 'triceps'),
+  load('seated-dip-machine', 'triceps', 'chest'),
+  load('smith-machine-bench-press', 'chest', 'triceps', 'shoulders'),
+  load('lower-back-machine', 'back'),
+  load('rotary-torso-machine', 'core'),
+  load('glute-kick-machine', 'glutes', 'hamstrings'),
+  load('standing-leg-curl', 'hamstrings'),
+  body('sissy-squat', 'quads'),
+  load('donkey-calf-raise', 'calves'),
+  load('calf-press', 'calves'),
+  // No muscle, like the adduction machine: the model has no forearms or shins.
+  load('wrist-curl'),
+  load('tibialis-raise'),
   // Swimming.
   swim('swim-freestyle', 'free'),
   swim('swim-backstroke', 'back'),
