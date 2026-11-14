@@ -61,6 +61,16 @@ describe('exercise search', () => {
     expect(presetSlugOf({ id: 'mine', name: 'Something else' })).toBeUndefined()
   })
 
+  test('a letter or two names no muscle group', () => {
+    const mine: Exercise[] = [
+      { id: 'p', name: 'Plank hold', metric: 'time', muscles: ['core'] },
+      { id: 'h', name: 'Hammer grip', metric: 'weight_reps', muscles: ['biceps'] },
+    ]
+    expect(searchExercises('a', mine, 'en').related).toEqual([])
+    expect(searchExercises('bi', mine, 'en').related).toEqual([])
+    expect(names(searchExercises('bic', mine, 'en').related)).toEqual(['Hammer grip'])
+  })
+
   test('an empty search lists everything and suggests nothing', () => {
     const all = searchExercises('  ', library, 'en')
     expect(all.matches).toHaveLength(library.length)

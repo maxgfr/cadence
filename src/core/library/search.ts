@@ -102,8 +102,11 @@ export function searchExercises(
       found.add(e.id)
     }
 
+  // A muscle group is named from three letters: "a" alone is not "abdominale".
   const mentioned = new Set(
-    [...namesOfMuscles()].filter(([, ws]) => q.some((t) => ws.some((w) => w.startsWith(t)))).map(([m]) => m),
+    [...namesOfMuscles()]
+      .filter(([, ws]) => q.some((t) => t.length >= 3 && ws.some((w) => w.startsWith(t))))
+      .map(([m]) => m),
   )
   // The muscle what was found mostly trains: an upright row among rows does not make shoulder work related.
   const counts = new Map<Muscle, number>()

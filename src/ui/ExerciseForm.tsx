@@ -295,8 +295,12 @@ export function ExerciseForm({
         {photo ? (
           <img className={styles.photo} src={photo} alt={t.forms.exercise.photoOf(name.trim() || t.common.exercise)} />
         ) : (
-          // Until they add their own, a preset (or an exercise named like one) shows its illustration.
-          <ExerciseArt exercise={{ id: exercise?.id ?? '', name: name.trim(), muscles }} size="large" />
+          // Until they add their own, a preset (or an exercise named like one) shows its illustration, with the
+          // preset's muscles while none is chosen.
+          <ExerciseArt
+            exercise={{ id: exercise?.id ?? '', name: name.trim(), ...(muscles.length > 0 ? { muscles } : {}) }}
+            size="large"
+          />
         )}
         <div className={styles.photoActions}>
           <label className={cx(buttonClass({ variant: 'secondary' }), styles.photoPick)}>
