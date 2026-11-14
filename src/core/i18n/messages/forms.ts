@@ -40,6 +40,7 @@ export const forms = namespace(
       changePhoto: 'Change the photo',
       removePhoto: 'Remove the photo',
       photoOf: (name: string) => `Photo of ${name}`,
+      illustrationOf: (name: string) => `Illustration of ${name}`,
       photoHint: 'To recognise the machine. Made smaller, and kept on your devices.',
       photoFailed: 'This image could not be read. Try a JPEG or a PNG.',
       add: 'Add exercise',
@@ -67,6 +68,9 @@ export const forms = namespace(
       create: 'Create an exercise',
       libraryEmpty: 'Your library is empty: create your first exercise, or load the demo from Settings.',
       noMatch: (query: string) => `No exercise matches “${query}”.`,
+      related: 'Related',
+      fromPresets: (count: number) => `From the presets (${count})`,
+      presetHint: 'Adds it to your library',
     },
     sports: {
       yours: 'Your disciplines',
@@ -125,6 +129,7 @@ export const forms = namespace(
       changePhoto: 'Changer la photo',
       removePhoto: 'Retirer la photo',
       photoOf: (name: string) => `Photo de ${name}`,
+      illustrationOf: (name: string) => `Illustration : ${name}`,
       photoHint: 'Pour reconnaître la machine. Réduite, et gardée sur vos appareils.',
       photoFailed: 'Impossible de lire cette image. Essayez un JPEG ou un PNG.',
       add: 'Ajouter l’exercice',
@@ -153,6 +158,9 @@ export const forms = namespace(
       libraryEmpty:
         'Votre bibliothèque est vide : créez votre premier exercice, ou chargez la démo depuis les Réglages.',
       noMatch: (query: string) => `Aucun exercice ne correspond à « ${query} ».`,
+      related: 'Apparentés',
+      fromPresets: (count: number) => `Dans les presets (${count})`,
+      presetHint: 'L’ajoute à ta bibliothèque',
     },
     sports: {
       yours: 'Vos disciplines',
@@ -211,6 +219,7 @@ export const forms = namespace(
       changePhoto: 'Foto ändern',
       removePhoto: 'Foto entfernen',
       photoOf: (name: string) => `Foto von ${name}`,
+      illustrationOf: (name: string) => `Illustration: ${name}`,
       photoHint: 'Um das Gerät wiederzuerkennen. Verkleinert und nur auf deinen Geräten gespeichert.',
       photoFailed: 'Dieses Bild konnte nicht gelesen werden. Versuch es mit JPEG oder PNG.',
       add: 'Übung hinzufügen',
@@ -238,6 +247,9 @@ export const forms = namespace(
       create: 'Übung erstellen',
       libraryEmpty: 'Deine Bibliothek ist leer: Erstelle deine erste Übung oder lade die Demo in den Einstellungen.',
       noMatch: (query: string) => `Keine Übung passt zu „${query}“.`,
+      related: 'Ähnliche Übungen',
+      fromPresets: (count: number) => `Aus den Presets (${count})`,
+      presetHint: 'Fügt sie deiner Bibliothek hinzu',
     },
     sports: {
       yours: 'Deine Disziplinen',

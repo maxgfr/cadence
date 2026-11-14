@@ -91,6 +91,15 @@ describe('presets', () => {
     expect(row?.perSet?.map((s) => s.reps)).toEqual([15, 10, 8, 6])
   })
 
+  test('one exercise can be added on its own, with its sport only when it is missing', () => {
+    const alone = all({ sports: ['gym'], withPrograms: false, only: ['machine-high-row'] })
+    expect(alone.exercises.map((e) => e.id)).toEqual(['preset-machine-high-row'])
+    expect(alone.disciplines.map((d) => d.id)).toEqual(['preset-gym'])
+    const again = all({ sports: ['gym'], withPrograms: false, only: ['machine-high-row'], library: alone })
+    expect(again.exercises).toEqual([])
+    expect(again.disciplines).toEqual([])
+  })
+
   test('programs can be left out', () => {
     expect(all({ withPrograms: false }).programs).toEqual([])
   })

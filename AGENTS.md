@@ -47,6 +47,10 @@ under `/cadence/`, no server.
   never write around it. The merge is symmetric and deterministic. Erase and import leave no tombstones, so a sync never
   deletes on the other device what was only reset here. Trystero and the QR code libraries load with the sync screen only.
 - Charts are hand-written SVG (`src/ui/charts`), following the dataviz rules in `DESIGN.md`. No charting library.
+- Every preset exercise has an illustration (`src/ui/art`): a figure posed by joint angles, its equipment, and its
+  muscles in the strength blue, coloured by theme tokens and loaded lazily. A new preset needs its scene in
+  `scenes.ts` (the type check fails otherwise). An exercise the athlete made shows the preset's drawing when its name
+  is a preset's in any language; their own photo always wins.
 - Visual rules are in `DESIGN.md`, product truth in `PRODUCT.md`. `.impeccable/` is local working output, never committed.
 - Gates are frozen: never skip, weaken or delete a test, no suppression comments.
 - Docs are in English, factual, without tool or assistant attribution.

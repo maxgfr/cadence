@@ -176,6 +176,8 @@ export interface PresetOptions {
   withPrograms: boolean
   library: { exercises: readonly Exercise[]; disciplines: readonly Discipline[] }
   exerciseLanguage: ExerciseLanguage
+  /** Only these exercises (one picked from a search), with their sport's discipline when it is missing. */
+  only?: readonly PresetSlug[]
   now?: Date
 }
 
@@ -196,6 +198,7 @@ export function buildPreset({
   withPrograms,
   library,
   exerciseLanguage,
+  only,
   now = new Date(),
 }: PresetOptions): PresetData {
   const chosen = PRESET_SPORTS.filter((s) => sports.includes(s))
@@ -212,7 +215,7 @@ export function buildPreset({
   const exercises: Exercise[] = []
   const exerciseOf = new Map<PresetSlug, string>()
   for (const e of PRESET_EXERCISES) {
-    if (!chosen.includes(e.sport)) continue
+    if (!chosen.includes(e.sport) || (only && !only.includes(e.slug))) continue
     const id = `preset-${e.slug}`
     const names = namesOf((m) => m.presets.exercises[e.slug])
     const mine = library.exercises.find((x) => x.id === id || names.has(normalizeName(x.name)))

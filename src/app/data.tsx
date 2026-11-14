@@ -2,6 +2,7 @@ import { createContext, type ReactNode, useCallback, useContext, useEffect, useM
 import type { DemoSport } from '../core/demo/catalog.ts'
 import { buildDemo, demoRemoval } from '../core/demo/demo.ts'
 import { type ExerciseIndex, indexExercises, sortedExercises } from '../core/library/exercises.ts'
+import { presetSlugOf } from '../core/library/search.ts'
 import { todayIso } from '../core/model/dates.ts'
 import {
   type Backup,
@@ -14,7 +15,7 @@ import {
   type Session,
   Settings,
 } from '../core/model/schemas.ts'
-import type { PresetSport } from '../core/presets/catalog.ts'
+import { PRESET_EXERCISES, type PresetSlug, type PresetSport } from '../core/presets/catalog.ts'
 import { buildPreset } from '../core/presets/presets.ts'
 import { idbStore } from '../core/storage/idb.ts'
 import { migrateGoals, migrateV1, needsGoalMigration, needsMigration } from '../core/storage/migrate.ts'
@@ -48,6 +49,11 @@ export interface Data {
   loadDemo(sports: readonly DemoSport[], withSessions: boolean): Promise<void>
   /** Adds these sports' presets, dated so a sync carries them; returns how many records were new. */
   loadPreset(sports: readonly PresetSport[], withPrograms: boolean): Promise<{ exercises: number; programs: number }>
+  /**
+   * Adds one preset exercise picked from a search (with its sport's discipline when missing) and returns it; an
+   * exercise they already have under its name is returned instead.
+   */
+  addPresetExercise(slug: PresetSlug): Promise<Exercise | undefined>
   /** Removes what the demo added, except what the user's own records still use. */
   removeDemo(): Promise<void>
 }
@@ -251,15 +257,16 @@ export function DataProvider({ children, fallback }: { children: ReactNode; fall
     [setLoaded, write],
   )
 
-  const loadPreset = useCallback(
-    async (sports: readonly PresetSport[], withPrograms: boolean) => {
+  const writePreset = useCallback(
+    async (sports: readonly PresetSport[], withPrograms: boolean, only?: readonly PresetSlug[]) => {
       const loaded = current.current
-      if (!loaded) return { exercises: 0, programs: 0 }
+      if (!loaded) return undefined
       const preset = buildPreset({
         sports,
         withPrograms,
         library: loaded,
         exerciseLanguage: loaded.settings.exerciseLanguage,
+        ...(only ? { only } : {}),
       })
       const updatedAt = new Date().toISOString()
       const next = { ...loaded }
@@ -272,9 +279,25 @@ export function DataProvider({ children, fallback }: { children: ReactNode; fall
         if (key !== 'disciplines') added[key] = fresh.length
       }
       setLoaded({ ...next })
-      return added
+      return { added, exercises: next.exercises }
     },
     [setLoaded, write],
+  )
+
+  const loadPreset = useCallback(
+    async (sports: readonly PresetSport[], withPrograms: boolean) =>
+      (await writePreset(sports, withPrograms))?.added ?? { exercises: 0, programs: 0 },
+    [writePreset],
+  )
+
+  const addPresetExercise = useCallback(
+    async (slug: PresetSlug) => {
+      const sport = PRESET_EXERCISES.find((e) => e.slug === slug)?.sport
+      if (!sport) return undefined
+      const done = await writePreset([sport], false, [slug])
+      return done?.exercises.find((e) => e.id === `preset-${slug}` || presetSlugOf(e) === slug)
+    },
+    [writePreset],
   )
 
   const removeDemo = useCallback(async () => {
@@ -310,9 +333,22 @@ export function DataProvider({ children, fallback }: { children: ReactNode; fall
       replaceAll,
       loadDemo,
       loadPreset,
+      addPresetExercise,
       removeDemo,
     }
-  }, [state, saveFailures, today, put, remove, updateSettings, replaceAll, loadDemo, loadPreset, removeDemo])
+  }, [
+    state,
+    saveFailures,
+    today,
+    put,
+    remove,
+    updateSettings,
+    replaceAll,
+    loadDemo,
+    loadPreset,
+    addPresetExercise,
+    removeDemo,
+  ])
 
   if (!value) return <>{fallback}</>
   return <DataContext.Provider value={value}>{children}</DataContext.Provider>

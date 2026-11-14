@@ -1,0 +1,70 @@
+/* Exercise illustrations: a figure in ink, its equipment in a lighter ink, the trained muscles in the strength blue. */
+
+.thumb {
+  flex: none;
+  display: block;
+  width: 3rem;
+  aspect-ratio: 4 / 3;
+  border-radius: var(--radius-small);
+  background: var(--bg);
+}
+
+.large {
+  display: block;
+  width: 100%;
+  max-width: 20rem;
+  aspect-ratio: 4 / 3;
+  border-radius: var(--radius-surface);
+  background: var(--bg);
+}
+
+.thumb line,
+.thumb path,
+.large line,
+.large path {
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.body {
+  stroke: var(--ink-2);
+  fill: var(--ink-2);
+}
+
+.far {
+  stroke: var(--hairline-strong);
+  fill: var(--hairline-strong);
+}
+
+.gear {
+  stroke: var(--ink-3);
+  fill: var(--surface);
+}
+
+.ground {
+  stroke: var(--hairline-strong);
+  fill: none;
+}
+
+.water {
+  stroke: var(--c-aqua);
+  fill: none;
+}
+
+.hi {
+  stroke: var(--chart-series);
+  fill: var(--chart-series);
+}
+
+.hollow {
+  fill: none;
+}
+
+.filled.body,
+.filled.hi {
+  stroke: none;
+}
+
+.dash {
+  stroke-dasharray: 3 3;
+}

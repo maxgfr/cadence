@@ -21,6 +21,7 @@ import {
 import type { Entry, Exercise, Session, SetLog } from '../../core/model/schemas.ts'
 import { formatTime } from '../../core/model/units.ts'
 import { lastPerformance } from '../../core/stats/metrics.ts'
+import { ExerciseArt, hasArt } from '../../ui/art/ExerciseArt.tsx'
 import { Button } from '../../ui/components/Button.tsx'
 import { DisciplineTag } from '../../ui/components/Discipline.tsx'
 import { EmptyState } from '../../ui/components/EmptyState.tsx'
@@ -354,10 +355,14 @@ function EntryCard({
           />
         </div>
       </header>
-      {(exercise?.description || exercise?.notes || exercise?.photo) && (
+      {(exercise?.description || exercise?.notes || exercise?.photo || (exercise && hasArt(exercise))) && (
         <details className={styles.about}>
           <summary>{t.log.about}</summary>
-          {exercise.photo && <img src={exercise.photo} alt={t.forms.exercise.photoOf(exercise.name)} loading="lazy" />}
+          {exercise.photo ? (
+            <img src={exercise.photo} alt={t.forms.exercise.photoOf(exercise.name)} loading="lazy" />
+          ) : (
+            <ExerciseArt exercise={exercise} size="large" />
+          )}
           {exercise.description && (
             <p>
               <LinkedText text={exercise.description} />

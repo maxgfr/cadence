@@ -8,6 +8,7 @@ import { useT } from '../../app/i18n.tsx'
 import type { Discipline, Exercise } from '../../core/model/schemas.ts'
 import { formatTime, toDisplayDistance } from '../../core/model/units.ts'
 import { trainedExercises } from '../../core/stats/metrics.ts'
+import { ExerciseArt } from '../../ui/art/ExerciseArt.tsx'
 import { Button, buttonClass } from '../../ui/components/Button.tsx'
 import { DisciplineDot } from '../../ui/components/Discipline.tsx'
 import { EmptyState } from '../../ui/components/EmptyState.tsx'
@@ -143,6 +144,7 @@ export function Exercises() {
                   ]
                     .filter(Boolean)
                     .join(' · ')}
+                  trailing={<ExerciseArt exercise={e} size="thumb" />}
                   onClick={() => setEditing({ kind: 'exercise', value: e })}
                   chevron
                 />
