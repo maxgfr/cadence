@@ -153,6 +153,7 @@ export const presets = namespace(
       'calf-press': 'Calf press',
       'wrist-curl': 'Wrist curl',
       'tibialis-raise': 'Tibialis raise',
+      'neck-press-machine': 'Machine neck press',
       'swim-freestyle': 'Freestyle',
       'swim-backstroke': 'Backstroke',
       'swim-breaststroke': 'Breaststroke',
@@ -184,6 +185,12 @@ export const presets = namespace(
       'run-10k': '10 km',
       'run-half': 'Half marathon',
       'run-marathon': 'Marathon',
+    },
+    /** More words an exercise is found by: what the machine is called in a gym, or what it trains. */
+    searchWords: {
+      'hip-adduction-machine': 'adductor inner thigh',
+      'hip-abduction-machine': 'abductor outer thigh',
+      'neck-press-machine': 'behind the neck shoulder press',
     },
   },
   {
@@ -345,6 +352,7 @@ export const presets = namespace(
       'calf-press': 'Presse à mollets',
       'wrist-curl': 'Curl poignets',
       'tibialis-raise': 'Relevé de tibias',
+      'neck-press-machine': 'Développé nuque à la machine',
       'swim-freestyle': 'Crawl',
       'swim-backstroke': 'Dos crawlé',
       'swim-breaststroke': 'Brasse',
@@ -376,6 +384,11 @@ export const presets = namespace(
       'run-10k': '10 km',
       'run-half': 'Semi-marathon',
       'run-marathon': 'Marathon',
+    },
+    searchWords: {
+      'hip-adduction-machine': 'adducteurs intérieur des cuisses',
+      'hip-abduction-machine': 'abducteurs extérieur des cuisses',
+      'neck-press-machine': 'derrière la nuque épaules',
     },
   },
   {
@@ -534,6 +547,7 @@ export const presets = namespace(
       'calf-press': 'Wadenpresse',
       'wrist-curl': 'Handgelenkcurl',
       'tibialis-raise': 'Tibialis-Heben',
+      'neck-press-machine': 'Nackendrücken an der Maschine',
       'swim-freestyle': 'Kraul',
       'swim-backstroke': 'Rücken',
       'swim-breaststroke': 'Brust',
@@ -565,6 +579,11 @@ export const presets = namespace(
       'run-10k': '10 km',
       'run-half': 'Halbmarathon',
       'run-marathon': 'Marathon',
+    },
+    searchWords: {
+      'hip-adduction-machine': 'Adduktoren Oberschenkelinnenseite',
+      'hip-abduction-machine': 'Abduktoren Oberschenkelaußenseite',
+      'neck-press-machine': 'Nackenpresse Schulterpresse',
     },
   },
 )

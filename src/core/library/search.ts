@@ -23,6 +23,18 @@ function namesOfPresets(): ReadonlyMap<PresetSlug, readonly string[]> {
   return presetNames
 }
 
+let presetText: ReadonlyMap<PresetSlug, readonly string[]> | undefined
+/** What a preset is searched by: its names, and the words a gym also calls it by ("adductor", "inner thigh"). */
+function searchTextOfPresets(): ReadonlyMap<PresetSlug, readonly string[]> {
+  presetText ??= new Map(
+    [...namesOfPresets()].map(([slug, names]) => {
+      const more = LOCALES.map((l) => (messagesFor(l).presets.searchWords as Partial<Record<PresetSlug, string>>)[slug])
+      return [slug, words([...names, ...more.filter((w) => w !== undefined)].join(' '))]
+    }),
+  )
+  return presetText
+}
+
 let presetByName: ReadonlyMap<string, PresetSlug> | undefined
 /**
  * The preset an exercise is, by its id (`preset-<slug>`) or, for one the athlete made, by its name in any language:
@@ -88,10 +100,10 @@ export function searchExercises(
 ): ExerciseSearch {
   const q = words(query)
   if (q.length === 0) return { matches: [...library], related: [], presets: [] }
-  const names = namesOfPresets()
+  const presetText = searchTextOfPresets()
   const textOf = (e: Exercise) => {
     const slug = presetSlugOf(e)
-    return words([e.name, ...(slug ? (names.get(slug) ?? []) : [])].join(' '))
+    return [...words(e.name), ...(slug ? (presetText.get(slug) ?? []) : [])]
   }
 
   const found = new Set<string>()
@@ -141,9 +153,18 @@ export function searchExercises(
     .map((x) => x.e)
 
   const have = new Set(library.map(presetSlugOf).filter((s) => s !== undefined))
-  const presets = PRESET_EXERCISES.filter(
-    (p) => !have.has(p.slug) && matches(q, words((names.get(p.slug) ?? []).join(' '))),
-  )
+  const missing = PRESET_EXERCISES.filter((p) => !have.has(p.slug))
+  const presetMatches = (query: readonly string[]) =>
+    missing.filter((p) => matches(query, presetText.get(p.slug) ?? []))
+  // Nothing has every word ("hip aduction" for "hip adduction"): those that have one of the longer words, most first.
+  const close = () =>
+    missing
+      .map((p) => ({ p, n: q.filter((t) => t.length >= 4 && matches([t], presetText.get(p.slug) ?? [])).length }))
+      .filter((x) => x.n > 0)
+      .sort((a, b) => b.n - a.n)
+      .map((x) => x.p)
+  const exact = presetMatches(q)
+  const presets = (exact.length > 0 || matched.length > 0 ? exact : close())
     .slice(0, PRESETS_MAX)
     .map((p) => ({ slug: p.slug, sport: p.sport, name: messagesFor(exerciseLanguage).presets.exercises[p.slug] }))
 

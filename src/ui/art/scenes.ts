@@ -368,14 +368,25 @@ export const SCENES: Readonly<Record<PresetSlug, Scene>> = {
     under: (j) => [post(j.shoulder[0] - 14, 6, GROUND, 1.5), post(j.shoulder[0] + 6, 6, GROUND, 1.5)],
     over: (j) => plate(add(j.shoulder, -3, -5)),
   },
+  // A 45° sled: reclined, knees to the chest, the soles flat on a footplate that runs up its rail.
   'leg-press': {
-    pose: { hip: [36, 66], torso: -150, head: -140, arm: [60, 0], leg: [-40, 4], leg2: [-34, 8], foot: -50 },
-    under: (j) => [
-      pad(add(j.hip, -6, 6), add(j.shoulder, 4, 6)),
-      post(j.hip[0], j.hip[1] + 8, GROUND, 2),
-      lever([58, GROUND - 4], [112, 26]),
-      pad(at(j.ankle, 45, 6), at(j.ankle, -135, 8), 4),
-    ],
+    pose: { hip: [34, 70], torso: -155, head: -145, arm: [40, -10], leg: [-78, -8], leg2: [-72, -12], foot: -128 },
+    under: (j) => {
+      // The sled runs along the push, from the hip to the soles; the plate stands across it, the rail under it.
+      const push = (Math.atan2(j.ankle[1] - j.hip[1], j.ankle[0] - j.hip[0]) * 180) / Math.PI
+      const sole = at(j.ankle, push, 3)
+      const sled = at(sole, push + 90, 12)
+      const top = at(sled, push, 24)
+      const foot = at(sled, push + 180, (GROUND - 2 - sled[1]) / -Math.sin((push * Math.PI) / 180))
+      return [
+        pad(add(j.hip, 2, 5), add(j.shoulder, 2, 5)),
+        post(j.hip[0] + 4, j.hip[1] + 6, GROUND, 2.5),
+        lever(foot, top),
+        post(top[0], top[1], GROUND, 2.5),
+        lever(sole, sled),
+        pad(at(sole, push + 90, 10), at(sole, push - 90, 12), 4),
+      ]
+    },
   },
   'leg-extension': {
     pose: pose(SEAT, { leg: [0, -8], leg2: [2, 30] }),
@@ -724,6 +735,17 @@ export const SCENES: Readonly<Record<PresetSlug, Scene>> = {
     pose: pose(SEAT, { torso: -70, head: -64, arm: [76, -6], leg: [0, 90] }),
     under: (j) => seat(j, false),
     over: (j) => dumbbell(add(j.hand, 2, -2), 90),
+  },
+  // The handles behind the head, the weight stack behind the seat.
+  'neck-press-machine': {
+    pose: pose(SEAT, { hip: [58, 66], arm: [-170, -82] }),
+    under: (j) => [
+      ...seat(j),
+      post(j.hip[0] - 20, 6),
+      ...stack(j.hip[0] - 32),
+      lever(j.hand, [j.hip[0] - 20, j.hand[1] + 8]),
+      handle(j.hand),
+    ],
   },
   'tibialis-raise': {
     pose: pose(SEAT, { arm: [80, 10], leg: [0, 90], foot: -30 }),

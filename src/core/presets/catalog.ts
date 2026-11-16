@@ -167,6 +167,8 @@ export const PRESET_EXERCISES: readonly PresetExercise[] = [
   load('pullover-machine', 'back', 'chest'),
   load('decline-machine-press', 'chest', 'triceps'),
   load('seated-dip-machine', 'triceps', 'chest'),
+  // gym80's Neck Press: a shoulder press with the handles behind the head.
+  load('neck-press-machine', 'shoulders', 'triceps'),
   load('smith-machine-bench-press', 'chest', 'triceps', 'shoulders'),
   load('lower-back-machine', 'back'),
   load('rotary-torso-machine', 'core'),

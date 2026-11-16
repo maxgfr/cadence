@@ -55,6 +55,28 @@ describe('exercise search', () => {
     expect(searchExercises('lat pulldown', library, 'en').presets).toEqual([])
   })
 
+  test('a machine is also found by what a gym calls it', () => {
+    const slugs = (query: string) => searchExercises(query, library, 'en').presets.map((p) => p.slug)
+    expect(slugs('adductor')).toEqual(['hip-adduction-machine'])
+    expect(slugs('outer thigh')).toEqual(['hip-abduction-machine'])
+    expect(slugs('thigh')).toEqual(['hip-abduction-machine', 'hip-adduction-machine'])
+    expect(slugs('neck press')).toEqual(['neck-press-machine'])
+    const mine = buildPreset({
+      sports: ['gym'],
+      withPrograms: false,
+      library: { exercises: [], disciplines: [] },
+      exerciseLanguage: 'en',
+      only: ['hip-adduction-machine'],
+    }).exercises
+    expect(names(searchExercises('inner thigh', mine, 'en').matches)).toEqual(['Hip adduction machine'])
+  })
+
+  test('with no preset having every word typed, those close to it are offered', () => {
+    const slugs = searchExercises('lateral adduction', library, 'en').presets.map((p) => p.slug)
+    expect(slugs).toContain('hip-adduction-machine')
+    expect(slugs).toContain('lateral-raise')
+  })
+
   test('an exercise they made is known as the preset of the same name', () => {
     expect(presetSlugOf({ id: 'mine', name: 'Tirage vertical' })).toBe('lat-pulldown')
     expect(presetSlugOf({ id: 'preset-pec-deck', name: 'Renamed' })).toBe('pec-deck')
