@@ -20,6 +20,7 @@ const library: Exercise[] = buildPreset({
   ],
 }).exercises
 const names = (list: readonly { name: string }[]) => list.map((e) => e.name)
+const presetsFor = (query: string) => searchExercises(query, library, 'en').presets.map((p) => p.slug)
 
 describe('exercise search', () => {
   test('accents, case and punctuation do not matter', () => {
@@ -74,10 +75,34 @@ describe('exercise search', () => {
     expect(names(searchExercises('abduction', mine, 'en').matches)).toEqual(['Hip adduction machine'])
   })
 
-  test('with no preset having every word typed, those close to it are offered', () => {
+  test('with no preset having every word typed, those close to it are offered, a rare word first', () => {
     const slugs = searchExercises('lateral adduction', library, 'en').presets.map((p) => p.slug)
     expect(slugs).toContain('hip-adduction-machine')
     expect(slugs).toContain('lateral-raise')
+    expect(searchExercises('hack press', library, 'en').presets[0]?.slug).toBe('hack-squat')
+  })
+
+  test('the names a gym uses, and plurals', () => {
+    expect(names(searchExercises('chest fly', library, 'en').matches)).toEqual(['Pec deck'])
+    expect(presetsFor('military press')).toEqual(['overhead-press'])
+    expect(presetsFor('rdl')).toEqual(['romanian-deadlift'])
+    expect(presetsFor('hyperextension')).toEqual(['back-extension'])
+    expect(presetsFor('crunches')).toEqual(['crunch', 'cable-crunch', 'ab-crunch-machine'])
+    expect(presetsFor('pull ups')).toEqual(['pull-up', 'assisted-pull-up'])
+    expect(presetsFor('tractions')).toContain('pull-up')
+    expect(presetsFor('élévations latérales')).toContain('lateral-raise')
+    expect(presetsFor('abs')).not.toContain('hip-abduction-machine')
+  })
+
+  test('a word is found inside another from five letters only', () => {
+    expect(presetsFor('velo')).toEqual([])
+    expect(names(searchExercises('latziehen', library, 'en').matches)).toEqual(['Lat pulldown'])
+  })
+
+  test('a muscle group typed offers the presets that mostly train it', () => {
+    const slugs = searchExercises('ischio', library, 'en').presets.map((p) => p.slug)
+    expect(slugs).toContain('lying-leg-curl')
+    expect(slugs).not.toContain('back-squat')
   })
 
   test('an exercise they made is known as the preset of the same name', () => {

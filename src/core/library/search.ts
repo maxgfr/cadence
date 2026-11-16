@@ -61,13 +61,26 @@ function namesOfMuscles(): ReadonlyMap<Muscle, readonly string[]> {
   return muscleWords
 }
 
+/** A typed word and its singular: "crunches", "tractions", "pull ups". */
+const forms = (q: string): string[] =>
+  q.length >= 3 && q.endsWith('s')
+    ? [q, q.slice(0, -1), ...(q.length >= 5 && q.endsWith('es') ? [q.slice(0, -2)] : [])]
+    : [q]
+
 /**
- * Every typed word is the start of a word of the text, or, from four letters, inside it (German joins words:
- * "zieh" finds "Latziehen").
+ * Every typed word, or its singular, is the start of a word of the text, or, from five letters, inside it (German joins
+ * words: "ziehen" finds "Latziehen"; shorter, "velo" would find "développé"). A singular of two letters is a whole word:
+ * "abs" is "ab", not "abduction".
  */
 function matches(query: readonly string[], text: readonly string[]): boolean {
   const joined = text.join(' ')
-  return query.every((q) => text.some((w) => w.startsWith(q)) || (q.length >= 4 && joined.includes(q)))
+  return query.every((q) =>
+    forms(q).some(
+      (f) =>
+        text.some((w) => (f.length < 3 && f !== q ? w === f : w.startsWith(f))) ||
+        (f.length >= 5 && joined.includes(f)),
+    ),
+  )
 }
 
 export interface PresetHit {
@@ -156,15 +169,26 @@ export function searchExercises(
   const missing = PRESET_EXERCISES.filter((p) => !have.has(p.slug))
   const presetMatches = (query: readonly string[]) =>
     missing.filter((p) => matches(query, presetText.get(p.slug) ?? []))
-  // Nothing has every word ("hip aduction" for "hip adduction"): those that have one of the longer words, most first.
-  const close = () =>
-    missing
-      .map((p) => ({ p, n: q.filter((t) => t.length >= 4 && matches([t], presetText.get(p.slug) ?? [])).length }))
+  // Nothing has every word ("hack press"): those that have one of the longer words, a rare word worth more than a
+  // common one ("hack" than "press").
+  const close = () => {
+    const hits = new Map(
+      q.filter((t) => t.length >= 4).map((t) => [t, missing.filter((p) => matches([t], presetText.get(p.slug) ?? []))]),
+    )
+    return missing
+      .map((p) => ({ p, n: [...hits.values()].reduce((n, ps) => n + (ps.includes(p) ? 1 / ps.length : 0), 0) }))
       .filter((x) => x.n > 0)
       .sort((a, b) => b.n - a.n)
       .map((x) => x.p)
+  }
+  // A muscle group typed ("quadriceps", "ischio"): the presets that mostly train it.
+  const forMuscle = () => missing.filter((p) => p.muscles?.[0] !== undefined && mentioned.has(p.muscles[0]))
   const exact = presetMatches(q)
-  const presets = (exact.length > 0 || matched.length > 0 ? exact : close())
+  const fallback = () => {
+    const muscle = forMuscle()
+    return muscle.length > 0 ? muscle : close()
+  }
+  const presets = (exact.length > 0 || matched.length > 0 ? exact : fallback())
     .slice(0, PRESETS_MAX)
     .map((p) => ({ slug: p.slug, sport: p.sport, name: messagesFor(exerciseLanguage).presets.exercises[p.slug] }))
 

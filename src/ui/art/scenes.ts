@@ -81,6 +81,26 @@ const legsOnBench = (torso: number): Pick<Pose, 'leg' | 'leg2'> =>
       : { leg: [4, 92], leg2: [0, 96] }
 
 // Bench pressing family: lying on a bench, the bar or dumbbells over the chest.
+/**
+ * A 45° sled, as on a leg press: the seat under the back, a rail along the push from the hip to where the feet press
+ * (`on`), and the plate across it there.
+ */
+const sled = (j: Joints, on: Pt): Shape[] => {
+  const push = (Math.atan2(on[1] - j.hip[1], on[0] - j.hip[0]) * 180) / Math.PI
+  const sole = at(on, push, 3)
+  const carriage = at(sole, push + 90, 12)
+  const top = at(carriage, push, 24)
+  const bottom = at(carriage, push + 180, (GROUND - 2 - carriage[1]) / -Math.sin((push * Math.PI) / 180))
+  return [
+    pad(add(j.hip, 2, 5), add(j.shoulder, 2, 5)),
+    post(j.hip[0] + 4, j.hip[1] + 6, GROUND, 2.5),
+    lever(bottom, top),
+    post(top[0], top[1], GROUND, 2.5),
+    lever(sole, carriage),
+    pad(at(sole, push + 90, 10), at(sole, push - 90, 12), 4),
+  ]
+}
+
 const press = (torso: number, hip: Pt, tool: 'bar' | 'db' | 'smith', arm: Pose['arm'] = [-88, -92]): Scene => ({
   pose: pose(LYING, { hip, torso, arm, ...legsOnBench(torso) }),
   under: (j) => [
@@ -371,22 +391,7 @@ export const SCENES: Readonly<Record<PresetSlug, Scene>> = {
   // A 45° sled: reclined, knees to the chest, the soles flat on a footplate that runs up its rail.
   'leg-press': {
     pose: { hip: [34, 70], torso: -155, head: -145, arm: [40, -10], leg: [-78, -8], leg2: [-72, -12], foot: -128 },
-    under: (j) => {
-      // The sled runs along the push, from the hip to the soles; the plate stands across it, the rail under it.
-      const push = (Math.atan2(j.ankle[1] - j.hip[1], j.ankle[0] - j.hip[0]) * 180) / Math.PI
-      const sole = at(j.ankle, push, 3)
-      const sled = at(sole, push + 90, 12)
-      const top = at(sled, push, 24)
-      const foot = at(sled, push + 180, (GROUND - 2 - sled[1]) / -Math.sin((push * Math.PI) / 180))
-      return [
-        pad(add(j.hip, 2, 5), add(j.shoulder, 2, 5)),
-        post(j.hip[0] + 4, j.hip[1] + 6, GROUND, 2.5),
-        lever(foot, top),
-        post(top[0], top[1], GROUND, 2.5),
-        lever(sole, sled),
-        pad(at(sole, push + 90, 10), at(sole, push - 90, 12), 4),
-      ]
-    },
+    under: (j) => sled(j, j.ankle),
   },
   'leg-extension': {
     pose: pose(SEAT, { leg: [0, -8], leg2: [2, 30] }),
@@ -722,14 +727,10 @@ export const SCENES: Readonly<Record<PresetSlug, Scene>> = {
       post(j.hand[0], j.hand[1] + 2, GROUND, 2),
     ],
   },
+  // The leg press's sled, the legs straight, the balls of the feet on the plate's edge.
   'calf-press': {
-    pose: { hip: [36, 66], torso: -150, head: -140, arm: [60, 0], leg: [-32, -30], leg2: [-28, -26], foot: -80 },
-    under: (j) => [
-      pad(add(j.hip, -6, 6), add(j.shoulder, 4, 6)),
-      post(j.hip[0], j.hip[1] + 8, GROUND, 2),
-      lever([58, GROUND - 4], [112, 26]),
-      pad(at(j.toe, 45, 6), at(j.toe, -135, 8), 4),
-    ],
+    pose: { hip: [34, 70], torso: -155, head: -145, arm: [40, -10], leg: [-36, -36], leg2: [-32, -32], foot: -120 },
+    under: (j) => sled(j, j.toe),
   },
   'wrist-curl': {
     pose: pose(SEAT, { torso: -70, head: -64, arm: [76, -6], leg: [0, 90] }),
