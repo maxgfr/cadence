@@ -1,11 +1,12 @@
-import { CheckCircle2, ListChecks, Pencil, Trash2, Trophy } from 'lucide-react'
+import { CheckCircle2, ListChecks, Pencil, Repeat, Trash2, Trophy } from 'lucide-react'
 import { useState } from 'react'
 import { useLocation, useParams, useSearch } from 'wouter'
 import { useData } from '../../app/data.tsx'
+import { useDraft } from '../../app/drafts.tsx'
 import { useT } from '../../app/i18n.tsx'
 import { useToast } from '../../app/toast.tsx'
 import { formatDay } from '../../core/model/dates.ts'
-import { describeBlock } from '../../core/model/program.ts'
+import { describeBlock, programFromSession } from '../../core/model/program.ts'
 import type { Exercise, Session, SetLog } from '../../core/model/schemas.ts'
 import { formatDistance, formatTime, formatWeight } from '../../core/model/units.ts'
 import { recordsOf } from '../../core/stats/records.ts'
@@ -32,6 +33,7 @@ export function SessionDetail() {
   const toast = useToast()
   const [, navigate] = useLocation()
   const [editing, setEditing] = useState(false)
+  const { setDraft } = useDraft()
   const session = data.sessions.find((s) => s.id === id)
   if (!session) return <NotFound />
   const advanced = data.settings.mode === 'advanced'
@@ -144,6 +146,22 @@ export function SessionDetail() {
           }}
         >
           {t.history.editSets}
+        </Button>
+        <Button
+          variant="secondary"
+          icon={<Repeat size={18} strokeWidth={1.75} aria-hidden="true" />}
+          onClick={() => {
+            setDraft({
+              program: programFromSession(session, data.index),
+              newExercises: [],
+              newDisciplines: [],
+              notes: [],
+              origin: 'session',
+            })
+            navigate('/programs/draft')
+          }}
+        >
+          {t.history.makeProgram}
         </Button>
         <Button
           variant="danger"

@@ -117,6 +117,14 @@ test('demo sport → logged session → record and chart → backup round trip',
   await page.getByRole('button', { name: 'Save', exact: true }).click()
   await expect(page.getByRole('heading', { name: 'Heavy squat day', level: 1 })).toBeVisible()
 
+  // A session done becomes a program to repeat, asking for what was lifted.
+  await page.getByRole('button', { name: 'Make it a program' }).click()
+  await expect(page.getByText(/^Your session as a program to repeat/)).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Back squat 2×5' })).toBeVisible()
+  await accessible(page, 'program from a session')
+  await page.getByRole('button', { name: 'Save program' }).click()
+  await expect(page.getByText('Heavy squat day saved')).toBeVisible()
+
   if (isMobile) {
     // Phones: the tab bar, no horizontal scroll.
     await expect(page.getByRole('navigation', { name: 'Main' })).toBeVisible()

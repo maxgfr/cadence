@@ -34,6 +34,8 @@ export const programs = namespace(
         template: 'A copy of the template: change anything, then save it to your programs.',
         ai: 'Written by your AI model. Read it through and change anything before saving: nothing is stored until you do.',
         adjust: 'Your AI model rewrote one week from what you actually did. Check it, then save to replace the week.',
+        session:
+          'Your session as a program to repeat: what you did is its target. Change anything, add other sessions, then save.',
       },
       unknownExercise: 'Unknown exercise',
       programSaved: 'Program saved',
@@ -140,6 +142,8 @@ export const programs = namespace(
         ai: 'Écrit par votre modèle d’IA. Relisez-le et modifiez ce que vous voulez avant d’enregistrer : rien n’est stocké d’ici là.',
         adjust:
           'Votre modèle d’IA a réécrit une semaine d’après ce que vous avez réellement fait. Vérifiez-la, puis enregistrez pour remplacer la semaine.',
+        session:
+          'Votre séance devenue programme à refaire : ce que vous avez fait en est l’objectif. Modifiez ce que vous voulez, ajoutez d’autres séances, puis enregistrez.',
       },
       unknownExercise: 'Exercice inconnu',
       programSaved: 'Programme enregistré',
@@ -248,6 +252,8 @@ export const programs = namespace(
         ai: 'Von deinem KI-Modell geschrieben. Lies es durch und ändere, was du willst, bevor du speicherst: Bis dahin wird nichts gespeichert.',
         adjust:
           'Dein KI-Modell hat eine Woche nach dem umgeschrieben, was du tatsächlich gemacht hast. Prüfe sie und speichere, um die Woche zu ersetzen.',
+        session:
+          'Deine Einheit als Programm zum Wiederholen: Was du gemacht hast, ist sein Ziel. Ändere, was du willst, füge weitere Einheiten hinzu und speichere dann.',
       },
       unknownExercise: 'Unbekannte Übung',
       programSaved: 'Programm gespeichert',

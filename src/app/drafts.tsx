@@ -2,13 +2,13 @@ import { createContext, type ReactNode, useContext, useMemo, useState } from 're
 import type { ExercisesDraft } from '../core/ai/exercises.ts'
 import type { Discipline, Exercise, Program } from '../core/model/schemas.ts'
 
-/** A program not saved yet: from a template, from AI, or new. It lives only until saved or discarded. */
+/** A program not saved yet: from a template, from AI, from a past session, or new. It lives until saved or discarded. */
 export interface ProgramDraft {
   program: Program
   newExercises: Exercise[]
   newDisciplines: Discipline[]
   notes: string[]
-  origin: 'new' | 'template' | 'ai' | 'adjust'
+  origin: 'new' | 'template' | 'ai' | 'adjust' | 'session'
 }
 
 interface Drafts {

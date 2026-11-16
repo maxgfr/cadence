@@ -575,6 +575,82 @@ export function cloneWeek(week: Program['weeks'][number]): Program['weeks'][numb
   }
 }
 
+const positiveOr = (n: number | undefined) => (n !== undefined && n > 0 ? n : undefined)
+
+/**
+ * What an exercise of a past session asks for next time: as many sets as were done, their reps and loads (set by set
+ * when they differed), their time or distance. The plan's rest, interval, tempo and notes are kept.
+ */
+export function blockFromEntry(entry: Entry, exercise: Exercise | undefined): Block {
+  const { perSet: _s, reps: _r, intensity: _i, duration: _d, distance: _x, ...plan } = entry.planned ?? {}
+  const done = entry.sets.filter((s) => s.done)
+  const sets = done.length > 0 ? done : entry.sets
+  const block: Block = {
+    ...plan,
+    id: newId(),
+    exerciseId: entry.exerciseId,
+    sets: Math.min(50, Math.max(1, sets.length)),
+  }
+  const first = sets[0]
+  if (!first) return entry.planned ? { ...entry.planned, id: newId() } : block
+  const metric = exercise?.metric ?? 'weight_reps'
+  if (metric === 'weight_reps' || metric === 'reps') {
+    const reps = sets.map((s) => positiveOr(s.reps))
+    const loads = metric === 'weight_reps' ? sets.map((s) => positiveOr(s.weight)) : []
+    const load = loads.find((w) => w !== undefined)
+    if (reps[0] !== undefined) block.reps = reps[0]
+    if (load !== undefined) block.intensity = { kind: 'kg', value: load }
+    if (reps.some((r) => r !== reps[0]) || loads.some((w) => w !== loads[0]))
+      block.perSet = sets.slice(0, 50).map((_, i) => ({
+        ...(reps[i] !== undefined ? { reps: reps[i] } : {}),
+        ...(loads[i] !== undefined ? { value: loads[i] } : {}),
+      }))
+  }
+  if (metric === 'time') {
+    const time = positiveOr(first.time)
+    if (time !== undefined) block.duration = time
+  }
+  if (metric === 'distance_time' && exercise?.distance === undefined) {
+    const distance = positiveOr(first.distance)
+    if (distance !== undefined) block.distance = distance
+  }
+  return block
+}
+
+/**
+ * A past session as a set of sessions to repeat: it is the only one, named as it was, its exercises asking for what
+ * was done. Exercises since deleted are left out. A draft: nothing is saved until the athlete does.
+ */
+export function programFromSession(session: Session, exercises: ExerciseIndex, now: Date = new Date()): Program {
+  const at = now.toISOString()
+  const name = session.title.trim().slice(0, 60) || currentMessages().core.session
+  return {
+    id: newId(),
+    name,
+    goal: '',
+    layout: 'sessions',
+    weeks: [
+      {
+        id: newId(),
+        name: currentMessages().programs.weekN(1),
+        days: [
+          {
+            id: newId(),
+            name,
+            ...(session.disciplineId ? { disciplineId: session.disciplineId } : {}),
+            blocks: session.entries
+              .filter((e) => exercises.has(e.exerciseId))
+              .map((e) => blockFromEntry(e, exercises.get(e.exerciseId))),
+          },
+        ],
+      },
+    ],
+    source: 'manual',
+    createdAt: at,
+    updatedAt: at,
+  }
+}
+
 /**
  * Sets said aloud, into the session: they fill the exercise's planned sets not done yet, in order (the plan's
  * distance kept when the athlete gave none), then are added after them. An exercise not in the session gets its entry.

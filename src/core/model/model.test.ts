@@ -8,6 +8,7 @@ import {
   dayToStart,
   describeBlock,
   nextDay,
+  programFromSession,
   programsUnderWay,
   sessionFromDay,
   suggestedWeight,
@@ -201,6 +202,53 @@ describe('schedule', () => {
     expect(
       suggestedWeight({ id: 'a', exerciseId: 'x', sets: 1, intensity: { kind: 'kg', value: 60 } }, undefined),
     ).toBe(60)
+  })
+})
+
+describe('a program from a past session', () => {
+  test('the session is the only one of a set, asking for what was done', () => {
+    const squat = {
+      ...entry('back-squat', [
+        set({ reps: 8, weight: 100 }),
+        set({ reps: 8, weight: 100 }),
+        set({ reps: 6, weight: 110 }),
+        set({ reps: 5, weight: 120, done: false }),
+      ]),
+      planned: { id: 'b', exerciseId: 'back-squat', sets: 4, intensity: { kind: 'rpe', value: 8 }, rest: 150 },
+    } as const
+    const plank = entry('plank', [set({ time: 60 }), set({ time: 45 })])
+    const swim = entry('swim-free', [set({ distance: 100, time: 95 })])
+    const gone = entry('deleted-exercise', [set({ reps: 10 })])
+    const s = session('2026-11-14', [squat, plank, swim, gone], { title: 'Leg day' })
+    const p = programFromSession(s, IDX)
+    expect(Program.safeParse(p).success).toBe(true)
+    expect(p.layout).toBe('sessions')
+    expect(p.name).toBe('Leg day')
+    const day = must(p.weeks[0]?.days[0])
+    expect(p.weeks[0]?.days).toHaveLength(1)
+    expect(day).toMatchObject({ name: 'Leg day', disciplineId: s.disciplineId })
+    expect(day.blocks.map((b) => b.exerciseId)).toEqual(['back-squat', 'plank', 'swim-free'])
+    expect(day.blocks[0]).toMatchObject({
+      sets: 3,
+      reps: 8,
+      intensity: { kind: 'kg', value: 100 },
+      perSet: [
+        { reps: 8, value: 100 },
+        { reps: 8, value: 100 },
+        { reps: 6, value: 110 },
+      ],
+      rest: 150,
+    })
+    expect(day.blocks[1]).toMatchObject({ sets: 2, duration: 60 })
+    expect(day.blocks[2]).toMatchObject({ sets: 1, distance: 100 })
+    expect(day.blocks[2]?.intensity).toBeUndefined()
+  })
+
+  test('sets alike need no set-by-set targets', () => {
+    const s = session('2026-11-14', [entry('back-squat', [set({ reps: 5, weight: 80 }), set({ reps: 5, weight: 80 })])])
+    const block = programFromSession(s, IDX).weeks[0]?.days[0]?.blocks[0]
+    expect(block).toMatchObject({ sets: 2, reps: 5, intensity: { kind: 'kg', value: 80 } })
+    expect(block?.perSet).toBeUndefined()
   })
 })
 
