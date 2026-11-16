@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 import type { Exercise } from '../model/schemas.ts'
+import type { PresetSlug } from '../presets/catalog.ts'
 import { buildPreset } from '../presets/presets.ts'
 import { fold, presetSlugOf, searchExercises } from './search.ts'
 
@@ -57,9 +58,11 @@ describe('exercise search', () => {
 
   test('a machine is also found by what a gym calls it', () => {
     const slugs = (query: string) => searchExercises(query, library, 'en').presets.map((p) => p.slug)
-    expect(slugs('adductor')).toEqual(['hip-adduction-machine'])
-    expect(slugs('outer thigh')).toEqual(['hip-abduction-machine'])
-    expect(slugs('thigh')).toEqual(['hip-abduction-machine', 'hip-adduction-machine'])
+    const thighs: PresetSlug[] = ['hip-abduction-machine', 'hip-adduction-machine']
+    // One machine closes and opens the thighs: either name brings both movements.
+    expect(slugs('adduction')).toEqual(thighs)
+    expect(slugs('abductor')).toEqual(thighs)
+    expect(slugs('fermer cuisses')).toEqual(thighs)
     expect(slugs('neck press')).toEqual(['neck-press-machine'])
     const mine = buildPreset({
       sports: ['gym'],
@@ -68,7 +71,7 @@ describe('exercise search', () => {
       exerciseLanguage: 'en',
       only: ['hip-adduction-machine'],
     }).exercises
-    expect(names(searchExercises('inner thigh', mine, 'en').matches)).toEqual(['Hip adduction machine'])
+    expect(names(searchExercises('abduction', mine, 'en').matches)).toEqual(['Hip adduction machine'])
   })
 
   test('with no preset having every word typed, those close to it are offered', () => {

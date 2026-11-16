@@ -186,10 +186,13 @@ export const presets = namespace(
       'run-half': 'Half marathon',
       'run-marathon': 'Marathon',
     },
-    /** More words an exercise is found by: what the machine is called in a gym, or what it trains. */
+    /**
+     * More words an exercise is found by: what the machine is called in a gym, or what it trains. One machine often
+     * closes and opens the thighs: each of its two movements is found by the other's words.
+     */
     searchWords: {
-      'hip-adduction-machine': 'adductor inner thigh',
-      'hip-abduction-machine': 'abductor outer thigh',
+      'hip-adduction-machine': 'adductor abductor abduction thigh close open',
+      'hip-abduction-machine': 'abductor adductor adduction thigh open close',
       'neck-press-machine': 'behind the neck shoulder press',
     },
   },
@@ -386,8 +389,8 @@ export const presets = namespace(
       'run-marathon': 'Marathon',
     },
     searchWords: {
-      'hip-adduction-machine': 'adducteurs intérieur des cuisses',
-      'hip-abduction-machine': 'abducteurs extérieur des cuisses',
+      'hip-adduction-machine': 'adducteurs abducteurs abduction cuisses fermer ouvrir',
+      'hip-abduction-machine': 'abducteurs adducteurs adduction cuisses ouvrir fermer',
       'neck-press-machine': 'derrière la nuque épaules',
     },
   },
@@ -581,8 +584,8 @@ export const presets = namespace(
       'run-marathon': 'Marathon',
     },
     searchWords: {
-      'hip-adduction-machine': 'Adduktoren Oberschenkelinnenseite',
-      'hip-abduction-machine': 'Abduktoren Oberschenkelaußenseite',
+      'hip-adduction-machine': 'Adduktoren Abduktoren Abduktion Oberschenkel schließen öffnen',
+      'hip-abduction-machine': 'Abduktoren Adduktoren Adduktion Oberschenkel öffnen schließen',
       'neck-press-machine': 'Nackenpresse Schulterpresse',
     },
   },
