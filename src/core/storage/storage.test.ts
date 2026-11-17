@@ -1,9 +1,18 @@
 import { describe, expect, test } from 'bun:test'
 import { openDB } from 'idb'
 import { instantiate, TEMPLATES } from '../demo/programs.ts'
-import { BACKUP_VERSION, DEFAULT_SETTINGS, EXERCISE_PHOTO_MAX, Exercise } from '../model/schemas.ts'
+import { BACKUP_VERSION, type Backup, DEFAULT_SETTINGS, EXERCISE_PHOTO_MAX, Exercise } from '../model/schemas.ts'
 import { entry, IDX, must, session, set } from '../testkit.test.ts'
-import { BackupError, exportBackup, importBackup, parseBackup, sessionsCsv } from './backup.ts'
+import {
+  applyImport,
+  BACKUP_PARTS,
+  BackupError,
+  exportBackup,
+  importBackup,
+  parseBackup,
+  partsOf,
+  sessionsCsv,
+} from './backup.ts'
 import { idbStore } from './idb.ts'
 import { needsGoalMigration } from './migrate.ts'
 import { memoryStore, type Store } from './store.ts'
@@ -234,6 +243,164 @@ describe('version 1 backups', () => {
     expect(b.programs[0]?.weeks[0]?.days[0]?.disciplineId).toBe('demo-gym')
     expect(b.sessions.map((s) => s.disciplineId)).toEqual(['demo-swim', undefined])
     expect(b.goals[0]).toMatchObject({ disciplineId: 'demo-swim', volume: 'distance' })
+  })
+})
+
+describe('a backup of some parts', () => {
+  const T1 = '2026-10-01T00:00:00.000Z'
+  const T2 = '2026-10-02T00:00:00.000Z'
+  const NOW = new Date('2026-11-01T00:00:00.000Z')
+  const gym = { id: 'gym', name: 'Gym', color: 'blue' as const, updatedAt: T1 }
+  const squat = { id: 'squat', name: 'Back squat', disciplineId: 'gym', metric: 'weight_reps' as const, updatedAt: T1 }
+  const curl = { id: 'curl', name: 'Curl', disciplineId: 'gym', metric: 'weight_reps' as const, updatedAt: T1 }
+  const program = {
+    id: 'p1',
+    name: 'Legs',
+    goal: '',
+    source: 'manual' as const,
+    weeks: [{ id: 'w', days: [{ id: 'd', name: 'Legs', blocks: [{ id: 'b', exerciseId: 'squat', sets: 5 }] }] }],
+    createdAt: T1,
+    updatedAt: T1,
+  }
+
+  async function device() {
+    const s = memoryStore()
+    await s.put('disciplines', gym)
+    await s.put('exercises', squat)
+    await s.put('exercises', curl)
+    await s.put('programs', program)
+    await s.put('sessions', session('2026-10-10', [entry('squat', [set({ weight: 100, reps: 5 })])], { id: 's1' }))
+    await s.put('notes', { id: 'n1', text: 'Seat at 4', createdAt: T1 })
+    await s.putTombstone({ collection: 'sessions', id: 'gone', deletedAt: T1 })
+    await s.putSettings({ ...DEFAULT_SETTINGS, weightUnit: 'lb', onboarded: true })
+    return s
+  }
+
+  test('holds what was chosen and the exercises it uses, and says so; a whole backup does not', async () => {
+    const s = await device()
+    const b = parseBackup(JSON.stringify(await exportBackup(s, NOW, ['history'])))
+    expect(b.parts).toEqual(['history'])
+    expect(partsOf(b)).toEqual(['history'])
+    expect(b.sessions.map((x) => x.id)).toEqual(['s1'])
+    expect(b.programs).toEqual([])
+    expect(b.notes).toEqual([])
+    expect(b.exercises.map((x) => x.id)).toEqual(['squat'])
+    expect(b.disciplines.map((x) => x.id)).toEqual(['gym'])
+    expect(b.deleted).toEqual([])
+    expect(b.settings).toEqual(DEFAULT_SETTINGS)
+
+    const whole = await exportBackup(s, NOW)
+    expect('parts' in whole).toBe(false)
+    expect(whole.deleted).toHaveLength(1)
+    expect(await exportBackup(s, NOW, BACKUP_PARTS)).toEqual(whole)
+    expect(partsOf(whole)).toEqual([...BACKUP_PARTS])
+  })
+
+  test('a version 11 backup reads as whole', async () => {
+    const v11 = { ...(await exportBackup(await device(), NOW)), version: 11 }
+    const b = parseBackup(JSON.stringify(v11))
+    expect(b.version).toBe(BACKUP_VERSION)
+    expect(b.parts).toBeUndefined()
+    expect(partsOf(b)).toEqual([...BACKUP_PARTS])
+  })
+
+  test('added: the newer of each record stays, nothing goes, and settings stay unless chosen', async () => {
+    const here = await exportBackup(await device(), NOW)
+    const mine = must(here.sessions[0])
+    const file: Backup = {
+      ...here,
+      programs: [],
+      notes: [],
+      sessions: [
+        { ...mine, title: 'Older', updatedAt: T1 },
+        session('2026-10-12', [entry('curl', [set({ reps: 10 })])], { id: 's2', updatedAt: T2 }),
+      ],
+      settings: { ...DEFAULT_SETTINGS, weightUnit: 'kg' },
+    }
+    const local = { ...here, sessions: [{ ...mine, updatedAt: T2 }] }
+    const plan = applyImport(local, file, ['history', 'programs', 'notes'], 'add', NOW)
+    expect(plan.puts.sessions.map((x) => x.id)).toEqual(['s2'])
+    expect(plan.puts.programs).toEqual([])
+    expect(plan.puts.exercises).toEqual([])
+    expect(Object.values(plan.removes).flat()).toEqual([])
+    expect(plan.settings).toBeUndefined()
+    expect(plan.counts.sessions).toBe(1)
+
+    const newer = applyImport(
+      here,
+      { ...file, sessions: [{ ...mine, title: 'Newer', updatedAt: T2 }] },
+      BACKUP_PARTS,
+      'add',
+    )
+    expect(newer.puts.sessions.map((x) => x.title)).toEqual(['Newer'])
+    expect(newer.settings).toMatchObject({ weightUnit: 'kg', onboarded: true })
+  })
+
+  test("an exercise or discipline named as the device's is reused, and what uses it follows", async () => {
+    const here = await exportBackup(await device(), NOW)
+    const file: Backup = {
+      ...here,
+      parts: ['history'],
+      disciplines: [{ id: 'other-gym', name: 'gym', color: 'red' }],
+      exercises: [
+        { id: 'other-squat', name: 'Back Squat', disciplineId: 'other-gym', metric: 'weight_reps' },
+        { id: 'deadlift', name: 'Deadlift', disciplineId: 'other-gym', metric: 'weight_reps' },
+      ],
+      programs: [],
+      notes: [],
+      sessions: [
+        session('2026-10-14', [entry('other-squat', [set()]), entry('deadlift', [set()])], {
+          id: 's3',
+          disciplineId: 'other-gym',
+          updatedAt: T1,
+        }),
+      ],
+    }
+    const plan = applyImport(here, file, ['history'], 'add', NOW)
+    const s3 = must(plan.puts.sessions[0])
+    expect(s3.disciplineId).toBe('gym')
+    expect(s3.entries.map((e) => e.exerciseId)).toEqual(['squat', 'deadlift'])
+    expect(s3.updatedAt).toBe(NOW.toISOString())
+    // Only the missing exercise comes, on the device's discipline; no discipline is added.
+    expect(plan.puts.exercises).toEqual([
+      { id: 'deadlift', name: 'Deadlift', disciplineId: 'gym', metric: 'weight_reps', updatedAt: NOW.toISOString() },
+    ])
+    expect(plan.puts.disciplines).toEqual([])
+  })
+
+  test('replaced: only the chosen collections change, and exercises still used stay', async () => {
+    const here = await exportBackup(await device(), NOW)
+    const file: Backup = {
+      ...here,
+      parts: ['exercises', 'history'],
+      exercises: [{ ...curl, name: 'Biceps curl', updatedAt: T2 }],
+      disciplines: [gym],
+      sessions: [session('2026-10-20', [entry('curl', [set()])], { id: 's4', updatedAt: T1 })],
+      programs: [],
+      notes: [],
+    }
+    const plan = applyImport(here, file, BACKUP_PARTS, 'replace', NOW)
+    expect(plan.removes.sessions).toEqual(['s1'])
+    expect(plan.puts.sessions.map((x) => x.id)).toEqual(['s4'])
+    // The device's program still uses the squat, so it stays.
+    expect(plan.removes.exercises).toEqual([])
+    expect(applyImport(here, { ...file, programs: [] }, BACKUP_PARTS, 'replace', NOW).removes.exercises).toEqual([])
+    expect(applyImport({ ...here, programs: [] }, file, BACKUP_PARTS, 'replace', NOW).removes.exercises).toEqual([
+      'squat',
+    ])
+    expect(plan.puts.exercises.map((x) => x.name)).toEqual(['Biceps curl'])
+    expect(plan.removes.programs).toEqual([])
+    expect(plan.removes.notes).toEqual([])
+    expect(plan.puts.programs).toEqual([])
+    expect(plan.removes.disciplines).toEqual([])
+    expect(plan.settings).toBeUndefined()
+  })
+
+  test('what was deleted here since comes back dated now, so a sync keeps it', async () => {
+    const here = await exportBackup(await device(), NOW)
+    const back = session('2026-10-01', [], { id: 'gone', updatedAt: '2026-09-30T00:00:00.000Z' })
+    const plan = applyImport(here, { ...here, sessions: [back] }, ['history'], 'add', NOW)
+    expect(plan.puts.sessions).toEqual([{ ...back, updatedAt: NOW.toISOString() }])
   })
 })
 

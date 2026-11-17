@@ -119,3 +119,18 @@
 .privacy strong {
   color: var(--ink);
 }
+
+.partOff {
+  color: var(--ink-3);
+  cursor: default;
+}
+
+.sheet {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.mode {
+  display: grid;
+  gap: var(--space-2);
+}

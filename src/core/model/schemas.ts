@@ -300,9 +300,15 @@ export const DEFAULT_SETTINGS: Settings = Settings.parse({})
  * versions read with no notes, no description, and their days by position. 9: an exercise can hold a `photo`; earlier
  * versions read with none. 10: a program can hold `resets` of its progress; earlier versions read with none.
  * 11: a block can differ set by set (`perSet`) and settings hold the language of exercise names (`exerciseLanguage`);
- * earlier versions read with the same sets throughout and English names.
+ * earlier versions read with the same sets throughout and English names. 12: a backup can hold only some parts
+ * (`parts`), with the exercises and disciplines what it holds uses; earlier versions read as whole.
  */
-export const BACKUP_VERSION = 11
+export const BACKUP_VERSION = 12
+
+/** What an export can hold, and an import take: history is the sessions, exercises come with their disciplines. */
+export const BackupPart = z.enum(['history', 'exercises', 'programs', 'goals', 'notes', 'settings'])
+export type BackupPart = z.infer<typeof BackupPart>
+
 export const Backup = z.object({
   app: z.literal('cadence'),
   version: z.literal(BACKUP_VERSION),
@@ -315,5 +321,7 @@ export const Backup = z.object({
   goals: z.array(Goal),
   notes: z.array(Note).default([]),
   deleted: z.array(Deleted).default([]),
+  /** The parts it holds, when not all of them: absent is a whole backup. */
+  parts: z.array(BackupPart).optional(),
 })
 export type Backup = z.infer<typeof Backup>

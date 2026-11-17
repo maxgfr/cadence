@@ -18,8 +18,8 @@ import { useT } from '../../app/i18n.tsx'
 import { lastSynced } from '../../app/sync/lastSync.ts'
 import { useToast } from '../../app/toast.tsx'
 import { LANGUAGE_NAMES, LOCALES } from '../../core/i18n/locale.ts'
-import { BACKUP_VERSION, DEFAULT_SETTINGS, ExerciseLanguage, Language } from '../../core/model/schemas.ts'
-import { BackupError, exportBackup, parseBackup, sessionsCsv } from '../../core/storage/backup.ts'
+import { BACKUP_VERSION, type Backup, DEFAULT_SETTINGS, ExerciseLanguage, Language } from '../../core/model/schemas.ts'
+import { BackupError, parseBackup, sessionsCsv } from '../../core/storage/backup.ts'
 import { Button } from '../../ui/components/Button.tsx'
 import { ListGroup, ListRow } from '../../ui/components/List.tsx'
 import { RadioCards } from '../../ui/components/RadioCards.tsx'
@@ -28,6 +28,8 @@ import { SelectField } from '../../ui/components/SelectField.tsx'
 import { download } from '../../ui/download.ts'
 import { Screen } from '../../ui/shell/Screen.tsx'
 import { useModeOptions } from '../Onboarding/Welcome.tsx'
+import { ExportSheet } from './ExportSheet.tsx'
+import { ImportSheet } from './ImportSheet.tsx'
 import styles from './Settings.module.css'
 
 function usePersisted(): [boolean | undefined, () => Promise<void>] {
@@ -53,6 +55,8 @@ export function Settings() {
   const s = data.settings
   const file = useRef<HTMLInputElement>(null)
   const [importError, setImportError] = useState<string>()
+  const [exporting, setExporting] = useState(false)
+  const [importing, setImporting] = useState<Backup>()
   const [confirmErase, setConfirmErase] = useState(false)
   const [persisted, persist] = usePersisted()
 
@@ -180,10 +184,7 @@ export function Settings() {
           leading={<Download size={20} strokeWidth={1.75} />}
           title={t.settings.exportBackup}
           subtitle={t.settings.exportBackupHint}
-          onClick={async () => {
-            const b = await exportBackup(data.store)
-            download(`cadence-backup-${data.today}.json`, JSON.stringify(b, null, 2), 'application/json')
-          }}
+          onClick={() => setExporting(true)}
         />
         <ListRow
           leading={<Upload size={20} strokeWidth={1.75} />}
@@ -227,14 +228,14 @@ export function Settings() {
           if (!f) return
           setImportError(undefined)
           try {
-            const backup = parseBackup(await f.text())
-            await data.replaceAll(backup)
-            toast(t.settings.imported(backup.sessions.length, backup.programs.length))
+            setImporting(parseBackup(await f.text()))
           } catch (err) {
             setImportError(err instanceof BackupError ? err.message : t.settings.unreadable)
           }
         }}
       />
+      <ExportSheet open={exporting} onClose={() => setExporting(false)} />
+      <ImportSheet file={importing} onClose={() => setImporting(undefined)} />
       {importError && (
         <p className={styles.error} role="alert">
           {importError}

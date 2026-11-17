@@ -35,7 +35,7 @@ const MERGE_ORDER: readonly Collection[] = ['programs', 'sessions', 'goals', 'no
 type Merged = Record<Collection, Rec[]>
 
 /** The ids of this collection that the records already merged still use. */
-function usedIds(c: Collection, out: Merged): ReadonlySet<string> {
+export function usedIds(c: Collection, out: Merged): ReadonlySet<string> {
   const programs = out.programs as Backup['programs']
   const sessions = out.sessions as Backup['sessions']
   const goals = out.goals as Backup['goals']
@@ -70,7 +70,7 @@ function canonical(v: unknown): string {
 const stamp = (r: Rec | undefined) => r?.updatedAt ?? ''
 
 /** The newer of two versions of a record; with the same date, the same one on both devices. */
-function newer<T extends Rec>(a: T, b: T): T {
+export function newer<T extends Rec>(a: T, b: T): T {
   const sa = stamp(a)
   const sb = stamp(b)
   if (sa !== sb) return sa > sb ? a : b

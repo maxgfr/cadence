@@ -5,7 +5,9 @@ import { type ExerciseIndex, indexExercises, sortedExercises } from '../core/lib
 import { presetSlugOf } from '../core/library/search.ts'
 import { todayIso } from '../core/model/dates.ts'
 import {
+  BACKUP_VERSION,
   type Backup,
+  type BackupPart,
   DEFAULT_SETTINGS,
   type Discipline,
   type Exercise,
@@ -17,9 +19,10 @@ import {
 } from '../core/model/schemas.ts'
 import { PRESET_EXERCISES, type PresetSlug, type PresetSport } from '../core/presets/catalog.ts'
 import { buildPreset } from '../core/presets/presets.ts'
+import { applyImport, type ImportMode, type ImportPlan, isWhole, partsOf } from '../core/storage/backup.ts'
 import { idbStore } from '../core/storage/idb.ts'
 import { migrateGoals, migrateV1, needsGoalMigration, needsMigration } from '../core/storage/migrate.ts'
-import { type CollectionName, type Collections, memoryStore, type Store } from '../core/storage/store.ts'
+import { COLLECTIONS, type CollectionName, type Collections, memoryStore, type Store } from '../core/storage/store.ts'
 
 export interface Data {
   store: Store
@@ -45,6 +48,11 @@ export interface Data {
   remove(name: CollectionName, id: string): Promise<void>
   updateSettings(patch: Partial<Settings>): Promise<void>
   replaceAll(backup: Backup): Promise<void>
+  /**
+   * Imports these parts of a backup: added to the device's data (the newer of each record kept) or in place of those
+   * parts only. Returns what was taken from the file.
+   */
+  importBackup(file: Backup, parts: readonly BackupPart[], mode: ImportMode): Promise<ImportPlan | undefined>
   /** Adds the demo for these sports; what already exists (edited demo records included) is left as it is. */
   loadDemo(sports: readonly DemoSport[], withSessions: boolean): Promise<void>
   /** Adds these sports' presets, dated so a sync carries them; returns how many records were new. */
@@ -238,6 +246,42 @@ export function DataProvider({ children, fallback }: { children: ReactNode; fall
     [setLoaded, write],
   )
 
+  const importBackup = useCallback(
+    async (file: Backup, parts: readonly BackupPart[], mode: ImportMode) => {
+      const loaded = current.current
+      if (!loaded) return undefined
+      const here: Backup = {
+        app: 'cadence',
+        version: BACKUP_VERSION,
+        exportedAt: new Date().toISOString(),
+        settings: loaded.settings,
+        disciplines: loaded.disciplines,
+        exercises: loaded.exercises,
+        programs: loaded.programs,
+        sessions: loaded.sessions,
+        goals: loaded.goals,
+        notes: loaded.notes,
+        deleted: await loaded.store.tombstones().catch(() => []),
+      }
+      const plan = applyImport(here, file, parts, mode)
+      // Every part of a whole backup in place of the device's: the file as it is, what it deleted included.
+      if (mode === 'replace' && isWhole(parts) && isWhole(partsOf(file))) {
+        await replaceAll(file)
+        return plan
+      }
+      // The file's records keep their dates, so a sync still keeps the newest of each. Nothing is kept as deleted.
+      for (const c of COLLECTIONS) {
+        for (const id of plan.removes[c]) await write(() => loaded.store.remove(c, id))
+        for (const x of plan.puts[c]) await write(() => loaded.store.put(c, x as never))
+      }
+      const settings = plan.settings
+      if (settings) await write(() => loaded.store.putSettings(settings))
+      setLoaded((l) => (l ? { ...l, ...plan.data, settings: settings ?? l.settings } : l))
+      return plan
+    },
+    [replaceAll, setLoaded, write],
+  )
+
   const loadDemo = useCallback(
     async (sports: readonly DemoSport[], withSessions: boolean) => {
       const loaded = current.current
@@ -331,6 +375,7 @@ export function DataProvider({ children, fallback }: { children: ReactNode; fall
       remove,
       updateSettings,
       replaceAll,
+      importBackup,
       loadDemo,
       loadPreset,
       addPresetExercise,
@@ -344,6 +389,7 @@ export function DataProvider({ children, fallback }: { children: ReactNode; fall
     remove,
     updateSettings,
     replaceAll,
+    importBackup,
     loadDemo,
     loadPreset,
     addPresetExercise,
