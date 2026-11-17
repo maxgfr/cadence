@@ -150,6 +150,19 @@ export const SCENES: Readonly<Record<PresetSlug, Scene>> = {
     pose: pose(SEAT, { arm: [8, 0] }),
     under: (j) => [...seat(j), ...machine(), lever(j.hand, [86, 14]), handle(j.hand)],
   },
+  // Seen from the front: the two levers swing in from pivots above, so the hands meet before the chest.
+  'inner-chest-press': {
+    pose: pose(SEAT, { front: true, hip: [60, 64], arm: [50, 175], leg: [70, 90] }),
+    under: (j) => [
+      pad(add(j.hip, -12, 6), add(j.hip, 12, 6)),
+      post(60, 70, GROUND),
+      post(60, 10, 40, 3),
+      lever(j.hand, [86, 10]),
+      lever(j.hand2, [34, 10]),
+      handle(j.hand),
+      handle(j.hand2),
+    ],
+  },
   'pec-deck': {
     pose: pose(SEAT, { front: true, hip: [60, 64], arm: [-10, -80], leg: [70, 90] }),
     under: (j) => [

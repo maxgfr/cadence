@@ -199,3 +199,13 @@ test('an exercise created while changing a planned one becomes the new choice', 
   await page.getByRole('button', { name: 'Done', exact: true }).click()
   await expect(page.getByRole('button', { name: /^Zercher squat/ }).first()).toBeVisible()
 })
+
+test('a free session starts as the last one of its sport did, in one tap, with undo', async ({ page }) => {
+  await startWithGym(page)
+  await doFullBodyA(page, '82.5')
+  await page.getByRole('button', { name: /^Gym/ }).click()
+  await page.getByRole('button', { name: /^Same as last time: Full body A/ }).click()
+  await expect(page.getByLabel('Back squat, set 1, kg')).toHaveValue('82.5')
+  await page.getByRole('button', { name: 'Undo' }).click()
+  await expect(page.getByRole('heading', { name: 'Add your first exercise' })).toBeVisible()
+})

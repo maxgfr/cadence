@@ -1,6 +1,7 @@
 .sheet {
   width: min(100%, 34rem);
-  max-height: min(90dvh, calc(100dvh - var(--kb-inset) - 2rem));
+  /* Within what is visible: the screen above the keyboard, which iOS may also have moved down the page. */
+  max-height: min(90dvh, calc(100dvh - var(--kb-inset) - 2rem), calc(var(--vv-height, 100dvh) - 2rem));
   margin: auto;
   padding: 0;
   border: 0;
@@ -9,6 +10,8 @@
   color: var(--ink);
   box-shadow: var(--lift);
   overflow: auto;
+  /* A scroll reaching its end stays in the sheet: the page behind does not move. */
+  overscroll-behavior: contain;
 }
 
 .sheet::backdrop {
@@ -62,7 +65,7 @@
 
 /* Tall: the height it may take, kept while its content changes; the body scrolls its own parts. */
 .sheet.tall {
-  height: min(90dvh, calc(100dvh - var(--kb-inset) - 2rem));
+  height: min(90dvh, calc(100dvh - var(--kb-inset) - 2rem), calc(var(--vv-height, 100dvh) - 2rem));
   overflow: hidden;
 }
 
@@ -77,6 +80,7 @@
   flex-direction: column;
   min-height: 0;
   overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 /*

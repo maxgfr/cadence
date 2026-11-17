@@ -1,5 +1,6 @@
 import { currentMessages } from '../i18n/index.ts'
 import type { ExerciseIndex } from '../library/exercises.ts'
+import { isAssisted } from '../library/search.ts'
 import type { LastPerformance } from '../stats/metrics.ts'
 import { addDays } from './dates.ts'
 import { newId } from './ids.ts'
@@ -213,6 +214,14 @@ export function suggestedWeight(block: Block, e1rm: number | undefined): number 
   return undefined
 }
 
+/**
+ * Whether a set's weight is carried from one time to the next: the load lifted, or the counterweight of an assisted
+ * machine (not a load, but what the athlete sets the machine to).
+ */
+export function carriesLoad(exercise: Exercise | undefined): boolean {
+  return exercise !== undefined && (exercise.metric === 'weight_reps' || isAssisted(exercise))
+}
+
 /** The load lifted last time on the set of this rank, else on its last set. */
 function loadAt(last: LastPerformance | undefined, i: number): number | undefined {
   return (last?.sets[i] ?? last?.sets[last.sets.length - 1])?.weight
@@ -234,7 +243,7 @@ export function plannedSets(
     const target = setTargetAt(block, i)
     const planned = suggestedWeight(target.intensity ? { ...block, intensity: target.intensity } : block, e1rm)
     const rpe = target.intensity?.kind === 'rpe' ? target.intensity.value : undefined
-    const weight = (exercise?.metric === 'weight_reps' ? loadAt(last, i) : undefined) ?? planned
+    const weight = (carriesLoad(exercise) ? loadAt(last, i) : undefined) ?? planned
     if (target.reps !== undefined) s.reps = target.reps
     if (weight !== undefined) s.weight = weight
     if (block.duration !== undefined) s.time = block.duration
@@ -252,22 +261,27 @@ export function emptySet(exercise: Exercise | undefined, previous?: SetLog): Set
 }
 
 /**
- * The sets of an exercise added by hand: as many as last time, with their load and reps, none ticked. A time or a
- * distance is a result to beat, not a setting to reuse: those start empty.
+ * The sets of an exercise added by hand: as many as last time, with their load (or an assisted machine's counterweight)
+ * and reps, none ticked. A time or a distance is a result to beat, not a setting to reuse: those start empty.
  */
 export function setsFromLast(exercise: Exercise | undefined, last: LastPerformance | undefined): SetLog[] {
   const metric = exercise?.metric
   if (!last || (metric !== 'weight_reps' && metric !== 'reps')) return [emptySet(exercise)]
+  const load = carriesLoad(exercise)
   return last.sets.map((set) => ({
     done: false,
-    ...(metric === 'weight_reps' && set.weight !== undefined ? { weight: set.weight } : {}),
+    ...(load && set.weight !== undefined ? { weight: set.weight } : {}),
     ...(set.reps !== undefined ? { reps: set.reps } : {}),
   }))
 }
 
-/** Sets as one short line: "3×8 · 60 kg", "2×8 · 60 kg, 1×6 · 62.5 kg", "4×1:05", "2×100 m 1:50". */
+/**
+ * Sets as one short line: "3×8 · 60 kg", "2×8 · 60 kg, 1×6 · 62.5 kg", "3×8 · 20 kg assist", "4×1:05",
+ * "2×100 m 1:50".
+ */
 export function describeSets(sets: readonly SetLog[], exercise: Exercise | undefined, units: UnitPrefs): string {
   const metric = exercise?.metric ?? 'weight_reps'
+  const assisted = exercise !== undefined && isAssisted(exercise)
   const text = (s: SetLog) => {
     const time = s.time !== undefined ? formatTime(s.time) : ''
     if (metric === 'time') return time || '–'
@@ -277,8 +291,11 @@ export function describeSets(sets: readonly SetLog[], exercise: Exercise | undef
     }
     return String(s.reps ?? '–')
   }
-  const load = (s: SetLog) =>
-    metric === 'weight_reps' && s.weight !== undefined ? ` · ${formatWeight(s.weight, units.weightUnit)}` : ''
+  const load = (s: SetLog) => {
+    if (s.weight === undefined) return ''
+    if (metric === 'weight_reps') return ` · ${formatWeight(s.weight, units.weightUnit)}`
+    return assisted ? ` · ${currentMessages().log.assistLoad(formatWeight(s.weight, units.weightUnit))}` : ''
+  }
   const groups: { line: string; n: number }[] = []
   for (const s of sets) {
     const line = `${text(s)}${load(s)}`
@@ -325,7 +342,7 @@ export function swapEntryExercise(
     sets: entry.sets.map((set, i) => {
       if (set.done) return set
       const { weight: _old, distance: oldDistance, ...rest } = set
-      const load = to.metric === 'weight_reps' ? loadAt(last, i) : undefined
+      const load = carriesLoad(to) ? loadAt(last, i) : undefined
       const distance = to.distance ?? (from.distance === undefined ? oldDistance : undefined)
       return {
         ...rest,
@@ -411,6 +428,45 @@ export function freeSession(
     status: 'active',
     startedAt: now.toISOString(),
   }
+}
+
+/**
+ * The latest finished session of a discipline (or of none, for a session with none) strictly before `before`, with
+ * exercises in it: what a free session can start from.
+ */
+export function previousSessionFor(
+  sessions: readonly Session[],
+  disciplineId: string | undefined,
+  before: Pick<Session, 'date' | 'startedAt'>,
+): Session | undefined {
+  const at = (s: Pick<Session, 'date' | 'startedAt'>) => `${s.date} ${s.startedAt ?? ''}`
+  let latest: Session | undefined
+  for (const s of sessions) {
+    if (s.status !== 'done' || s.disciplineId !== disciplineId || s.entries.length === 0) continue
+    if (at(s) >= at(before) || (latest && at(s) <= at(latest))) continue
+    latest = s
+  }
+  return latest
+}
+
+/**
+ * The exercises of a past session, in its order, as new entries: one per exercise still in the library, each with the
+ * sets it had last time (`setsFromLast`), none ticked and with no plan.
+ */
+export function entriesFromSession(
+  previous: Session,
+  exercises: ExerciseIndex,
+  lastOf: (exerciseId: string) => LastPerformance | undefined,
+): Entry[] {
+  const seen = new Set<string>()
+  const entries: Entry[] = []
+  for (const e of previous.entries) {
+    const exercise = exercises.get(e.exerciseId)
+    if (!exercise || seen.has(e.exerciseId)) continue
+    seen.add(e.exerciseId)
+    entries.push({ id: newId(), exerciseId: e.exerciseId, sets: setsFromLast(exercise, lastOf(e.exerciseId)) })
+  }
+  return entries
 }
 
 /** The sessions in progress, the latest started first. */

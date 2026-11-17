@@ -121,6 +121,17 @@ describe('exercise search', () => {
     expect(names(searchExercises('bic', mine, 'en').related)).toEqual(['Hammer grip'])
   })
 
+  test('chest presses and dip machines are found by what a gym calls them', () => {
+    expect(presetsFor('inclined chest press')[0]).toBe('incline-machine-press')
+    expect(presetsFor('seated chest press')[0]).toBe('machine-chest-press')
+    expect(presetsFor('machine chest press')[0]).toBe('machine-chest-press')
+    expect(presetsFor('inner chest press')[0]).toBe('inner-chest-press')
+    expect(presetsFor('reverse butterfly machine')[0]).toBe('reverse-pec-deck')
+    expect(presetsFor('dipping assisted machine')[0]).toBe('assisted-dip')
+    const slugs = searchExercises('butterfly machine', [], 'en').presets.map((p) => p.slug)
+    expect(slugs).toEqual(expect.arrayContaining(['pec-deck', 'reverse-pec-deck']))
+  })
+
   test('an empty search lists everything and suggests nothing', () => {
     const all = searchExercises('  ', library, 'en')
     expect(all.matches).toHaveLength(library.length)

@@ -43,3 +43,39 @@ test('adding an exercise finds related ones and presets, each with its illustrat
   await sheet.locator('[class*="results"]').evaluate((el) => el.scrollTo(0, el.scrollHeight))
   expect((await search.boundingBox())?.y).toBe(top)
 })
+
+test('while the picker is open, the page behind it does not scroll', async ({ page }) => {
+  await page.goto('./')
+  await page.getByRole('checkbox', { name: /^Gym/ }).check()
+  await page.getByRole('button', { name: 'Start with the demo' }).click()
+  await page.getByRole('button', { name: /^Gym/ }).click()
+  await page.getByRole('heading', { name: 'Add your first exercise' }).waitFor()
+  // A page long enough to scroll, and the wheel scrolls it before the sheet opens.
+  await page.evaluate(() => {
+    const room = document.createElement('div')
+    room.style.height = '3000px'
+    document.body.append(room)
+  })
+  const scrolled = () => page.evaluate(() => document.scrollingElement?.scrollTop ?? 0)
+  const viewport = page.viewportSize() ?? { width: 400, height: 800 }
+  await page.mouse.move(viewport.width / 2, viewport.height / 2)
+  await page.mouse.wheel(0, 200)
+  await expect.poll(scrolled).toBeGreaterThan(0)
+  await page.evaluate(() => document.scrollingElement?.scrollTo(0, 0))
+
+  await page.getByRole('button', { name: 'Add exercise' }).first().click()
+  const sheet = page.getByRole('dialog', { name: 'Add exercise' })
+  await sheet.evaluate((d) => Promise.all(d.getAnimations().map((a) => a.finished)))
+  const box = await sheet.boundingBox()
+  if (!box) throw new Error('the sheet has no box')
+  // Over the sheet, past the end of its results, then over the dimmed page around it.
+  for (const [x, y] of [
+    [box.x + box.width / 2, box.y + box.height / 2],
+    [8, 8],
+  ] as const) {
+    await page.mouse.move(x, y)
+    for (let i = 0; i < 5; i++) await page.mouse.wheel(0, 800)
+  }
+  await page.waitForTimeout(300)
+  expect(await scrolled()).toBe(0)
+})

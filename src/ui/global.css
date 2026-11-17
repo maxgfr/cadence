@@ -30,6 +30,11 @@ html[data-keyboard] {
   --kb-room: var(--kb-inset, 0px);
 }
 
+/* While a sheet is open, the page behind it stays still. */
+html:has(dialog[open]) {
+  overflow: hidden;
+}
+
 body {
   margin: 0;
   padding-bottom: var(--kb-room, 0px);

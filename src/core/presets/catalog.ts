@@ -56,6 +56,12 @@ const runEvent = (slug: PresetSlug, distance: number): PresetExercise => ({
   distance,
 })
 
+/**
+ * The machines whose counterweight makes the movement easier: counted in reps, the weight logged beside them being the
+ * assistance, never a load to beat.
+ */
+export const ASSISTED_PRESETS: ReadonlySet<PresetSlug> = new Set<PresetSlug>(['assisted-pull-up', 'assisted-dip'])
+
 export const PRESET_EXERCISES: readonly PresetExercise[] = [
   // Chest.
   load('barbell-bench-press', 'chest', 'triceps', 'shoulders'),
@@ -66,6 +72,8 @@ export const PRESET_EXERCISES: readonly PresetExercise[] = [
   load('dumbbell-fly', 'chest'),
   load('cable-crossover', 'chest'),
   load('machine-chest-press', 'chest', 'triceps'),
+  // A converging machine: the handles come together as they go forward.
+  load('inner-chest-press', 'chest', 'triceps'),
   load('pec-deck', 'chest'),
   body('push-up', 'chest', 'triceps'),
   body('chest-dip', 'chest', 'triceps'),
@@ -153,7 +161,7 @@ export const PRESET_EXERCISES: readonly PresetExercise[] = [
   body('glute-ham-raise', 'hamstrings', 'glutes'),
   load('incline-machine-press', 'chest', 'shoulders'),
   load('machine-lateral-raise', 'shoulders'),
-  // Counted in reps: the counterweight makes them easier, so it must not read as a load.
+  // Counted in reps: the counterweight makes them easier, so it is logged as assistance and never reads as a load.
   body('assisted-pull-up', 'back', 'biceps'),
   body('assisted-dip', 'chest', 'triceps'),
   load('machine-biceps-curl', 'biceps'),

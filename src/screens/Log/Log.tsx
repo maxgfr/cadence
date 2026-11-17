@@ -1,4 +1,4 @@
-import { ArrowLeftRight, Check, ChevronLeft, Plus, RotateCcw, Timer, Trash2, X } from 'lucide-react'
+import { ArrowLeftRight, Check, ChevronLeft, Plus, Repeat, RotateCcw, Timer, Trash2, X } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useLocation, useParams } from 'wouter'
 import { useStartSession } from '../../app/actions.ts'
@@ -13,6 +13,8 @@ import {
   describeBlock,
   describeSets,
   emptySet,
+  entriesFromSession,
+  previousSessionFor,
   replaceBlockExercise,
   restFor,
   setsFromLast,
@@ -107,6 +109,21 @@ export function Log() {
   const setTotal = session.entries.reduce((n, e) => n + e.sets.length, 0)
   const replacing = picking !== null && picking !== 'add' ? picking : undefined
 
+  // A free session not started yet can begin as the last one of its discipline did.
+  const previous =
+    session.entries.length === 0 && !session.programRef
+      ? previousSessionFor(data.sessions, session.disciplineId, session)
+      : undefined
+  const fromPrevious = previous
+    ? entriesFromSession(previous, data.index, (id) => lastPerformance(data.sessions, id, session))
+    : []
+  const sameAsLast = () => {
+    if (!previous || fromPrevious.length === 0) return
+    const before = session
+    update({ ...session, entries: fromPrevious })
+    toast(t.log.filledFromLast(previous.title), [{ label: t.log.undo, onClick: () => update(before) }])
+  }
+
   const restart = () => {
     const before = session
     update(start.restarted(session))
@@ -194,7 +211,22 @@ export function Log() {
       </div>
 
       {session.entries.length === 0 && (
-        <EmptyState title={t.log.firstExerciseTitle} body={t.log.firstExerciseBody} level={2} />
+        <EmptyState
+          title={t.log.firstExerciseTitle}
+          body={t.log.firstExerciseBody}
+          level={2}
+          action={
+            previous && fromPrevious.length > 0 ? (
+              <Button
+                variant="secondary"
+                icon={<Repeat size={18} strokeWidth={2} aria-hidden="true" />}
+                onClick={sameAsLast}
+              >
+                {t.log.sameAsLast(previous.title, formatShortDay(previous.date), fromPrevious.length)}
+              </Button>
+            ) : undefined
+          }
+        />
       )}
 
       <ol className={styles.entries}>

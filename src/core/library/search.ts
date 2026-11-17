@@ -1,6 +1,6 @@
 import { LOCALES, messagesFor } from '../i18n/index.ts'
 import { type Exercise, type ExerciseLanguage, MUSCLES, type Muscle } from '../model/schemas.ts'
-import { PRESET_EXERCISES, type PresetSlug, type PresetSport } from '../presets/catalog.ts'
+import { ASSISTED_PRESETS, PRESET_EXERCISES, type PresetSlug, type PresetSport } from '../presets/catalog.ts'
 import { normalizeName } from './exercises.ts'
 
 /** Lower case, accents and punctuation dropped, words split: what a typed search is compared with. */
@@ -50,6 +50,16 @@ export function presetSlugOf(exercise: Pick<Exercise, 'id' | 'name'>): PresetSlu
     [...names.entries()].flatMap(([slug, all]) => all.map((n) => [normalizeName(n), slug] as const)),
   )
   return presetByName.get(normalizeName(exercise.name))
+}
+
+/**
+ * Whether an exercise is done on an assisted machine (an assisted pull-up or dip, by its id or its name in any
+ * language): counted in reps, with the counterweight that makes it easier logged beside them.
+ */
+export function isAssisted(exercise: Pick<Exercise, 'id' | 'name' | 'metric'>): boolean {
+  if (exercise.metric !== 'reps') return false
+  const slug = presetSlugOf(exercise)
+  return slug !== undefined && ASSISTED_PRESETS.has(slug)
 }
 
 let muscleWords: ReadonlyMap<Muscle, readonly string[]> | undefined

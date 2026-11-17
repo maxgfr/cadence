@@ -1,6 +1,7 @@
 import { Check } from 'lucide-react'
 import { useT } from '../../app/i18n.tsx'
 import { currentMessages, decimalSeparator, formatDecimal } from '../../core/i18n/index.ts'
+import { isAssisted } from '../../core/library/search.ts'
 import type { UnitPrefs } from '../../core/model/program.ts'
 import type { Block, Exercise, SetLog } from '../../core/model/schemas.ts'
 import {
@@ -23,14 +24,20 @@ export interface Columns {
   label: (f: SetField, units: UnitPrefs) => string
 }
 
-/** Which inputs a set row has: what the exercise is measured by, plus effort per set in Advanced mode. */
+/**
+ * Which inputs a set row has: what the exercise is measured by, plus effort per set in Advanced mode. An assisted
+ * machine is counted in reps, its counterweight logged beside them.
+ */
 export function setColumns(exercise: Exercise | undefined, advanced: boolean): Columns {
   const metric = exercise?.metric ?? 'weight_reps'
+  const assisted = exercise !== undefined && isAssisted(exercise)
   const fields: SetField[] =
     metric === 'weight_reps'
       ? ['weight', 'reps']
       : metric === 'reps'
-        ? ['reps']
+        ? assisted
+          ? ['weight', 'reps']
+          : ['reps']
         : metric === 'time'
           ? ['time']
           : exercise?.distance !== undefined
@@ -43,7 +50,7 @@ export function setColumns(exercise: Exercise | undefined, advanced: boolean): C
     label: (f, units) => {
       const col = currentMessages().log.column
       return {
-        weight: units.weightUnit,
+        weight: assisted ? col.assist(units.weightUnit) : units.weightUnit,
         reps: col.reps,
         distance: units.distanceUnit === 'm' ? col.metres : col.yards,
         time: col.time,
