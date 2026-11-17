@@ -11,6 +11,14 @@ under `/cadence/`, no server.
 - `bun run catalog` (rebuild `src/core/ai/catalog.json` from `llm-models`, with a CORS probe per provider)
 - `bun run check` = typecheck + lint + test + build
 
+## CI
+
+A push to `main` runs `.github/workflows/release.yml`: CI (`check`, `e2e`), then semantic-release (tag and GitHub
+release), then the Pages deploy. After every push, follow that run to the end (`gh run list --branch main`,
+`gh run watch <id>`) and read the failed job's log (`gh run view <id> --log-failed`) before calling the work done. A red
+test is fixed in the code. A release step rejected by GitHub with no change on our side is rerun once
+(`gh run rerun <id> --failed`); if it fails again, report it.
+
 ## Rules
 
 - `src/core/**` is pure TypeScript: no React, no DOM. Tested with `bun test`; the UI is tested with Playwright.
