@@ -361,6 +361,30 @@ test('once loaded, the app opens offline', async ({ page, context }) => {
   await context.setOffline(false)
 })
 
+test('Settings checks for a new version: up to date online, could not check offline', async ({ page, context }) => {
+  await page.goto('./')
+  await page.getByRole('button', { name: 'Start empty' }).click()
+  await expect(page.getByRole('heading', { name: 'Today' })).toBeVisible()
+  // The build being served is the one the service worker holds: nothing newer to find.
+  await page.evaluate(async () => {
+    await navigator.serviceWorker.ready
+    if (!navigator.serviceWorker.controller)
+      await new Promise((r) => navigator.serviceWorker.addEventListener('controllerchange', r, { once: true }))
+  })
+  await page.goto('./#/settings')
+  const about = page.getByRole('region', { name: 'About' })
+  await expect(about.getByText(/^Version /)).toBeVisible()
+  await about.getByRole('button', { name: 'Check for updates' }).click()
+  await expect(about.getByRole('status')).toHaveText('Cadence is up to date')
+  await expect(about.getByRole('button', { name: 'Check for updates' })).toBeEnabled()
+  await accessible(page, 'settings, up to date')
+
+  await context.setOffline(true)
+  await about.getByRole('button', { name: 'Check for updates' }).click()
+  await expect(about.getByRole('status')).toHaveText('Could not check. Try again once online.')
+  await context.setOffline(false)
+})
+
 test('a change the browser refuses to store is reported, and the app keeps working', async ({ page }) => {
   await page.goto('./')
   await expect(page.getByRole('heading', { name: 'Cadence' })).toBeVisible()

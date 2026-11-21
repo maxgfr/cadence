@@ -17,9 +17,11 @@ import { useData } from '../../app/data.tsx'
 import { useT } from '../../app/i18n.tsx'
 import { lastSynced } from '../../app/sync/lastSync.ts'
 import { useToast } from '../../app/toast.tsx'
+import { browserUpdateHost } from '../../app/update.ts'
 import { LANGUAGE_NAMES, LOCALES } from '../../core/i18n/locale.ts'
 import { BACKUP_VERSION, type Backup, DEFAULT_SETTINGS, ExerciseLanguage, Language } from '../../core/model/schemas.ts'
 import { BackupError, parseBackup, sessionsCsv } from '../../core/storage/backup.ts'
+import { checkForUpdate, type UpdateStatus } from '../../core/update/update.ts'
 import { Button } from '../../ui/components/Button.tsx'
 import { ListGroup, ListRow } from '../../ui/components/List.tsx'
 import { RadioCards } from '../../ui/components/RadioCards.tsx'
@@ -44,6 +46,33 @@ function usePersisted(): [boolean | undefined, () => Promise<void>] {
       setPersisted(ok)
     },
   ]
+}
+
+/** The app's version, with a check for a newer one that reloads the page on it when there is. */
+function VersionRow() {
+  const t = useT()
+  const [status, setStatus] = useState<UpdateStatus>('idle')
+  const busy = status === 'checking' || status === 'updating'
+  return (
+    <ListRow
+      wrap
+      leading={<Info size={20} strokeWidth={1.75} />}
+      title={t.common.appName}
+      subtitle={
+        <>
+          {t.settings.version(BUILD.version, BUILD.commit)}
+          <span className={styles.updateStatus} role="status">
+            {status === 'idle' ? '' : t.settings.update[status]}
+          </span>
+        </>
+      }
+      trailing={
+        <Button loading={busy} onClick={() => checkForUpdate(browserUpdateHost, setStatus)}>
+          {t.settings.checkUpdates}
+        </Button>
+      }
+    />
+  )
 }
 
 export function Settings() {
@@ -291,11 +320,7 @@ export function Settings() {
       </section>
 
       <ListGroup title={t.settings.about}>
-        <ListRow
-          leading={<Info size={20} strokeWidth={1.75} />}
-          title={t.common.appName}
-          subtitle={t.settings.version(BUILD.version, BUILD.commit)}
-        />
+        <VersionRow />
         <li className={styles.linkRow}>
           <a href="https://github.com/maxgfr/cadence" target="_blank" rel="noreferrer" className={styles.link}>
             <ExternalLink size={20} strokeWidth={1.75} aria-hidden="true" />

@@ -82,6 +82,13 @@ export const settings = namespace(
     eraseAll: 'Erase all training data…',
     about: 'About',
     version: (version: string, commit: string) => `Version ${version} · ${commit}`,
+    checkUpdates: 'Check for updates',
+    update: {
+      checking: 'Checking…',
+      updating: 'Updating, Cadence will reload…',
+      upToDate: 'Cadence is up to date',
+      failed: 'Could not check. Try again once online.',
+    },
     sourceCode: 'Source code and issues on GitHub',
     footnote: 'No account, no server, no tracking. MIT licence.',
     demoPage: {
@@ -180,6 +187,13 @@ export const settings = namespace(
     eraseAll: 'Effacer toutes les données d’entraînement…',
     about: 'À propos',
     version: (version: string, commit: string) => `Version ${version} · ${commit}`,
+    checkUpdates: 'Rechercher une mise à jour',
+    update: {
+      checking: 'Recherche en cours…',
+      updating: 'Mise à jour, Cadence va se recharger…',
+      upToDate: 'Cadence est à jour',
+      failed: 'Vérification impossible. Réessayez une fois en ligne.',
+    },
     sourceCode: 'Code source et tickets sur GitHub',
     footnote: 'Aucun compte, aucun serveur, aucun pistage. Licence MIT.',
     demoPage: {
@@ -277,6 +291,13 @@ export const settings = namespace(
     eraseAll: 'Alle Trainingsdaten löschen…',
     about: 'Über',
     version: (version: string, commit: string) => `Version ${version} · ${commit}`,
+    checkUpdates: 'Nach Updates suchen',
+    update: {
+      checking: 'Suche läuft…',
+      updating: 'Update läuft, Cadence lädt neu…',
+      upToDate: 'Cadence ist auf dem neuesten Stand',
+      failed: 'Prüfung nicht möglich. Versuche es erneut, sobald du online bist.',
+    },
     sourceCode: 'Quellcode und Issues auf GitHub',
     footnote: 'Kein Konto, kein Server, kein Tracking. MIT-Lizenz.',
     demoPage: {
