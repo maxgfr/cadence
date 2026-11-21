@@ -11,7 +11,10 @@
   padding: 0 var(--gutter) calc(env(safe-area-inset-bottom) + 7rem);
 }
 
-/* Top bar: back, the session clock, Finish. Sticky so Finish is always one tap away. */
+/*
+ * Top bar: back, the sets done, Finish; under them, a slim line with the exercise the athlete is on and the running
+ * clock; across its bottom edge, the sets done as a band. Sticky so Finish is always one tap away.
+ */
 .bar {
   position: sticky;
   top: 0;
@@ -19,16 +22,16 @@
   display: grid;
   grid-template-columns: 1fr auto 1fr;
   align-items: center;
-  gap: var(--space-2);
+  gap: 0 var(--space-2);
   margin-inline: calc(-1 * var(--gutter));
-  padding: calc(env(safe-area-inset-top) + var(--space-2)) var(--gutter) var(--space-2);
+  padding: calc(env(safe-area-inset-top) + var(--space-2)) var(--gutter) var(--space-1);
   border-bottom: var(--hairline-width) solid var(--hairline);
   background: color-mix(in srgb, var(--bg) 92%, transparent);
   backdrop-filter: saturate(1.6) blur(16px);
   -webkit-backdrop-filter: saturate(1.6) blur(16px);
 }
 
-.bar > :last-child {
+.finishButton {
   justify-self: end;
 }
 
@@ -54,6 +57,101 @@
   font-size: var(--text-footnote);
   font-weight: 600;
   font-variant-numeric: tabular-nums;
+}
+
+/* One line on a 360 px phone: the position stays whole, a long exercise name gives way first. */
+.status {
+  display: flex;
+  grid-column: 1 / -1;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+  min-height: 1.75rem;
+}
+
+.status:empty {
+  display: none;
+}
+
+.position {
+  display: flex;
+  flex: 0 1 auto;
+  align-items: center;
+  gap: var(--space-1);
+  min-width: 0;
+  min-height: 1.75rem;
+  margin: 0 0 0 calc(-1 * var(--space-2));
+  padding: 0 var(--space-2);
+  border: 0;
+  border-radius: var(--radius-control);
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: var(--text-footnote);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  line-height: var(--leading-tight);
+  white-space: nowrap;
+}
+
+button.position {
+  cursor: pointer;
+}
+
+button.position:hover {
+  background: var(--surface-pressed);
+}
+
+.positionAt {
+  flex: none;
+}
+
+.positionName {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--ink-2);
+  font-weight: 500;
+  text-overflow: ellipsis;
+}
+
+.positionName::before {
+  content: "·" / "";
+  margin-inline-end: var(--space-1);
+}
+
+.clock {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: var(--space-1);
+  margin-inline-start: auto;
+  color: var(--ink);
+  font-size: var(--text-footnote);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: var(--leading-tight);
+}
+
+.clock svg {
+  color: var(--ink-3);
+}
+
+/* The sets done, as a band over the bar's hairline. */
+.progress {
+  position: absolute;
+  right: 0;
+  bottom: calc(-1 * var(--hairline-width));
+  left: 0;
+  height: 3px;
+  background: var(--accent);
+  transform-origin: left;
+  transition: transform var(--dur) var(--ease-out);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .progress {
+    transition: none;
+  }
 }
 
 .head {
@@ -90,6 +188,8 @@
 .entry {
   display: grid;
   gap: var(--space-3);
+  /* Brought into view from the top bar: below it, not under it. */
+  scroll-margin-top: calc(env(safe-area-inset-top) + 6.5rem);
   padding: var(--space-4) var(--space-3) var(--space-2);
   border-radius: var(--radius-surface);
   background: var(--surface);

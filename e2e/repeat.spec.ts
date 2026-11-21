@@ -209,3 +209,40 @@ test('a free session starts as the last one of its sport did, in one tap, with u
   await page.getByRole('button', { name: 'Undo' }).click()
   await expect(page.getByRole('heading', { name: 'Add your first exercise' })).toBeVisible()
 })
+
+test('the top bar shows how long the session has run and the exercise under way, and goes to it', async ({ page }) => {
+  await startWithGym(page)
+  await page
+    .getByRole('button', { name: /^Full body A/ })
+    .first()
+    .click()
+  const bar = page.getByRole('main').locator('header').first()
+
+  // The clock counts up from the start; a screen reader gets it in minutes, never second by second.
+  const clock = bar.getByText(/^\d+:\d{2}$/)
+  await expect(clock).toBeVisible()
+  const started = (await clock.textContent()) ?? ''
+  await expect(clock).not.toHaveText(started)
+  await expect(bar.getByText('Elapsed time 0 min')).toBeAttached()
+  await expect(bar.locator('[aria-live], [role="timer"]')).toHaveCount(0)
+
+  // On the first exercise; once its sets are ticked, on the next.
+  await expect(bar.getByRole('button', { name: 'Exercise 1 of 4, Back squat' })).toBeVisible()
+  for (const n of [1, 2, 3]) await page.getByRole('button', { name: `Back squat, set ${n} done` }).click()
+  await expect(bar.getByText(/^3 of \d+ sets$/)).toBeVisible()
+  const next = bar.getByRole('button', { name: 'Exercise 2 of 4, Bench press' })
+  await expect(next).toBeVisible()
+
+  // A tap brings that card into view, under the bar, and moves focus to it.
+  await next.click()
+  const card = page.getByRole('article', { name: 'Bench press' })
+  await expect(card).toBeFocused()
+  const heading = card.getByRole('heading', { name: 'Bench press' })
+  await expect(heading).toBeInViewport()
+  await expect
+    .poll(async () => {
+      const [h, b] = await Promise.all([heading.boundingBox(), bar.boundingBox()])
+      return h && b ? h.y >= b.y + b.height : false
+    })
+    .toBe(true)
+})

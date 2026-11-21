@@ -49,7 +49,7 @@ test('demo sport → logged session → record and chart → backup round trip',
     await page.getByLabel(`Back squat, set ${set}, kg`).fill(kg)
     await page.getByRole('button', { name: `Back squat, set ${set} done` }).click()
   }
-  // No clock runs and ticking a set starts nothing: the rest is started by hand.
+  // Ticking a set starts no timer: the rest is started by hand.
   await expect(page.getByRole('timer')).toHaveCount(0)
   await expect(page.getByRole('region', { name: 'Rest timer' })).toHaveCount(0)
   await page.getByRole('button', { name: /^Rest .* after Back squat$/ }).click()

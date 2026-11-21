@@ -22,6 +22,7 @@ import {
   swapEntryExercise,
 } from '../../core/model/program.ts'
 import type { Entry, Exercise, Session, SetLog } from '../../core/model/schemas.ts'
+import { sessionPosition } from '../../core/model/sessionProgress.ts'
 import { formatTime } from '../../core/model/units.ts'
 import { lastPerformance } from '../../core/stats/metrics.ts'
 import { ExerciseArt, hasArt } from '../../ui/art/ExerciseArt.tsx'
@@ -37,11 +38,13 @@ import { useUnits } from '../../ui/units.ts'
 import { FinishSheet } from './FinishSheet.tsx'
 import styles from './Log.module.css'
 import { RestTimer, useRestTimer } from './RestTimer.tsx'
+import { SessionClock } from './SessionClock.tsx'
 import { SetRow, setColumns } from './SetRow.tsx'
 
 /**
- * The logging screen: one card per exercise, one row per set, a tick per set done. No clock runs: the rest timer
- * starts only when asked, from an exercise.
+ * The logging screen: one card per exercise, one row per set, a tick per set done. The top bar says where the athlete
+ * is (the sets done, the exercise they are on) and how long the session has run; the rest timer starts only when
+ * asked, from an exercise.
  */
 export function Log() {
   const { id } = useParams<{ id: string }>()
@@ -116,6 +119,18 @@ export function Log() {
   const setDone = session.entries.reduce((n, e) => n + e.sets.filter((s) => s.done).length, 0)
   const setTotal = session.entries.reduce((n, e) => n + e.sets.length, 0)
   const replacing = picking !== null && picking !== 'add' ? picking : undefined
+  const position = sessionPosition(session.entries)
+  const current = position.kind === 'at' ? session.entries[position.index - 1] : undefined
+  const currentName = current && (data.index.get(current.exerciseId)?.name ?? t.log.unknownExercise)
+
+  // To the card of the exercise the athlete is on, below the sticky bar; focus follows, for a keyboard or a reader.
+  const goToEntry = (entryId: string) => {
+    const card = document.getElementById(entryAnchor(entryId))
+    if (!card) return
+    const still = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    card.scrollIntoView({ block: 'start', behavior: still ? 'auto' : 'smooth' })
+    card.focus({ preventScroll: true })
+  }
 
   // A free session not started yet can begin as the last one of its discipline did.
   const previous =
@@ -204,9 +219,27 @@ export function Log() {
           {from !== undefined ? t.common.back : t.shell.nav.today}
         </a>
         <span className={styles.count}>{t.log.setsCount(setDone, setTotal)}</span>
-        <Button variant="primary" onClick={() => setFinishing(true)}>
+        <Button variant="primary" className={styles.finishButton} onClick={() => setFinishing(true)}>
           {t.log.finish}
         </Button>
+        <div className={styles.status}>
+          {position.kind === 'at' && current && (
+            <button
+              type="button"
+              className={styles.position}
+              aria-label={t.log.exerciseAt(t.log.exercisePosition(position.index, position.total), currentName ?? '')}
+              onClick={() => goToEntry(current.id)}
+            >
+              <span className={styles.positionAt}>{t.log.exercisePosition(position.index, position.total)}</span>
+              <span className={styles.positionName}>{currentName}</span>
+            </button>
+          )}
+          {position.kind === 'done' && <p className={styles.position}>{t.log.allExercisesDone(position.total)}</p>}
+          <SessionClock session={session} />
+        </div>
+        {setTotal > 0 && (
+          <div className={styles.progress} style={{ transform: `scaleX(${setDone / setTotal})` }} aria-hidden="true" />
+        )}
       </header>
 
       <div className={styles.head}>
@@ -353,6 +386,9 @@ export function Log() {
   )
 }
 
+/** The id of an exercise's card, for the top bar to bring it into view. */
+const entryAnchor = (entryId: string) => `entry-${entryId}`
+
 interface EntryCardProps {
   entry: Entry
   exercise: Exercise | undefined
@@ -387,7 +423,12 @@ function EntryCard({
   const setAt = (i: number, next: SetLog) =>
     onChange((e) => ({ ...e, sets: e.sets.map((s, j) => (j === i ? next : s)) }))
   return (
-    <article className={cx(styles.entry, allDone && styles.entryDone)} aria-label={exercise?.name ?? t.common.exercise}>
+    <article
+      id={entryAnchor(entry.id)}
+      tabIndex={-1}
+      className={cx(styles.entry, allDone && styles.entryDone)}
+      aria-label={exercise?.name ?? t.common.exercise}
+    >
       <header className={styles.entryHead}>
         <div className={styles.entryText}>
           <h2 className={styles.entryName}>

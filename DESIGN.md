@@ -121,14 +121,14 @@ components:
 
 Cadence reads like a training card a coach hands over at the start of a session: the plan written in the sport's own shorthand ("5×5 @80%", "8×50 m @1:50", "6×60 m @95% max · rest 3:00"), set in tabular figures, with room to write down what actually happened next to it. Neutral graphite surfaces, deep ink, and one track-orange accent that marks the next action and the sets already done.
 
-It is used in bright places (gym lights, pool decks, outdoor tracks) with sweaty hands and a few seconds of attention between sets, so the logging screen is the loudest part of the system: thumb-sized cells, a big tick per set, and no running clock (a rest bar rises from the bottom only when the athlete starts it). Planning and review screens are calmer and denser. Dark mode is designed on its own: near-black ground, lifted graphite surfaces, a lighter orange carrying dark ink.
+It is used in bright places (gym lights, pool decks, outdoor tracks) with sweaty hands and a few seconds of attention between sets, so the logging screen is the loudest part of the system: thumb-sized cells, a big tick per set, and one quiet clock in the top bar counting the session up (a rest bar rises from the bottom only when the athlete starts it). Planning and review screens are calmer and denser. Dark mode is designed on its own: near-black ground, lifted graphite surfaces, a lighter orange carrying dark ink.
 
 **Key characteristics:**
 - One accent (track orange) for the primary action, the current place, a ticked set and a record point. Never decoration.
 - The user's disciplines each take one of eight palette colours, shown as 10px dots, always beside a text label; a hollow ring means "no discipline".
 - Plans and values in tabular figures, joined to their units with no-break spaces so "800 m" never splits.
 - Bottom tab bar (Today, Programs, Progress, Exercises, Settings) under 1000px; a 260px sidebar from 1000px. History is the second view of Progress (Overview | History).
-- Logging is a focus route: no tab bar, a sticky bar with Back, the count of sets done and Finish. No clock runs on screen.
+- Logging is a focus route: no tab bar, a sticky bar with Back, the count of sets done and Finish, then the exercise the athlete is on and the time the session has run.
 
 ## Colors
 
@@ -193,6 +193,9 @@ Control radius, min height 44px (50px large). Primary orange; secondary soft ora
 
 ### Set row (signature)
 `Set # | value cells | (RPE in Advanced) | tick`. Cells are 52px, centred, tabular, on the ground colour; the plan pre-fills them so logging is mostly confirming. The tick is a 52px ring; pressing it fills it orange with a 200ms pop; it starts nothing else. A ticked row's cells flatten to Surface Pressed. When every set of an exercise is ticked, its name gains a green check.
+
+### Session bar
+The logging screen's sticky top bar, two rows tall at most. First row: Back, the count of sets done (Footnote, Ink 2) and Finish. Second row, 28px: on the left "Exercise 3 of 7" in Footnote Ink, then the exercise's name in Ink 2, cut with an ellipsis before it wraps; a tap brings that card into view under the bar and moves focus to it. Every set ticked, it reads "All 7 exercises done". On the right, the clock counting up from the start (m:ss, h:mm:ss past an hour) in tabular Footnote 700, a small clock icon in Ink 3 before it; it shows only for a session in progress started less than six hours ago, so a session opened again from the history days later shows none. A screen reader reads it as "Elapsed time 23 min" and is never told each second. A 3px orange band over the bar's bottom hairline fills with the sets done.
 
 ### Rest bar (signature)
 Started by hand from an exercise's *Rest* button (its planned rest, or the length set in Settings), never by a tick. Pinned to the bottom of the logging screen, ink ground, a 4px orange band draining left to right, the countdown in Headline, then −15, +15 and Skip as 44px outlined buttons. It buzzes (where vibration exists) when the rest ends, says "Rest over, go", and leaves after four seconds.
