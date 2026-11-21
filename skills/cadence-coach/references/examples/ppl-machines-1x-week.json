@@ -91,12 +91,12 @@
           "notes": "12–20 reps. Once every set reaches 20, add the smallest load step."
         },
         {
-          "slug": "cable-lateral-raise",
+          "slug": "machine-lateral-raise",
           "sets": 4,
           "reps": 12,
           "intensity": { "kind": "rpe", "value": 9 },
-          "rest": 60,
-          "notes": "One arm at a time, the cable behind the body. 12–20 reps. Once every set reaches 20, add the smallest load step."
+          "rest": 90,
+          "notes": "12–20 reps. Once every set reaches 20, add the smallest load step."
         },
         {
           "slug": "machine-biceps-curl",

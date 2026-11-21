@@ -11,7 +11,8 @@ It was built with an athlete from their own last Push, Pull and Legs sessions:
 
 - Their exercises were kept, reordered with the compound movements first (chest press, lat pulldown, leg press).
 - Ramping sets they logged as working sets became two warm-up sets (not logged) and 3–4 hard sets.
-- On Pull, the machine lateral raise became the cable lateral raise, for variety beside the machine one on Push.
+- On Pull, they had tried the cable lateral raise for variety and went back to the machine lateral raise: side delts
+  are trained on both days, with the same 4 sets.
 - A leg extension was added, because the leg press was their only quadriceps exercise.
 - The machine high row was dropped: it overlapped the lat pulldown and the machine row, and back was above the
   per-session ceiling.
@@ -46,6 +47,7 @@ Flags (advice: ceiling 11 per muscle per session, floor 6 per muscle per week)
   below floor: calves 3
   below floor: core 3
   below floor: glutes 5
+  repeated: Machine lateral raise on Push, Pull. Another exercise for the same muscle gives variety (machine vs cable, for example).
 ```
 
 ## What it leaves out
@@ -56,5 +58,7 @@ Flags (advice: ceiling 11 per muscle per session, floor 6 per muscle per week)
   press.
 - **Hip adduction**: its 3 sets are not counted, because the preset lists no muscle for it.
 - **Above the ceiling**: chest (11.5 on Push) passes the 11 fractional sets per session past which no extra hypertrophy
-  is detectable, by 0.5. With each muscle trained once a week, the extra sets add little rather than harm (see
+  is detectable, by 0.5. With chest trained once a week, the extra sets add little rather than harm (see
   `../programming.md`).
+- **Repeated exercise**: the machine lateral raise is on Push and on Pull. That is intended: side delts are trained twice
+  a week, on the machine the athlete went back to after trying the cable.

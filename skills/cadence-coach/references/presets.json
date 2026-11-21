@@ -2235,18 +2235,18 @@
               }
             },
             {
-              "slug": "cable-lateral-raise",
+              "slug": "machine-lateral-raise",
               "sets": 4,
               "reps": 12,
               "intensity": {
                 "kind": "rpe",
                 "value": 9
               },
-              "rest": 60,
+              "rest": 90,
               "notes": {
-                "en": "One arm at a time, the cable behind the body. 12–20 reps. Once every set reaches 20, add the smallest load step.",
-                "fr": "Un bras à la fois, le câble passant derrière le corps. 12 à 20 répétitions. Dès que chaque série atteint 20, monte la charge du plus petit cran.",
-                "de": "Ein Arm nach dem anderen, das Kabel hinter dem Körper. 12–20 Wiederholungen. Schaffst du in jedem Satz 20, erhöhe das Gewicht um die kleinste Stufe."
+                "en": "12–20 reps. Once every set reaches 20, add the smallest load step.",
+                "fr": "12 à 20 répétitions. Dès que chaque série atteint 20, monte la charge du plus petit cran.",
+                "de": "12–20 Wiederholungen. Schaffst du in jedem Satz 20, erhöhe das Gewicht um die kleinste Stufe."
               }
             },
             {

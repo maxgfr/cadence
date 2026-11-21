@@ -61,7 +61,7 @@ export const PRESET_PROGRAMS: readonly PresetProgram[] = [
           b('lat-pulldown', 4, range(8, 12, 8, 150, notes.rampUp)),
           b('machine-row', 4, range(8, 12, 8, 150)),
           b('reverse-pec-deck', 4, range(12, 20, 9, 90)),
-          b('cable-lateral-raise', 4, range(12, 20, 9, 60, notes.oneArmBehind)),
+          b('machine-lateral-raise', 4, range(12, 20, 9, 90)),
           b('machine-biceps-curl', 4, range(10, 15, 9, 90)),
           b('cable-curl', 3, range(10, 15, 9, 60)),
         ]),
