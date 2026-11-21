@@ -1,0 +1,3023 @@
+{
+  "app": "cadence",
+  "backupVersion": 12,
+  "locales": ["en", "fr", "de"],
+  "muscles": {
+    "quads": {
+      "en": "Quads",
+      "fr": "Quadriceps",
+      "de": "Quadrizeps"
+    },
+    "hamstrings": {
+      "en": "Hamstrings",
+      "fr": "Ischio-jambiers",
+      "de": "Beinbeuger"
+    },
+    "glutes": {
+      "en": "Glutes",
+      "fr": "Fessiers",
+      "de": "Gesäß"
+    },
+    "calves": {
+      "en": "Calves",
+      "fr": "Mollets",
+      "de": "Waden"
+    },
+    "chest": {
+      "en": "Chest",
+      "fr": "Pectoraux",
+      "de": "Brust"
+    },
+    "back": {
+      "en": "Back",
+      "fr": "Dos",
+      "de": "Rücken"
+    },
+    "shoulders": {
+      "en": "Shoulders",
+      "fr": "Épaules",
+      "de": "Schultern"
+    },
+    "biceps": {
+      "en": "Biceps",
+      "fr": "Biceps",
+      "de": "Bizeps"
+    },
+    "triceps": {
+      "en": "Triceps",
+      "fr": "Triceps",
+      "de": "Trizeps"
+    },
+    "core": {
+      "en": "Core",
+      "fr": "Sangle abdominale",
+      "de": "Rumpf"
+    },
+    "full_body": {
+      "en": "Full body",
+      "fr": "Corps entier",
+      "de": "Ganzkörper"
+    }
+  },
+  "disciplines": {
+    "gym": {
+      "id": "preset-gym",
+      "color": "blue",
+      "names": {
+        "en": "Gym",
+        "fr": "Musculation",
+        "de": "Krafttraining"
+      }
+    },
+    "swim": {
+      "id": "preset-swim",
+      "color": "aqua",
+      "names": {
+        "en": "Swimming",
+        "fr": "Natation",
+        "de": "Schwimmen"
+      }
+    },
+    "running": {
+      "id": "preset-running",
+      "color": "orange",
+      "names": {
+        "en": "Running",
+        "fr": "Course à pied",
+        "de": "Laufen"
+      }
+    }
+  },
+  "exercises": [
+    {
+      "slug": "barbell-bench-press",
+      "id": "preset-barbell-bench-press",
+      "sport": "gym",
+      "metric": "weight_reps",
+      "muscles": ["chest", "triceps", "shoulders"],
+      "assisted": false,
+      "names": {
+        "en": "Barbell bench press",
+        "fr": "Développé couché barre",
+        "de": "Bankdrücken mit Langhantel"
+      }
+    },
+    {
+      "slug": "incline-barbell-bench-press",
+      "id": "preset-incline-barbell-bench-press",
+      "sport": "gym",
+      "metric": "weight_reps",
+      "muscles": ["chest", "shoulders", "triceps"],
+      "assisted": false,
+      "names": {
+        "en": "Incline barbell bench press",
+        "fr": "Développé incliné barre",
+        "de": "Schrägbankdrücken mit Langhantel"
+      }
+    },
+    {
+      "slug": "decline-bench-press",
+      "id": "preset-decline-bench-press",
+      "sport": "gym",
+      "metric": "weight_reps",
+      "muscles": ["chest", "triceps"],
+      "assisted": false,
+      "names": {
+        "en": "Decline bench press",
+        "fr": "Développé décliné",
+        "de": "Negativ-Bankdrücken"
+      }
+    },
+    {
+      "slug": "dumbbell-bench-press",
+      "id": "preset-dumbbell-bench-press",
+      "sport": "gym",
+      "metric": "weight_reps",
+      "muscles": ["chest", "triceps", "shoulders"],
+      "assisted": false,
+      "names": {
+        "en": "Dumbbell bench press",
+        "fr": "Développé couché haltères",
+        "de": "Bankdrücken mit Kurzhanteln"
+      }
+    },
+    {
+      "slug": "incline-dumbbell-press",
+      "id": "preset-incline-dumbbell-press",
+      "sport": "gym",
+      "metric": "weight_reps",
+      "muscles": ["chest", "shoulders"],
+      "assisted": false,
+      "names": {
+        "en": "Incline dumbbell press",
+        "fr": "Développé incliné haltères",
+        "de": "Schrägbankdrücken mit Kurzhanteln"
+      }
+    },
+    {
+      "slug": "dumbbell-fly",
+      "id": "preset-dumbbell-fly",
+      "sport": "gym",
+      "metric": "weight_reps",
+      "muscles": ["chest"],
+      "assisted": false,
+      "names": {
+        "en": "Dumbbell fly",
+        "fr": "Écarté couché haltères",
+        "de": "Fliegende mit Kurzhanteln"
+      }
+    },
+    {
+      "slug": "cable-crossover",
+      "id": "preset-cable-crossover",
+      "sport": "gym",
+      "metric": "weight_reps",
+      "muscles": ["chest"],
+      "assisted": false,
+      "names": {
+        "en": "Cable crossover",
+        "fr": "Écarté à la poulie",
+        "de": "Cable Crossover"
+      }
+    },
+    {
+      "slug": "machine-chest-press",
+      "id": "preset-machine-chest-press",
+      "sport": "gym",
+      "metric": "weight_reps",
+      "muscles": ["chest", "triceps"],
+      "assisted": false,
+      "names": {
+        "en": "Seated chest press",
+        "fr": "Développé assis à la machine",
+        "de": "Brustpresse sitzend"
+      },
+      "words": {
+        "en": "machine chest press seated",
+        "fr": "développé pectoraux à la machine",
+        "de": "Brustpresse an der Maschine"
+      }
+    },
+    {
+      "slug": "inner-chest-press",
+      "id": "preset-inner-chest-press",
+      "sport": "gym",
+      "metric": "weight_reps",
+      "muscles": ["chest", "triceps"],
+      "assisted": false,
+      "names": {
+        "en": "Inner chest press",
+        "fr": "Développé convergent à la machine",
+        "de": "Inner-Chest-Presse"
+      },
+      "words": {
+        "en": "inner chest converging iso lateral",
+        "fr": "développé convergent iso latéral",
+        "de": "konvergierende Brustpresse iso lateral"
+      }
+    },
+    {
+      "slug": "pec-deck",
+      "id": "preset-pec-deck",
+      "sport": "gym",
+      "metric": "weight_reps",
+      "muscles": ["chest"],
+      "assisted": false,
+      "names": {
+        "en": "Pec deck",
+        "fr": "Pec deck",
+        "de": "Butterfly-Maschine"
+      },
+      "words": {
+        "en": "chest fly machine pec fly butterfly",
+        "fr": "écartés à la machine butterfly",
+        "de": "Fliegende an der Maschine Butterfly"
+      }
+    },
+    {
+      "slug": "push-up",
+      "id": "preset-push-up",
+      "sport": "gym",
+      "metric": "reps",
+      "muscles": ["chest", "triceps"],
+      "assisted": false,
+      "names": {
+        "en": "Push-up",
+        "fr": "Pompe",
+        "de": "Liegestütz"
+      }
+    },
+    {
+      "slug": "chest-dip",
+      "id": "preset-chest-dip",
+      "sport": "gym",
+      "metric": "reps",
+      "muscles": ["chest", "triceps"],
+      "assisted": false,
+      "names": {
+        "en": "Dip",
+        "fr": "Dips",
+        "de": "Dips"
+      },
+      "words": {
+        "en": "dipping",
+        "fr": "dips",
+        "de": "Barrenstütz"
+      }
+    },
+    {
+      "slug": "deadlift",
+      "id": "preset-deadlift",
+      "sport": "gym",
+      "metric": "weight_reps",
+      "muscles": ["hamstrings", "glutes", "back"],
+      "assisted": false,
+      "names": {
+        "en": "Deadlift",
+        "fr": "Soulevé de terre",
+        "de": "Kreuzheben"
+      }
+    },
+    {
+      "slug": "barbell-row",
+      "id": "preset-barbell-row",
+      "sport": "gym",
+      "metric": "weight_reps",
+      "muscles": ["back", "biceps"],
+      "assisted": false,
+      "names": {
+        "en": "Barbell row",
+        "fr": "Rowing barre",
+        "de": "Langhantelrudern"
+      }
+    },
+    {
+      "slug": "dumbbell-row",
+      "id": "preset-dumbbell-row",
+      "sport": "gym",
+      "metric": "weight_reps",
+      "muscles": ["back", "biceps"],
+      "assisted": false,
+      "names": {
+        "en": "Dumbbell row",
+        "fr": "Rowing haltère",
+        "de": "Kurzhantelrudern"
+      }
+    },
+    {
+      "slug": "t-bar-row",
+      "id": "preset-t-bar-row",
+      "sport": "gym",
+      "metric": "weight_reps",
+      "muscles": ["back", "biceps"],
+      "assisted": false,
+      "names": {
+        "en": "T-bar row",
+        "fr": "Rowing barre en T",
+        "de": "T-Bar-Rudern"
+      }
+    },
+    {
+      "slug": "trap-bar-deadlift",
+      "id": "preset-trap-bar-deadlift",
+      "sport": "gym",
+      "metric": "weight_reps",
+      "muscles": ["quads", "glutes", "hamstrings", "back"],
+      "assisted": false,
+      "names": {
+        "en": "Trap bar deadlift",
+        "fr": "Soulevé de terre à la trap bar",
+        "de": "Kreuzheben mit Trap Bar"
+      }
+    },
+    {
+      "slug": "good-morning",
+      "id": "preset-good-morning",
+      "sport": "gym",
+      "metric": "weight_reps",
+      "muscles": ["hamstrings", "glutes", "back"],
+      "assisted": false,
+      "names": {
+        "en": "Good morning",
+        "fr": "Good morning",
+        "de": "Good Morning"
+      }
+    },
+    {
+      "slug": "seated-cable-row",
+      "id": "preset-seated-cable-row",
+      "sport": "gym",
+      "metric": "weight_reps",
+      "muscles": ["back", "biceps"],
+      "assisted": false,
+      "names": {
+        "en": "Seated cable row",
+        "fr": "Tirage horizontal à la poulie",
+        "de": "Rudern am Kabelzug sitzend"
+      },
+      "words": {
+        "en": "low row",
+        "fr": "rowing assis",
+        "de": "Low Row"
+      }
+    },
+    {
+      "slug": "machine-row",
+      "id": "preset-machine-row",
+      "sport": "gym",
+      "metric": "weight_reps",
+      "muscles": ["back", "biceps"],
+      "assisted": false,
+      "names": {
+        "en": "Machine row",
+        "fr": "Rowing à la machine",
+        "de": "Rudern an der Maschine"
+      },
+      "words": {
+        "en": "low row chest supported row",
+        "fr": "tirage horizontal à la machine",
+        "de": "Brustgestütztes Rudern"
+      }
+    },
+    {
+      "slug": "lat-pulldown",
+      "id": "preset-lat-pulldown",
+      "sport": "gym",
+      "metric": "weight_reps",
+      "muscles": ["back", "biceps"],
+      "assisted": false,
+      "names": {
+        "en": "Lat pulldown",
+        "fr": "Tirage vertical",
+        "de": "Latziehen"
+      }
+    },
+    {
+      "slug": "straight-arm-pulldown",
+      "id": "preset-straight-arm-pulldown",
+      "sport": "gym",
+      "metric": "weight_reps",
+      "muscles": ["back"],
+      "assisted": false,
+      "names": {
+        "en": "Straight-arm pulldown",
+        "fr": "Pull-over à la poulie",
+        "de": "Überzüge am Kabelzug"
+      }
+    },
+    {
+      "slug": "pull-up",
+      "id": "preset-pull-up",
+      "sport": "gym",
+      "metric": "reps",
+      "muscles": ["back", "biceps"],
+      "assisted": false,
+      "names": {
+        "en": "Pull-up",
+        "fr": "Traction",
+        "de": "Klimmzug"
+      }
+    },
+    {
+      "slug": "chin-up",
+      "id": "preset-chin-up",
+      "sport": "gym",
+      "metric": "reps",
+      "muscles": ["back", "biceps"],
+      "assisted": false,
+      "names": {
+        "en": "Chin-up",
+        "fr": "Traction supination",
+        "de": "Klimmzug im Untergriff"
+      }
+    },
+    {
+      "slug": "inverted-row",
+      "id": "preset-inverted-row",
+      "sport": "gym",
+      "metric": "reps",
+      "muscles": ["back", "biceps"],
+      "assisted": false,
+      "names": {
+        "en": "Inverted row",
+        "fr": "Rowing inversé",
+        "de": "Australische Klimmzüge"
+      }
+    },
+    {
+      "slug": "back-extension",
+      "id": "preset-back-extension",
+      "sport": "gym",
+      "metric": "weight_reps",
+      "muscles": ["back", "glutes"],
+      "assisted": false,
+      "names": {
+        "en": "Back extension",
+        "fr": "Extension lombaire",
+        "de": "Rückenstrecker"
+      },
+      "words": {
+        "en": "hyperextension",
+        "fr": "banc à lombaires",
+        "de": "Hyperextension"
+      }
+    },
+    {
+      "slug": "shrug",
+      "id": "preset-shrug",
+      "sport": "gym",
+      "metric": "weight_reps",
+      "muscles": ["back"],
+      "assisted": false,
+      "names": {
+        "en": "Shrug",
+        "fr": "Shrug",
+        "de": "Shrugs"
+      },
+      "words": {
+        "en": "trap",
+        "fr": "haussement d’épaules trapèzes",
+        "de": "Schulterheben Trapez"
+      }
+    },
+    {
+      "slug": "overhead-press",
+      "id": "preset-overhead-press",
+      "sport": "gym",
+      "metric": "weight_reps",
+      "muscles": ["shoulders", "triceps"],
+      "assisted": false,
+      "names": {
+        "en": "Overhead press",
+        "fr": "Développé militaire",
+        "de": "Schulterdrücken stehend"
+      },
+      "words": {
+        "en": "military press",
+        "fr": "développé épaules debout",
+        "de": "Military Press"
+      }
+    },
+    {
+      "slug": "push-press",
+      "id": "preset-push-press",
+      "sport": "gym",
+      "metric": "weight_reps",
+      "muscles": ["shoulders", "triceps", "quads"],
+      "assisted": false,
+      "names": {
+        "en": "Push press",
+        "fr": "Push press",
+        "de": "Push Press"
+      }
+    },
+    {
+      "slug": "seated-dumbbell-press",
+      "id": "preset-seated-dumbbell-press",
+      "sport": "gym",
+      "metric": "weight_reps",
+      "muscles": ["shoulders", "triceps"],
+      "assisted": false,
+      "names": {
+        "en": "Seated dumbbell press",
+        "fr": "Développé épaules haltères assis",
+        "de": "Schulterdrücken mit Kurzhanteln sitzend"
+      }
+    },
+    {
+      "slug": "arnold-press",
+      "id": "preset-arnold-press",
+      "sport": "gym",
+      "metric": "weight_reps",
+      "muscles": ["shoulders", "triceps"],
+      "assisted": false,
+      "names": {
+        "en": "Arnold press",
+        "fr": "Développé Arnold",
+        "de": "Arnold Press"
+      }
+    },
+    {
+      "slug": "machine-shoulder-press",
+      "id": "preset-machine-shoulder-press",
+      "sport": "gym",
+      "metric": "weight_reps",
+      "muscles": ["shoulders", "triceps"],
+      "assisted": false,
+      "names": {
+        "en": "Machine shoulder press",
+        "fr": "Développé épaules à la machine",
+        "de": "Schulterpresse an der Maschine"
+      }
+    },
+    {
+      "slug": "lateral-raise",
+      "id": "preset-lateral-raise",
+      "sport": "gym",
+      "metric": "weight_reps",
+      "muscles": ["shoulders"],
+      "assisted": false,
+      "names": {
+        "en": "Lateral raise",
+        "fr": "Élévation latérale",
+        "de": "Seitheben"
+      }
+    },
+    {
+      "slug": "cable-lateral-raise",
+      "id": "preset-cable-lateral-raise",
+      "sport": "gym",
+      "metric": "weight_reps",
+      "muscles": ["shoulders"],
+      "assisted": false,
+      "names": {
+        "en": "Cable lateral raise",
+        "fr": "Élévation latérale à la poulie",
+        "de": "Seitheben am Kabelzug"
+      }
+    },
+    {
+      "slug": "front-raise",
+      "id": "preset-front-raise",
+      "sport": "gym",
+      "metric": "weight_reps",
+      "muscles": ["shoulders"],
+      "assisted": false,
+      "names": {
+        "en": "Front raise",
+        "fr": "Élévation frontale",
+        "de": "Frontheben"
+      }
+    },
+    {
+      "slug": "rear-delt-fly",
+      "id": "preset-rear-delt-fly",
+      "sport": "gym",
+      "metric": "weight_reps",
+      "muscles": ["shoulders", "back"],
+      "assisted": false,
+      "names": {
+        "en": "Rear delt fly",
+        "fr": "Oiseau",
+        "de": "Reverse Flys"
+      }
+    },
+    {
+      "slug": "reverse-pec-deck",
+      "id": "preset-reverse-pec-deck",
+      "sport": "gym",
+      "metric": "weight_reps",
+      "muscles": ["shoulders", "back"],
+      "assisted": false,
+      "names": {
+        "en": "Reverse pec deck",
+        "fr": "Pec deck inversé",
+        "de": "Reverse Butterfly"
+      },
+      "words": {
+        "en": "reverse butterfly machine rear delt",
+        "fr": "butterfly inversé oiseau deltoïdes postérieurs",
+        "de": "Reverse Fliegende hintere Schulter"
+      }
+    },
+    {
+      "slug": "face-pull",
+      "id": "preset-face-pull",
+      "sport": "gym",
+      "metric": "weight_reps",
+      "muscles": ["shoulders", "back"],
+      "assisted": false,
+      "names": {
+        "en": "Face pull",
+        "fr": "Face pull",
+        "de": "Face Pull"
+      }
+    },
+    {
+      "slug": "upright-row",
+      "id": "preset-upright-row",
+      "sport": "gym",
+      "metric": "weight_reps",
+      "muscles": ["shoulders", "back"],
+      "assisted": false,
+      "names": {
+        "en": "Upright row",
+        "fr": "Rowing menton",
+        "de": "Aufrechtes Rudern"
+      }
+    },
+    {
+      "slug": "barbell-curl",
+      "id": "preset-barbell-curl",
+      "sport": "gym",
+      "metric": "weight_reps",
+      "muscles": ["biceps"],
+      "assisted": false,
+      "names": {
+        "en": "Barbell curl",
+        "fr": "Curl barre",
+        "de": "Langhantelcurl"
+      }
+    },
+    {
+      "slug": "dumbbell-curl",
+      "id": "preset-dumbbell-curl",
+      "sport": "gym",
+      "metric": "weight_reps",
+      "muscles": ["biceps"],
+      "assisted": false,
+      "names": {
+        "en": "Dumbbell curl",
+        "fr": "Curl haltères",
+        "de": "Kurzhantelcurl"
+      }
+    },
+    {
+      "slug": "incline-dumbbell-curl",
+      "id": "preset-incline-dumbbell-curl",
+      "sport": "gym",
+      "metric": "weight_reps",
+      "muscles": ["biceps"],
+      "assisted": false,
+      "names": {
+        "en": "Incline dumbbell curl",
+        "fr": "Curl haltères sur banc incliné",
+        "de": "Kurzhantelcurl auf der Schrägbank"
+      }
+    },
+    {
+      "slug": "reverse-curl",
+      "id": "preset-reverse-curl",
+      "sport": "gym",
+      "metric": "weight_reps",
+      "muscles": ["biceps"],
+      "assisted": false,
+      "names": {
+        "en": "Reverse curl",
+        "fr": "Curl inversé",
+        "de": "Reverse Curl"
+      }
+    },
+    {
+      "slug": "hammer-curl",
+      "id": "preset-hammer-curl",
+      "sport": "gym",
+      "metric": "weight_reps",
+      "muscles": ["biceps"],
+      "assisted": false,
+      "names": {
+        "en": "Hammer curl",
+        "fr": "Curl marteau",
+        "de": "Hammercurl"
+      }
+    },
+    {
+      "slug": "preacher-curl",
+      "id": "preset-preacher-curl",
+      "sport": "gym",
+      "metric": "weight_reps",
+      "muscles": ["biceps"],
+      "assisted": false,
+      "names": {
+        "en": "Preacher curl",
+        "fr": "Curl au pupitre",
+        "de": "Scottcurl"
+      }
+    },
+    {
+      "slug": "cable-curl",
+      "id": "preset-cable-curl",
+      "sport": "gym",
+      "metric": "weight_reps",
+      "muscles": ["biceps"],
+      "assisted": false,
+      "names": {
+        "en": "Cable curl",
+        "fr": "Curl à la poulie",
+        "de": "Curl am Kabelzug"
+      }
+    },
+    {
+      "slug": "concentration-curl",
+      "id": "preset-concentration-curl",
+      "sport": "gym",
+      "metric": "weight_reps",
+      "muscles": ["biceps"],
+      "assisted": false,
+      "names": {
+        "en": "Concentration curl",
+        "fr": "Curl concentré",
+        "de": "Konzentrationscurl"
+      }
+    },
+    {
+      "slug": "triceps-pushdown",
+      "id": "preset-triceps-pushdown",
+      "sport": "gym",
+      "metric": "weight_reps",
+      "muscles": ["triceps"],
+      "assisted": false,
+      "names": {
+        "en": "Triceps pushdown",
+        "fr": "Extension triceps à la poulie",
+        "de": "Trizepsdrücken am Kabelzug"
+      }
+    },
+    {
+      "slug": "overhead-triceps-extension",
+      "id": "preset-overhead-triceps-extension",
+      "sport": "gym",
+      "metric": "weight_reps",
+      "muscles": ["triceps"],
+      "assisted": false,
+      "names": {
+        "en": "Overhead triceps extension",
+        "fr": "Extension triceps au-dessus de la tête",
+        "de": "Trizepsstrecken über Kopf"
+      }
+    },
+    {
+      "slug": "skull-crusher",
+      "id": "preset-skull-crusher",
+      "sport": "gym",
+      "metric": "weight_reps",
+      "muscles": ["triceps"],
+      "assisted": false,
+      "names": {
+        "en": "Skull crusher",
+        "fr": "Barre au front",
+        "de": "French Press"
+      }
+    },
+    {
+      "slug": "close-grip-bench-press",
+      "id": "preset-close-grip-bench-press",
+      "sport": "gym",
+      "metric": "weight_reps",
+      "muscles": ["triceps", "chest"],
+      "assisted": false,
+      "names": {
+        "en": "Close-grip bench press",
+        "fr": "Développé couché prise serrée",
+        "de": "Enges Bankdrücken"
+      }
+    },
+    {
+      "slug": "back-squat",
+      "id": "preset-back-squat",
+      "sport": "gym",
+      "metric": "weight_reps",
+      "muscles": ["quads", "glutes"],
+      "assisted": false,
+      "names": {
+        "en": "Back squat",
+        "fr": "Squat barre",
+        "de": "Kniebeuge"
+      }
+    },
+    {
+      "slug": "front-squat",
+      "id": "preset-front-squat",
+      "sport": "gym",
+      "metric": "weight_reps",
+      "muscles": ["quads", "core"],
+      "assisted": false,
+      "names": {
+        "en": "Front squat",
+        "fr": "Squat avant",
+        "de": "Frontkniebeuge"
+      }
+    },
+    {
+      "slug": "goblet-squat",
+      "id": "preset-goblet-squat",
+      "sport": "gym",
+      "metric": "weight_reps",
+      "muscles": ["quads", "glutes"],
+      "assisted": false,
+      "names": {
+        "en": "Goblet squat",
+        "fr": "Goblet squat",
+        "de": "Goblet Squat"
+      }
+    },
+    {
+      "slug": "hack-squat",
+      "id": "preset-hack-squat",
+      "sport": "gym",
+      "metric": "weight_reps",
+      "muscles": ["quads", "glutes"],
+      "assisted": false,
+      "names": {
+        "en": "Hack squat",
+        "fr": "Hack squat",
+        "de": "Hackenschmidt-Kniebeuge"
+      }
+    },
+    {
+      "slug": "smith-machine-squat",
+      "id": "preset-smith-machine-squat",
+      "sport": "gym",
+      "metric": "weight_reps",
+      "muscles": ["quads", "glutes"],
+      "assisted": false,
+      "names": {
+        "en": "Smith machine squat",
+        "fr": "Squat à la Smith machine",
+        "de": "Kniebeuge an der Multipresse"
+      }
+    },
+    {
+      "slug": "leg-press",
+      "id": "preset-leg-press",
+      "sport": "gym",
+      "metric": "weight_reps",
+      "muscles": ["quads", "glutes"],
+      "assisted": false,
+      "names": {
+        "en": "Leg press",
+        "fr": "Presse à cuisses",
+        "de": "Beinpresse"
+      }
+    },
+    {
+      "slug": "leg-extension",
+      "id": "preset-leg-extension",
+      "sport": "gym",
+      "metric": "weight_reps",
+      "muscles": ["quads"],
+      "assisted": false,
+      "names": {
+        "en": "Leg extension",
+        "fr": "Leg extension",
+        "de": "Beinstrecker"
+      }
+    },
+    {
+      "slug": "lying-leg-curl",
+      "id": "preset-lying-leg-curl",
+      "sport": "gym",
+      "metric": "weight_reps",
+      "muscles": ["hamstrings"],
+      "assisted": false,
+      "names": {
+        "en": "Lying leg curl",
+        "fr": "Leg curl allongé",
+        "de": "Beinbeuger liegend"
+      }
+    },
+    {
+      "slug": "seated-leg-curl",
+      "id": "preset-seated-leg-curl",
+      "sport": "gym",
+      "metric": "weight_reps",
+      "muscles": ["hamstrings"],
+      "assisted": false,
+      "names": {
+        "en": "Seated leg curl",
+        "fr": "Leg curl assis",
+        "de": "Beinbeuger sitzend"
+      }
+    },
+    {
+      "slug": "romanian-deadlift",
+      "id": "preset-romanian-deadlift",
+      "sport": "gym",
+      "metric": "weight_reps",
+      "muscles": ["hamstrings", "glutes"],
+      "assisted": false,
+      "names": {
+        "en": "Romanian deadlift",
+        "fr": "Soulevé de terre roumain",
+        "de": "Rumänisches Kreuzheben"
+      },
+      "words": {
+        "en": "rdl stiff leg",
+        "fr": "jambes tendues",
+        "de": "gestreckte Beine"
+      }
+    },
+    {
+      "slug": "sumo-deadlift",
+      "id": "preset-sumo-deadlift",
+      "sport": "gym",
+      "metric": "weight_reps",
+      "muscles": ["glutes", "hamstrings", "back"],
+      "assisted": false,
+      "names": {
+        "en": "Sumo deadlift",
+        "fr": "Soulevé de terre sumo",
+        "de": "Sumo-Kreuzheben"
+      }
+    },
+    {
+      "slug": "bulgarian-split-squat",
+      "id": "preset-bulgarian-split-squat",
+      "sport": "gym",
+      "metric": "weight_reps",
+      "muscles": ["quads", "glutes"],
+      "assisted": false,
+      "names": {
+        "en": "Bulgarian split squat",
+        "fr": "Squat bulgare",
+        "de": "Bulgarische Kniebeuge"
+      }
+    },
+    {
+      "slug": "walking-lunge",
+      "id": "preset-walking-lunge",
+      "sport": "gym",
+      "metric": "weight_reps",
+      "muscles": ["quads", "glutes"],
+      "assisted": false,
+      "names": {
+        "en": "Walking lunge",
+        "fr": "Fentes marchées",
+        "de": "Ausfallschritte gehend"
+      }
+    },
+    {
+      "slug": "step-up",
+      "id": "preset-step-up",
+      "sport": "gym",
+      "metric": "weight_reps",
+      "muscles": ["quads", "glutes"],
+      "assisted": false,
+      "names": {
+        "en": "Step-up",
+        "fr": "Montée sur banc",
+        "de": "Step-up"
+      }
+    },
+    {
+      "slug": "hip-thrust",
+      "id": "preset-hip-thrust",
+      "sport": "gym",
+      "metric": "weight_reps",
+      "muscles": ["glutes", "hamstrings"],
+      "assisted": false,
+      "names": {
+        "en": "Hip thrust",
+        "fr": "Hip thrust",
+        "de": "Hip Thrust"
+      }
+    },
+    {
+      "slug": "glute-bridge",
+      "id": "preset-glute-bridge",
+      "sport": "gym",
+      "metric": "reps",
+      "muscles": ["glutes", "hamstrings"],
+      "assisted": false,
+      "names": {
+        "en": "Glute bridge",
+        "fr": "Pont fessier",
+        "de": "Glute Bridge"
+      }
+    },
+    {
+      "slug": "cable-kickback",
+      "id": "preset-cable-kickback",
+      "sport": "gym",
+      "metric": "weight_reps",
+      "muscles": ["glutes"],
+      "assisted": false,
+      "names": {
+        "en": "Cable kickback",
+        "fr": "Kickback à la poulie",
+        "de": "Kickback am Kabelzug"
+      }
+    },
+    {
+      "slug": "hip-abduction-machine",
+      "id": "preset-hip-abduction-machine",
+      "sport": "gym",
+      "metric": "weight_reps",
+      "muscles": ["glutes"],
+      "assisted": false,
+      "names": {
+        "en": "Hip abduction machine",
+        "fr": "Machine à abducteurs",
+        "de": "Abduktorenmaschine"
+      },
+      "words": {
+        "en": "abductor adductor adduction thigh open close",
+        "fr": "abducteurs adducteurs adduction cuisses ouvrir fermer",
+        "de": "Abduktoren Adduktoren Adduktion Oberschenkel öffnen schließen"
+      }
+    },
+    {
+      "slug": "hip-adduction-machine",
+      "id": "preset-hip-adduction-machine",
+      "sport": "gym",
+      "metric": "weight_reps",
+      "assisted": false,
+      "names": {
+        "en": "Hip adduction machine",
+        "fr": "Machine à adducteurs",
+        "de": "Adduktorenmaschine"
+      },
+      "words": {
+        "en": "adductor abductor abduction thigh close open",
+        "fr": "adducteurs abducteurs abduction cuisses fermer ouvrir",
+        "de": "Adduktoren Abduktoren Abduktion Oberschenkel schließen öffnen"
+      }
+    },
+    {
+      "slug": "standing-calf-raise",
+      "id": "preset-standing-calf-raise",
+      "sport": "gym",
+      "metric": "weight_reps",
+      "muscles": ["calves"],
+      "assisted": false,
+      "names": {
+        "en": "Standing calf raise",
+        "fr": "Mollets debout",
+        "de": "Wadenheben stehend"
+      }
+    },
+    {
+      "slug": "seated-calf-raise",
+      "id": "preset-seated-calf-raise",
+      "sport": "gym",
+      "metric": "weight_reps",
+      "muscles": ["calves"],
+      "assisted": false,
+      "names": {
+        "en": "Seated calf raise",
+        "fr": "Mollets assis",
+        "de": "Wadenheben sitzend"
+      }
+    },
+    {
+      "slug": "nordic-curl",
+      "id": "preset-nordic-curl",
+      "sport": "gym",
+      "metric": "reps",
+      "muscles": ["hamstrings"],
+      "assisted": false,
+      "names": {
+        "en": "Nordic curl",
+        "fr": "Nordic curl",
+        "de": "Nordic Curl"
+      }
+    },
+    {
+      "slug": "plank",
+      "id": "preset-plank",
+      "sport": "gym",
+      "metric": "time",
+      "muscles": ["core"],
+      "assisted": false,
+      "names": {
+        "en": "Plank",
+        "fr": "Gainage",
+        "de": "Unterarmstütz"
+      }
+    },
+    {
+      "slug": "side-plank",
+      "id": "preset-side-plank",
+      "sport": "gym",
+      "metric": "time",
+      "muscles": ["core"],
+      "assisted": false,
+      "names": {
+        "en": "Side plank",
+        "fr": "Gainage latéral",
+        "de": "Seitstütz"
+      }
+    },
+    {
+      "slug": "crunch",
+      "id": "preset-crunch",
+      "sport": "gym",
+      "metric": "reps",
+      "muscles": ["core"],
+      "assisted": false,
+      "names": {
+        "en": "Crunch",
+        "fr": "Crunch",
+        "de": "Crunch"
+      }
+    },
+    {
+      "slug": "cable-crunch",
+      "id": "preset-cable-crunch",
+      "sport": "gym",
+      "metric": "weight_reps",
+      "muscles": ["core"],
+      "assisted": false,
+      "names": {
+        "en": "Cable crunch",
+        "fr": "Crunch à la poulie",
+        "de": "Crunch am Kabelzug"
+      }
+    },
+    {
+      "slug": "hanging-leg-raise",
+      "id": "preset-hanging-leg-raise",
+      "sport": "gym",
+      "metric": "reps",
+      "muscles": ["core"],
+      "assisted": false,
+      "names": {
+        "en": "Hanging leg raise",
+        "fr": "Relevé de jambes suspendu",
+        "de": "Beinheben hängend"
+      }
+    },
+    {
+      "slug": "russian-twist",
+      "id": "preset-russian-twist",
+      "sport": "gym",
+      "metric": "reps",
+      "muscles": ["core"],
+      "assisted": false,
+      "names": {
+        "en": "Russian twist",
+        "fr": "Rotation russe",
+        "de": "Russian Twist"
+      }
+    },
+    {
+      "slug": "ab-wheel-rollout",
+      "id": "preset-ab-wheel-rollout",
+      "sport": "gym",
+      "metric": "reps",
+      "muscles": ["core"],
+      "assisted": false,
+      "names": {
+        "en": "Ab wheel rollout",
+        "fr": "Roulette abdominale",
+        "de": "Bauchroller"
+      }
+    },
+    {
+      "slug": "power-clean",
+      "id": "preset-power-clean",
+      "sport": "gym",
+      "metric": "weight_reps",
+      "muscles": ["full_body"],
+      "assisted": false,
+      "names": {
+        "en": "Power clean",
+        "fr": "Épaulé en puissance",
+        "de": "Umsetzen"
+      }
+    },
+    {
+      "slug": "kettlebell-swing",
+      "id": "preset-kettlebell-swing",
+      "sport": "gym",
+      "metric": "weight_reps",
+      "muscles": ["glutes", "hamstrings"],
+      "assisted": false,
+      "names": {
+        "en": "Kettlebell swing",
+        "fr": "Swing kettlebell",
+        "de": "Kettlebell Swing"
+      }
+    },
+    {
+      "slug": "farmers-carry",
+      "id": "preset-farmers-carry",
+      "sport": "gym",
+      "metric": "time",
+      "muscles": ["full_body"],
+      "assisted": false,
+      "names": {
+        "en": "Farmer's carry",
+        "fr": "Marche du fermier",
+        "de": "Farmer’s Walk"
+      }
+    },
+    {
+      "slug": "pendulum-squat",
+      "id": "preset-pendulum-squat",
+      "sport": "gym",
+      "metric": "weight_reps",
+      "muscles": ["quads", "glutes"],
+      "assisted": false,
+      "names": {
+        "en": "Pendulum squat",
+        "fr": "Pendulum squat",
+        "de": "Pendulum Squat"
+      }
+    },
+    {
+      "slug": "belt-squat",
+      "id": "preset-belt-squat",
+      "sport": "gym",
+      "metric": "weight_reps",
+      "muscles": ["quads", "glutes"],
+      "assisted": false,
+      "names": {
+        "en": "Belt squat",
+        "fr": "Belt squat",
+        "de": "Belt Squat"
+      }
+    },
+    {
+      "slug": "hip-thrust-machine",
+      "id": "preset-hip-thrust-machine",
+      "sport": "gym",
+      "metric": "weight_reps",
+      "muscles": ["glutes", "hamstrings"],
+      "assisted": false,
+      "names": {
+        "en": "Hip thrust machine",
+        "fr": "Hip thrust à la machine",
+        "de": "Hip-Thrust-Maschine"
+      }
+    },
+    {
+      "slug": "glute-ham-raise",
+      "id": "preset-glute-ham-raise",
+      "sport": "gym",
+      "metric": "reps",
+      "muscles": ["hamstrings", "glutes"],
+      "assisted": false,
+      "names": {
+        "en": "Glute-ham raise",
+        "fr": "Glute-ham raise",
+        "de": "Glute-Ham-Raise"
+      }
+    },
+    {
+      "slug": "incline-machine-press",
+      "id": "preset-incline-machine-press",
+      "sport": "gym",
+      "metric": "weight_reps",
+      "muscles": ["chest", "shoulders"],
+      "assisted": false,
+      "names": {
+        "en": "Incline chest press",
+        "fr": "Développé incliné à la machine",
+        "de": "Schrägbankpresse an der Maschine"
+      },
+      "words": {
+        "en": "incline machine press inclined",
+        "fr": "développé pectoraux incliné",
+        "de": "Schrägbankpresse Brustpresse schräg"
+      }
+    },
+    {
+      "slug": "machine-lateral-raise",
+      "id": "preset-machine-lateral-raise",
+      "sport": "gym",
+      "metric": "weight_reps",
+      "muscles": ["shoulders"],
+      "assisted": false,
+      "names": {
+        "en": "Machine lateral raise",
+        "fr": "Élévation latérale à la machine",
+        "de": "Seitheben an der Maschine"
+      }
+    },
+    {
+      "slug": "assisted-pull-up",
+      "id": "preset-assisted-pull-up",
+      "sport": "gym",
+      "metric": "reps",
+      "muscles": ["back", "biceps"],
+      "assisted": true,
+      "names": {
+        "en": "Assisted pull-up machine",
+        "fr": "Traction assistée à la machine",
+        "de": "Klimmzug an der Assistenzmaschine"
+      }
+    },
+    {
+      "slug": "assisted-dip",
+      "id": "preset-assisted-dip",
+      "sport": "gym",
+      "metric": "reps",
+      "muscles": ["chest", "triceps"],
+      "assisted": true,
+      "names": {
+        "en": "Assisted dip machine",
+        "fr": "Dips assistés à la machine",
+        "de": "Dips an der Assistenzmaschine"
+      },
+      "words": {
+        "en": "dipping",
+        "fr": "dips assistés",
+        "de": "Dips Assistenz"
+      }
+    },
+    {
+      "slug": "machine-biceps-curl",
+      "id": "preset-machine-biceps-curl",
+      "sport": "gym",
+      "metric": "weight_reps",
+      "muscles": ["biceps"],
+      "assisted": false,
+      "names": {
+        "en": "Machine biceps curl",
+        "fr": "Curl biceps à la machine",
+        "de": "Bizepscurl an der Maschine"
+      }
+    },
+    {
+      "slug": "machine-triceps-extension",
+      "id": "preset-machine-triceps-extension",
+      "sport": "gym",
+      "metric": "weight_reps",
+      "muscles": ["triceps"],
+      "assisted": false,
+      "names": {
+        "en": "Machine triceps extension",
+        "fr": "Extension triceps à la machine",
+        "de": "Trizepsstrecken an der Maschine"
+      }
+    },
+    {
+      "slug": "ab-crunch-machine",
+      "id": "preset-ab-crunch-machine",
+      "sport": "gym",
+      "metric": "weight_reps",
+      "muscles": ["core"],
+      "assisted": false,
+      "names": {
+        "en": "Ab crunch machine",
+        "fr": "Crunch à la machine",
+        "de": "Bauchmaschine"
+      }
+    },
+    {
+      "slug": "dumbbell-pullover",
+      "id": "preset-dumbbell-pullover",
+      "sport": "gym",
+      "metric": "weight_reps",
+      "muscles": ["chest", "back"],
+      "assisted": false,
+      "names": {
+        "en": "Dumbbell pullover",
+        "fr": "Pull-over haltère",
+        "de": "Überzüge mit Kurzhantel"
+      }
+    },
+    {
+      "slug": "cable-pull-through",
+      "id": "preset-cable-pull-through",
+      "sport": "gym",
+      "metric": "weight_reps",
+      "muscles": ["glutes", "hamstrings"],
+      "assisted": false,
+      "names": {
+        "en": "Cable pull-through",
+        "fr": "Pull-through à la poulie",
+        "de": "Pull-through am Kabelzug"
+      }
+    },
+    {
+      "slug": "cable-wood-chop",
+      "id": "preset-cable-wood-chop",
+      "sport": "gym",
+      "metric": "weight_reps",
+      "muscles": ["core"],
+      "assisted": false,
+      "names": {
+        "en": "Cable wood chop",
+        "fr": "Bûcheron à la poulie",
+        "de": "Holzhacker am Kabelzug"
+      }
+    },
+    {
+      "slug": "machine-high-row",
+      "id": "preset-machine-high-row",
+      "sport": "gym",
+      "metric": "weight_reps",
+      "muscles": ["back", "shoulders", "biceps"],
+      "assisted": false,
+      "names": {
+        "en": "Machine high row",
+        "fr": "Tirage haut à la machine",
+        "de": "High Row an der Maschine"
+      }
+    },
+    {
+      "slug": "pullover-machine",
+      "id": "preset-pullover-machine",
+      "sport": "gym",
+      "metric": "weight_reps",
+      "muscles": ["back", "chest"],
+      "assisted": false,
+      "names": {
+        "en": "Pullover machine",
+        "fr": "Pull-over à la machine",
+        "de": "Pullover-Maschine"
+      }
+    },
+    {
+      "slug": "decline-machine-press",
+      "id": "preset-decline-machine-press",
+      "sport": "gym",
+      "metric": "weight_reps",
+      "muscles": ["chest", "triceps"],
+      "assisted": false,
+      "names": {
+        "en": "Decline chest press",
+        "fr": "Développé décliné à la machine",
+        "de": "Negativ-Brustpresse an der Maschine"
+      },
+      "words": {
+        "en": "decline machine press declined",
+        "fr": "développé pectoraux décliné",
+        "de": "Negativ-Brustpresse"
+      }
+    },
+    {
+      "slug": "seated-dip-machine",
+      "id": "preset-seated-dip-machine",
+      "sport": "gym",
+      "metric": "weight_reps",
+      "muscles": ["triceps", "chest"],
+      "assisted": false,
+      "names": {
+        "en": "Seated dip machine",
+        "fr": "Dips assis à la machine",
+        "de": "Dip-Maschine sitzend"
+      },
+      "words": {
+        "en": "dipping",
+        "fr": "dips à la machine",
+        "de": "Dip-Maschine"
+      }
+    },
+    {
+      "slug": "neck-press-machine",
+      "id": "preset-neck-press-machine",
+      "sport": "gym",
+      "metric": "weight_reps",
+      "muscles": ["shoulders", "triceps"],
+      "assisted": false,
+      "names": {
+        "en": "Machine neck press",
+        "fr": "Développé nuque à la machine",
+        "de": "Nackendrücken an der Maschine"
+      },
+      "words": {
+        "en": "behind the neck shoulder press",
+        "fr": "derrière la nuque épaules",
+        "de": "Nackenpresse Schulterpresse"
+      }
+    },
+    {
+      "slug": "smith-machine-bench-press",
+      "id": "preset-smith-machine-bench-press",
+      "sport": "gym",
+      "metric": "weight_reps",
+      "muscles": ["chest", "triceps", "shoulders"],
+      "assisted": false,
+      "names": {
+        "en": "Smith machine bench press",
+        "fr": "Développé couché à la Smith machine",
+        "de": "Bankdrücken an der Multipresse"
+      }
+    },
+    {
+      "slug": "lower-back-machine",
+      "id": "preset-lower-back-machine",
+      "sport": "gym",
+      "metric": "weight_reps",
+      "muscles": ["back"],
+      "assisted": false,
+      "names": {
+        "en": "Lower back machine",
+        "fr": "Extension lombaire à la machine",
+        "de": "Rückenstrecker an der Maschine"
+      }
+    },
+    {
+      "slug": "rotary-torso-machine",
+      "id": "preset-rotary-torso-machine",
+      "sport": "gym",
+      "metric": "weight_reps",
+      "muscles": ["core"],
+      "assisted": false,
+      "names": {
+        "en": "Rotary torso machine",
+        "fr": "Rotation du buste à la machine",
+        "de": "Rumpfrotation an der Maschine"
+      }
+    },
+    {
+      "slug": "glute-kick-machine",
+      "id": "preset-glute-kick-machine",
+      "sport": "gym",
+      "metric": "weight_reps",
+      "muscles": ["glutes", "hamstrings"],
+      "assisted": false,
+      "names": {
+        "en": "Glute kick machine",
+        "fr": "Kick fessiers à la machine",
+        "de": "Gluteus-Kick an der Maschine"
+      }
+    },
+    {
+      "slug": "standing-leg-curl",
+      "id": "preset-standing-leg-curl",
+      "sport": "gym",
+      "metric": "weight_reps",
+      "muscles": ["hamstrings"],
+      "assisted": false,
+      "names": {
+        "en": "Standing leg curl",
+        "fr": "Leg curl debout",
+        "de": "Beinbeuger stehend"
+      }
+    },
+    {
+      "slug": "sissy-squat",
+      "id": "preset-sissy-squat",
+      "sport": "gym",
+      "metric": "reps",
+      "muscles": ["quads"],
+      "assisted": false,
+      "names": {
+        "en": "Sissy squat",
+        "fr": "Sissy squat",
+        "de": "Sissy Squat"
+      }
+    },
+    {
+      "slug": "donkey-calf-raise",
+      "id": "preset-donkey-calf-raise",
+      "sport": "gym",
+      "metric": "weight_reps",
+      "muscles": ["calves"],
+      "assisted": false,
+      "names": {
+        "en": "Donkey calf raise",
+        "fr": "Mollets donkey",
+        "de": "Donkey-Wadenheben"
+      }
+    },
+    {
+      "slug": "calf-press",
+      "id": "preset-calf-press",
+      "sport": "gym",
+      "metric": "weight_reps",
+      "muscles": ["calves"],
+      "assisted": false,
+      "names": {
+        "en": "Calf press",
+        "fr": "Presse à mollets",
+        "de": "Wadenpresse"
+      }
+    },
+    {
+      "slug": "wrist-curl",
+      "id": "preset-wrist-curl",
+      "sport": "gym",
+      "metric": "weight_reps",
+      "assisted": false,
+      "names": {
+        "en": "Wrist curl",
+        "fr": "Curl poignets",
+        "de": "Handgelenkcurl"
+      }
+    },
+    {
+      "slug": "tibialis-raise",
+      "id": "preset-tibialis-raise",
+      "sport": "gym",
+      "metric": "weight_reps",
+      "assisted": false,
+      "names": {
+        "en": "Tibialis raise",
+        "fr": "Relevé de tibias",
+        "de": "Tibialis-Heben"
+      }
+    },
+    {
+      "slug": "swim-freestyle",
+      "id": "preset-swim-freestyle",
+      "sport": "swim",
+      "metric": "distance_time",
+      "pace": "100m",
+      "stroke": "free",
+      "assisted": false,
+      "names": {
+        "en": "Freestyle",
+        "fr": "Crawl",
+        "de": "Kraul"
+      }
+    },
+    {
+      "slug": "swim-backstroke",
+      "id": "preset-swim-backstroke",
+      "sport": "swim",
+      "metric": "distance_time",
+      "pace": "100m",
+      "stroke": "back",
+      "assisted": false,
+      "names": {
+        "en": "Backstroke",
+        "fr": "Dos crawlé",
+        "de": "Rücken"
+      }
+    },
+    {
+      "slug": "swim-breaststroke",
+      "id": "preset-swim-breaststroke",
+      "sport": "swim",
+      "metric": "distance_time",
+      "pace": "100m",
+      "stroke": "breast",
+      "assisted": false,
+      "names": {
+        "en": "Breaststroke",
+        "fr": "Brasse",
+        "de": "Brust"
+      }
+    },
+    {
+      "slug": "swim-butterfly",
+      "id": "preset-swim-butterfly",
+      "sport": "swim",
+      "metric": "distance_time",
+      "pace": "100m",
+      "stroke": "fly",
+      "assisted": false,
+      "names": {
+        "en": "Butterfly",
+        "fr": "Papillon",
+        "de": "Schmetterling"
+      }
+    },
+    {
+      "slug": "swim-medley",
+      "id": "preset-swim-medley",
+      "sport": "swim",
+      "metric": "distance_time",
+      "pace": "100m",
+      "stroke": "im",
+      "assisted": false,
+      "names": {
+        "en": "Individual medley",
+        "fr": "4 nages",
+        "de": "Lagen"
+      }
+    },
+    {
+      "slug": "swim-kick",
+      "id": "preset-swim-kick",
+      "sport": "swim",
+      "metric": "distance_time",
+      "pace": "100m",
+      "stroke": "kick",
+      "assisted": false,
+      "names": {
+        "en": "Kick set",
+        "fr": "Battements",
+        "de": "Beinarbeit"
+      }
+    },
+    {
+      "slug": "swim-pull",
+      "id": "preset-swim-pull",
+      "sport": "swim",
+      "metric": "distance_time",
+      "pace": "100m",
+      "stroke": "free",
+      "assisted": false,
+      "names": {
+        "en": "Pull set",
+        "fr": "Pull buoy",
+        "de": "Armzug mit Pull-Buoy"
+      }
+    },
+    {
+      "slug": "drill-catch-up",
+      "id": "preset-drill-catch-up",
+      "sport": "swim",
+      "metric": "distance_time",
+      "pace": "100m",
+      "stroke": "drill",
+      "assisted": false,
+      "names": {
+        "en": "Catch-up drill",
+        "fr": "Éducatif rattrapé",
+        "de": "Abschlagschwimmen"
+      }
+    },
+    {
+      "slug": "drill-fingertip-drag",
+      "id": "preset-drill-fingertip-drag",
+      "sport": "swim",
+      "metric": "distance_time",
+      "pace": "100m",
+      "stroke": "drill",
+      "assisted": false,
+      "names": {
+        "en": "Fingertip drag drill",
+        "fr": "Éducatif doigts sur l’eau",
+        "de": "Fingerspitzen-Übung"
+      }
+    },
+    {
+      "slug": "drill-single-arm",
+      "id": "preset-drill-single-arm",
+      "sport": "swim",
+      "metric": "distance_time",
+      "pace": "100m",
+      "stroke": "drill",
+      "assisted": false,
+      "names": {
+        "en": "Single-arm drill",
+        "fr": "Éducatif un bras",
+        "de": "Einarmig Kraul"
+      }
+    },
+    {
+      "slug": "drill-sculling",
+      "id": "preset-drill-sculling",
+      "sport": "swim",
+      "metric": "distance_time",
+      "pace": "100m",
+      "stroke": "drill",
+      "assisted": false,
+      "names": {
+        "en": "Sculling",
+        "fr": "Godille",
+        "de": "Wriggen"
+      }
+    },
+    {
+      "slug": "drill-closed-fist",
+      "id": "preset-drill-closed-fist",
+      "sport": "swim",
+      "metric": "distance_time",
+      "pace": "100m",
+      "stroke": "drill",
+      "assisted": false,
+      "names": {
+        "en": "Closed-fist drill",
+        "fr": "Éducatif poings fermés",
+        "de": "Faustschwimmen"
+      }
+    },
+    {
+      "slug": "drill-side-kick",
+      "id": "preset-drill-side-kick",
+      "sport": "swim",
+      "metric": "distance_time",
+      "pace": "100m",
+      "stroke": "drill",
+      "assisted": false,
+      "names": {
+        "en": "Side-kick drill",
+        "fr": "Éducatif battements sur le côté",
+        "de": "Beinarbeit in Seitlage"
+      }
+    },
+    {
+      "slug": "swim-50-free",
+      "id": "preset-swim-50-free",
+      "sport": "swim",
+      "metric": "distance_time",
+      "distance": 50,
+      "stroke": "free",
+      "assisted": false,
+      "names": {
+        "en": "50 m freestyle",
+        "fr": "50 m crawl",
+        "de": "50 m Kraul"
+      }
+    },
+    {
+      "slug": "swim-100-free",
+      "id": "preset-swim-100-free",
+      "sport": "swim",
+      "metric": "distance_time",
+      "distance": 100,
+      "stroke": "free",
+      "assisted": false,
+      "names": {
+        "en": "100 m freestyle",
+        "fr": "100 m crawl",
+        "de": "100 m Kraul"
+      }
+    },
+    {
+      "slug": "swim-400-free",
+      "id": "preset-swim-400-free",
+      "sport": "swim",
+      "metric": "distance_time",
+      "distance": 400,
+      "stroke": "free",
+      "assisted": false,
+      "names": {
+        "en": "400 m freestyle",
+        "fr": "400 m crawl",
+        "de": "400 m Kraul"
+      }
+    },
+    {
+      "slug": "run-easy",
+      "id": "preset-run-easy",
+      "sport": "running",
+      "metric": "distance_time",
+      "pace": "km",
+      "assisted": false,
+      "names": {
+        "en": "Easy run",
+        "fr": "Footing",
+        "de": "Lockerer Lauf"
+      }
+    },
+    {
+      "slug": "run-long",
+      "id": "preset-run-long",
+      "sport": "running",
+      "metric": "distance_time",
+      "pace": "km",
+      "assisted": false,
+      "names": {
+        "en": "Long run",
+        "fr": "Sortie longue",
+        "de": "Langer Lauf"
+      }
+    },
+    {
+      "slug": "run-tempo",
+      "id": "preset-run-tempo",
+      "sport": "running",
+      "metric": "distance_time",
+      "pace": "km",
+      "assisted": false,
+      "names": {
+        "en": "Tempo run",
+        "fr": "Course au seuil",
+        "de": "Tempodauerlauf"
+      }
+    },
+    {
+      "slug": "run-fartlek",
+      "id": "preset-run-fartlek",
+      "sport": "running",
+      "metric": "distance_time",
+      "pace": "km",
+      "assisted": false,
+      "names": {
+        "en": "Fartlek",
+        "fr": "Fartlek",
+        "de": "Fahrtspiel"
+      }
+    },
+    {
+      "slug": "run-hills",
+      "id": "preset-run-hills",
+      "sport": "running",
+      "metric": "distance_time",
+      "pace": "km",
+      "assisted": false,
+      "names": {
+        "en": "Hill repeats",
+        "fr": "Côtes",
+        "de": "Bergläufe"
+      }
+    },
+    {
+      "slug": "run-strides",
+      "id": "preset-run-strides",
+      "sport": "running",
+      "metric": "distance_time",
+      "pace": "km",
+      "assisted": false,
+      "names": {
+        "en": "Strides",
+        "fr": "Lignes droites",
+        "de": "Steigerungsläufe"
+      }
+    },
+    {
+      "slug": "run-progression",
+      "id": "preset-run-progression",
+      "sport": "running",
+      "metric": "distance_time",
+      "pace": "km",
+      "assisted": false,
+      "names": {
+        "en": "Progression run",
+        "fr": "Course progressive",
+        "de": "Progressiver Dauerlauf"
+      }
+    },
+    {
+      "slug": "run-200",
+      "id": "preset-run-200",
+      "sport": "running",
+      "metric": "distance_time",
+      "distance": 200,
+      "assisted": false,
+      "names": {
+        "en": "200 m repeat",
+        "fr": "Répétition 200 m",
+        "de": "200-m-Wiederholung"
+      }
+    },
+    {
+      "slug": "run-400",
+      "id": "preset-run-400",
+      "sport": "running",
+      "metric": "distance_time",
+      "distance": 400,
+      "assisted": false,
+      "names": {
+        "en": "400 m repeat",
+        "fr": "Répétition 400 m",
+        "de": "400-m-Wiederholung"
+      }
+    },
+    {
+      "slug": "run-800",
+      "id": "preset-run-800",
+      "sport": "running",
+      "metric": "distance_time",
+      "distance": 800,
+      "assisted": false,
+      "names": {
+        "en": "800 m repeat",
+        "fr": "Répétition 800 m",
+        "de": "800-m-Wiederholung"
+      }
+    },
+    {
+      "slug": "run-1000",
+      "id": "preset-run-1000",
+      "sport": "running",
+      "metric": "distance_time",
+      "distance": 1000,
+      "assisted": false,
+      "names": {
+        "en": "1000 m repeat",
+        "fr": "Répétition 1000 m",
+        "de": "1000-m-Wiederholung"
+      }
+    },
+    {
+      "slug": "run-5k",
+      "id": "preset-run-5k",
+      "sport": "running",
+      "metric": "distance_time",
+      "distance": 5000,
+      "assisted": false,
+      "names": {
+        "en": "5 km",
+        "fr": "5 km",
+        "de": "5 km"
+      }
+    },
+    {
+      "slug": "run-10k",
+      "id": "preset-run-10k",
+      "sport": "running",
+      "metric": "distance_time",
+      "distance": 10000,
+      "assisted": false,
+      "names": {
+        "en": "10 km",
+        "fr": "10 km",
+        "de": "10 km"
+      }
+    },
+    {
+      "slug": "run-half",
+      "id": "preset-run-half",
+      "sport": "running",
+      "metric": "distance_time",
+      "distance": 21097,
+      "assisted": false,
+      "names": {
+        "en": "Half marathon",
+        "fr": "Semi-marathon",
+        "de": "Halbmarathon"
+      }
+    },
+    {
+      "slug": "run-marathon",
+      "id": "preset-run-marathon",
+      "sport": "running",
+      "metric": "distance_time",
+      "distance": 42195,
+      "assisted": false,
+      "names": {
+        "en": "Marathon",
+        "fr": "Marathon",
+        "de": "Marathon"
+      }
+    }
+  ],
+  "programs": [
+    {
+      "id": "preset-program-gym-full-body",
+      "templateId": "gym-full-body",
+      "sport": "gym",
+      "names": {
+        "en": "Full body",
+        "fr": "Full body",
+        "de": "Ganzkörper"
+      },
+      "goals": {
+        "en": "Build strength with two sessions repeated in turn",
+        "fr": "Gagner en force avec deux séances en alternance",
+        "de": "Kraft aufbauen mit zwei Einheiten im Wechsel"
+      },
+      "days": [
+        {
+          "names": {
+            "en": "Full body A",
+            "fr": "Full body A",
+            "de": "Ganzkörper A"
+          },
+          "blocks": [
+            {
+              "slug": "back-squat",
+              "sets": 3,
+              "reps": 8,
+              "intensity": {
+                "kind": "rpe",
+                "value": 7
+              },
+              "rest": 150
+            },
+            {
+              "slug": "barbell-bench-press",
+              "sets": 3,
+              "reps": 8,
+              "intensity": {
+                "kind": "rpe",
+                "value": 7
+              },
+              "rest": 120
+            },
+            {
+              "slug": "seated-cable-row",
+              "sets": 3,
+              "reps": 10,
+              "intensity": {
+                "kind": "rpe",
+                "value": 7
+              },
+              "rest": 90
+            },
+            {
+              "slug": "lateral-raise",
+              "sets": 3,
+              "reps": 12,
+              "rest": 60
+            },
+            {
+              "slug": "plank",
+              "sets": 3,
+              "duration": 45,
+              "rest": 60
+            }
+          ]
+        },
+        {
+          "names": {
+            "en": "Full body B",
+            "fr": "Full body B",
+            "de": "Ganzkörper B"
+          },
+          "blocks": [
+            {
+              "slug": "romanian-deadlift",
+              "sets": 3,
+              "reps": 10,
+              "intensity": {
+                "kind": "rpe",
+                "value": 7
+              },
+              "rest": 120
+            },
+            {
+              "slug": "overhead-press",
+              "sets": 3,
+              "reps": 8,
+              "intensity": {
+                "kind": "rpe",
+                "value": 7
+              },
+              "rest": 120
+            },
+            {
+              "slug": "lat-pulldown",
+              "sets": 3,
+              "reps": 10,
+              "intensity": {
+                "kind": "rpe",
+                "value": 7
+              },
+              "rest": 90
+            },
+            {
+              "slug": "leg-press",
+              "sets": 3,
+              "reps": 12,
+              "intensity": {
+                "kind": "rpe",
+                "value": 7
+              },
+              "rest": 90
+            },
+            {
+              "slug": "hanging-leg-raise",
+              "sets": 3,
+              "reps": 10,
+              "rest": 60
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "preset-program-gym-push-pull-legs",
+      "templateId": "gym-push-pull-legs",
+      "sport": "gym",
+      "names": {
+        "en": "Push Pull Legs",
+        "fr": "Push Pull Legs",
+        "de": "Push Pull Legs"
+      },
+      "goals": {
+        "en": "Build muscle and strength, main lifts in pyramid sets",
+        "fr": "Prendre du muscle et de la force, exercices clés en pyramide",
+        "de": "Muskeln und Kraft aufbauen, Hauptübungen als Pyramide"
+      },
+      "days": [
+        {
+          "names": {
+            "en": "Push",
+            "fr": "Poussée",
+            "de": "Drücken"
+          },
+          "blocks": [
+            {
+              "slug": "barbell-bench-press",
+              "sets": 4,
+              "reps": 15,
+              "intensity": {
+                "kind": "pct1rm",
+                "value": 55
+              },
+              "perSet": [
+                {
+                  "reps": 15,
+                  "value": 55
+                },
+                {
+                  "reps": 10,
+                  "value": 65
+                },
+                {
+                  "reps": 8,
+                  "value": 75
+                },
+                {
+                  "reps": 6,
+                  "value": 82
+                }
+              ],
+              "rest": 150
+            },
+            {
+              "slug": "incline-dumbbell-press",
+              "sets": 3,
+              "reps": 10,
+              "intensity": {
+                "kind": "rpe",
+                "value": 8
+              },
+              "rest": 90
+            },
+            {
+              "slug": "machine-shoulder-press",
+              "sets": 3,
+              "reps": 10,
+              "intensity": {
+                "kind": "rpe",
+                "value": 8
+              },
+              "rest": 90
+            },
+            {
+              "slug": "lateral-raise",
+              "sets": 3,
+              "reps": 15,
+              "rest": 60
+            },
+            {
+              "slug": "triceps-pushdown",
+              "sets": 3,
+              "reps": 12,
+              "rest": 60
+            }
+          ]
+        },
+        {
+          "names": {
+            "en": "Pull",
+            "fr": "Tirage",
+            "de": "Ziehen"
+          },
+          "blocks": [
+            {
+              "slug": "barbell-row",
+              "sets": 4,
+              "reps": 15,
+              "intensity": {
+                "kind": "rpe",
+                "value": 6.5
+              },
+              "perSet": [
+                {
+                  "reps": 15,
+                  "value": 6.5
+                },
+                {
+                  "reps": 10,
+                  "value": 7
+                },
+                {
+                  "reps": 8,
+                  "value": 7.5
+                },
+                {
+                  "reps": 6,
+                  "value": 8
+                }
+              ],
+              "rest": 150
+            },
+            {
+              "slug": "lat-pulldown",
+              "sets": 3,
+              "reps": 10,
+              "intensity": {
+                "kind": "rpe",
+                "value": 8
+              },
+              "rest": 90
+            },
+            {
+              "slug": "seated-cable-row",
+              "sets": 3,
+              "reps": 12,
+              "intensity": {
+                "kind": "rpe",
+                "value": 8
+              },
+              "rest": 90
+            },
+            {
+              "slug": "face-pull",
+              "sets": 3,
+              "reps": 15,
+              "rest": 60
+            },
+            {
+              "slug": "barbell-curl",
+              "sets": 3,
+              "reps": 12,
+              "rest": 60
+            }
+          ]
+        },
+        {
+          "names": {
+            "en": "Legs",
+            "fr": "Jambes",
+            "de": "Beine"
+          },
+          "blocks": [
+            {
+              "slug": "back-squat",
+              "sets": 4,
+              "reps": 15,
+              "intensity": {
+                "kind": "pct1rm",
+                "value": 55
+              },
+              "perSet": [
+                {
+                  "reps": 15,
+                  "value": 55
+                },
+                {
+                  "reps": 10,
+                  "value": 65
+                },
+                {
+                  "reps": 8,
+                  "value": 75
+                },
+                {
+                  "reps": 6,
+                  "value": 82
+                }
+              ],
+              "rest": 180
+            },
+            {
+              "slug": "romanian-deadlift",
+              "sets": 3,
+              "reps": 10,
+              "intensity": {
+                "kind": "rpe",
+                "value": 8
+              },
+              "rest": 120
+            },
+            {
+              "slug": "leg-press",
+              "sets": 3,
+              "reps": 12,
+              "intensity": {
+                "kind": "rpe",
+                "value": 8
+              },
+              "rest": 90
+            },
+            {
+              "slug": "seated-leg-curl",
+              "sets": 3,
+              "reps": 12,
+              "rest": 60
+            },
+            {
+              "slug": "standing-calf-raise",
+              "sets": 3,
+              "reps": 15,
+              "rest": 60
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "preset-program-gym-machines-ppl",
+      "templateId": "gym-machines-ppl",
+      "sport": "gym",
+      "names": {
+        "en": "Push Pull Legs — machines",
+        "fr": "Push Pull Legs — machines",
+        "de": "Push Pull Legs – Maschinen"
+      },
+      "goals": {
+        "en": "Build muscle on machines and cables, one session of each per week: few sets close to failure, more load once the top of the range is reached",
+        "fr": "Prendre du muscle sur machines et poulies, une séance de chaque par semaine : peu de séries, proches de l’échec, et plus de charge dès le haut de la fourchette atteint",
+        "de": "Muskeln aufbauen an Maschinen und Kabelzug, jede Einheit einmal pro Woche: wenige Sätze nah am Muskelversagen, mehr Gewicht, sobald das obere Ende des Bereichs erreicht ist"
+      },
+      "days": [
+        {
+          "names": {
+            "en": "Push",
+            "fr": "Poussée",
+            "de": "Drücken"
+          },
+          "blocks": [
+            {
+              "slug": "machine-chest-press",
+              "sets": 3,
+              "reps": 6,
+              "intensity": {
+                "kind": "rpe",
+                "value": 8
+              },
+              "rest": 150,
+              "notes": {
+                "en": "Two warm-up sets first (about 50% then 75% of the working load), not logged. 6–10 reps. Once every set reaches 10, add the smallest load step.",
+                "fr": "D’abord deux séries d’échauffement (environ 50 % puis 75 % de la charge de travail), sans les noter. 6 à 10 répétitions. Dès que chaque série atteint 10, monte la charge du plus petit cran.",
+                "de": "Vorher zwei Aufwärmsätze (etwa 50 %, dann 75 % des Arbeitsgewichts), nicht eingetragen. 6–10 Wiederholungen. Schaffst du in jedem Satz 10, erhöhe das Gewicht um die kleinste Stufe."
+              }
+            },
+            {
+              "slug": "incline-machine-press",
+              "sets": 3,
+              "reps": 8,
+              "intensity": {
+                "kind": "rpe",
+                "value": 8
+              },
+              "rest": 120,
+              "notes": {
+                "en": "8–12 reps. Once every set reaches 12, add the smallest load step.",
+                "fr": "8 à 12 répétitions. Dès que chaque série atteint 12, monte la charge du plus petit cran.",
+                "de": "8–12 Wiederholungen. Schaffst du in jedem Satz 12, erhöhe das Gewicht um die kleinste Stufe."
+              }
+            },
+            {
+              "slug": "pec-deck",
+              "sets": 3,
+              "reps": 10,
+              "intensity": {
+                "kind": "rpe",
+                "value": 9
+              },
+              "rest": 90,
+              "notes": {
+                "en": "10–15 reps. Once every set reaches 15, add the smallest load step.",
+                "fr": "10 à 15 répétitions. Dès que chaque série atteint 15, monte la charge du plus petit cran.",
+                "de": "10–15 Wiederholungen. Schaffst du in jedem Satz 15, erhöhe das Gewicht um die kleinste Stufe."
+              }
+            },
+            {
+              "slug": "machine-lateral-raise",
+              "sets": 4,
+              "reps": 12,
+              "intensity": {
+                "kind": "rpe",
+                "value": 9
+              },
+              "rest": 90,
+              "notes": {
+                "en": "12–20 reps. Once every set reaches 20, add the smallest load step.",
+                "fr": "12 à 20 répétitions. Dès que chaque série atteint 20, monte la charge du plus petit cran.",
+                "de": "12–20 Wiederholungen. Schaffst du in jedem Satz 20, erhöhe das Gewicht um die kleinste Stufe."
+              }
+            },
+            {
+              "slug": "seated-dip-machine",
+              "sets": 3,
+              "reps": 8,
+              "intensity": {
+                "kind": "rpe",
+                "value": 8
+              },
+              "rest": 120,
+              "notes": {
+                "en": "8–12 reps. Once every set reaches 12, add the smallest load step.",
+                "fr": "8 à 12 répétitions. Dès que chaque série atteint 12, monte la charge du plus petit cran.",
+                "de": "8–12 Wiederholungen. Schaffst du in jedem Satz 12, erhöhe das Gewicht um die kleinste Stufe."
+              }
+            },
+            {
+              "slug": "overhead-triceps-extension",
+              "sets": 3,
+              "reps": 10,
+              "intensity": {
+                "kind": "rpe",
+                "value": 9
+              },
+              "rest": 90,
+              "notes": {
+                "en": "On a cable. 10–15 reps. Once every set reaches 15, add the smallest load step.",
+                "fr": "À la poulie. 10 à 15 répétitions. Dès que chaque série atteint 15, monte la charge du plus petit cran.",
+                "de": "Am Kabelzug. 10–15 Wiederholungen. Schaffst du in jedem Satz 15, erhöhe das Gewicht um die kleinste Stufe."
+              }
+            }
+          ]
+        },
+        {
+          "names": {
+            "en": "Pull",
+            "fr": "Tirage",
+            "de": "Ziehen"
+          },
+          "blocks": [
+            {
+              "slug": "lat-pulldown",
+              "sets": 3,
+              "reps": 8,
+              "intensity": {
+                "kind": "rpe",
+                "value": 8
+              },
+              "rest": 150,
+              "notes": {
+                "en": "Two warm-up sets first (about 50% then 75% of the working load), not logged. 8–12 reps. Once every set reaches 12, add the smallest load step.",
+                "fr": "D’abord deux séries d’échauffement (environ 50 % puis 75 % de la charge de travail), sans les noter. 8 à 12 répétitions. Dès que chaque série atteint 12, monte la charge du plus petit cran.",
+                "de": "Vorher zwei Aufwärmsätze (etwa 50 %, dann 75 % des Arbeitsgewichts), nicht eingetragen. 8–12 Wiederholungen. Schaffst du in jedem Satz 12, erhöhe das Gewicht um die kleinste Stufe."
+              }
+            },
+            {
+              "slug": "machine-row",
+              "sets": 3,
+              "reps": 8,
+              "intensity": {
+                "kind": "rpe",
+                "value": 8
+              },
+              "rest": 150,
+              "notes": {
+                "en": "8–12 reps. Once every set reaches 12, add the smallest load step.",
+                "fr": "8 à 12 répétitions. Dès que chaque série atteint 12, monte la charge du plus petit cran.",
+                "de": "8–12 Wiederholungen. Schaffst du in jedem Satz 12, erhöhe das Gewicht um die kleinste Stufe."
+              }
+            },
+            {
+              "slug": "machine-high-row",
+              "sets": 3,
+              "reps": 8,
+              "intensity": {
+                "kind": "rpe",
+                "value": 8
+              },
+              "rest": 120,
+              "notes": {
+                "en": "8–12 reps. Once every set reaches 12, add the smallest load step.",
+                "fr": "8 à 12 répétitions. Dès que chaque série atteint 12, monte la charge du plus petit cran.",
+                "de": "8–12 Wiederholungen. Schaffst du in jedem Satz 12, erhöhe das Gewicht um die kleinste Stufe."
+              }
+            },
+            {
+              "slug": "reverse-pec-deck",
+              "sets": 3,
+              "reps": 12,
+              "intensity": {
+                "kind": "rpe",
+                "value": 9
+              },
+              "rest": 90,
+              "notes": {
+                "en": "12–20 reps. Once every set reaches 20, add the smallest load step.",
+                "fr": "12 à 20 répétitions. Dès que chaque série atteint 20, monte la charge du plus petit cran.",
+                "de": "12–20 Wiederholungen. Schaffst du in jedem Satz 20, erhöhe das Gewicht um die kleinste Stufe."
+              }
+            },
+            {
+              "slug": "machine-biceps-curl",
+              "sets": 3,
+              "reps": 10,
+              "intensity": {
+                "kind": "rpe",
+                "value": 9
+              },
+              "rest": 90,
+              "notes": {
+                "en": "10–15 reps. Once every set reaches 15, add the smallest load step.",
+                "fr": "10 à 15 répétitions. Dès que chaque série atteint 15, monte la charge du plus petit cran.",
+                "de": "10–15 Wiederholungen. Schaffst du in jedem Satz 15, erhöhe das Gewicht um die kleinste Stufe."
+              }
+            },
+            {
+              "slug": "cable-curl",
+              "sets": 2,
+              "reps": 10,
+              "intensity": {
+                "kind": "rpe",
+                "value": 9
+              },
+              "rest": 60,
+              "notes": {
+                "en": "10–15 reps. Once every set reaches 15, add the smallest load step.",
+                "fr": "10 à 15 répétitions. Dès que chaque série atteint 15, monte la charge du plus petit cran.",
+                "de": "10–15 Wiederholungen. Schaffst du in jedem Satz 15, erhöhe das Gewicht um die kleinste Stufe."
+              }
+            },
+            {
+              "slug": "cable-lateral-raise",
+              "sets": 3,
+              "reps": 12,
+              "intensity": {
+                "kind": "rpe",
+                "value": 9
+              },
+              "rest": 60,
+              "notes": {
+                "en": "12–20 reps. Once every set reaches 20, add the smallest load step.",
+                "fr": "12 à 20 répétitions. Dès que chaque série atteint 20, monte la charge du plus petit cran.",
+                "de": "12–20 Wiederholungen. Schaffst du in jedem Satz 20, erhöhe das Gewicht um die kleinste Stufe."
+              }
+            }
+          ]
+        },
+        {
+          "names": {
+            "en": "Legs",
+            "fr": "Jambes",
+            "de": "Beine"
+          },
+          "blocks": [
+            {
+              "slug": "leg-press",
+              "sets": 4,
+              "reps": 8,
+              "intensity": {
+                "kind": "rpe",
+                "value": 8
+              },
+              "rest": 180,
+              "notes": {
+                "en": "Two warm-up sets first (about 50% then 75% of the working load), not logged. 8–12 reps. Once every set reaches 12, add the smallest load step.",
+                "fr": "D’abord deux séries d’échauffement (environ 50 % puis 75 % de la charge de travail), sans les noter. 8 à 12 répétitions. Dès que chaque série atteint 12, monte la charge du plus petit cran.",
+                "de": "Vorher zwei Aufwärmsätze (etwa 50 %, dann 75 % des Arbeitsgewichts), nicht eingetragen. 8–12 Wiederholungen. Schaffst du in jedem Satz 12, erhöhe das Gewicht um die kleinste Stufe."
+              }
+            },
+            {
+              "slug": "seated-leg-curl",
+              "sets": 4,
+              "reps": 10,
+              "intensity": {
+                "kind": "rpe",
+                "value": 9
+              },
+              "rest": 90,
+              "notes": {
+                "en": "10–15 reps. Once every set reaches 15, add the smallest load step.",
+                "fr": "10 à 15 répétitions. Dès que chaque série atteint 15, monte la charge du plus petit cran.",
+                "de": "10–15 Wiederholungen. Schaffst du in jedem Satz 15, erhöhe das Gewicht um die kleinste Stufe."
+              }
+            },
+            {
+              "slug": "leg-extension",
+              "sets": 3,
+              "reps": 10,
+              "intensity": {
+                "kind": "rpe",
+                "value": 9
+              },
+              "rest": 90,
+              "notes": {
+                "en": "10–15 reps. Once every set reaches 15, add the smallest load step.",
+                "fr": "10 à 15 répétitions. Dès que chaque série atteint 15, monte la charge du plus petit cran.",
+                "de": "10–15 Wiederholungen. Schaffst du in jedem Satz 15, erhöhe das Gewicht um die kleinste Stufe."
+              }
+            },
+            {
+              "slug": "hip-adduction-machine",
+              "sets": 3,
+              "reps": 12,
+              "intensity": {
+                "kind": "rpe",
+                "value": 8
+              },
+              "rest": 90,
+              "notes": {
+                "en": "12–15 reps. Once every set reaches 15, add the smallest load step.",
+                "fr": "12 à 15 répétitions. Dès que chaque série atteint 15, monte la charge du plus petit cran.",
+                "de": "12–15 Wiederholungen. Schaffst du in jedem Satz 15, erhöhe das Gewicht um die kleinste Stufe."
+              }
+            },
+            {
+              "slug": "standing-calf-raise",
+              "sets": 4,
+              "reps": 10,
+              "intensity": {
+                "kind": "rpe",
+                "value": 9
+              },
+              "rest": 90,
+              "notes": {
+                "en": "Pause one second at the bottom, in the stretch. 10–15 reps. Once every set reaches 15, add the smallest load step.",
+                "fr": "Marque une seconde de pause en bas, en position étirée. 10 à 15 répétitions. Dès que chaque série atteint 15, monte la charge du plus petit cran.",
+                "de": "Unten eine Sekunde in der Dehnung halten. 10–15 Wiederholungen. Schaffst du in jedem Satz 15, erhöhe das Gewicht um die kleinste Stufe."
+              }
+            },
+            {
+              "slug": "ab-crunch-machine",
+              "sets": 2,
+              "reps": 10,
+              "intensity": {
+                "kind": "rpe",
+                "value": 8
+              },
+              "rest": 60,
+              "notes": {
+                "en": "10–15 reps. Once every set reaches 15, add the smallest load step.",
+                "fr": "10 à 15 répétitions. Dès que chaque série atteint 15, monte la charge du plus petit cran.",
+                "de": "10–15 Wiederholungen. Schaffst du in jedem Satz 15, erhöhe das Gewicht um die kleinste Stufe."
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "preset-program-swim-endurance",
+      "templateId": "swim-endurance",
+      "sport": "swim",
+      "names": {
+        "en": "Swim endurance",
+        "fr": "Endurance natation",
+        "de": "Schwimmausdauer"
+      },
+      "goals": {
+        "en": "Swim longer and smoother",
+        "fr": "Nager plus longtemps et plus fluide",
+        "de": "Länger und runder schwimmen"
+      },
+      "days": [
+        {
+          "names": {
+            "en": "Technique",
+            "fr": "Technique",
+            "de": "Technik"
+          },
+          "blocks": [
+            {
+              "slug": "swim-freestyle",
+              "sets": 1,
+              "distance": 300,
+              "notes": {
+                "en": "Warm-up",
+                "fr": "Échauffement",
+                "de": "Aufwärmen"
+              }
+            },
+            {
+              "slug": "drill-catch-up",
+              "sets": 4,
+              "distance": 50,
+              "rest": 20
+            },
+            {
+              "slug": "drill-single-arm",
+              "sets": 4,
+              "distance": 50,
+              "rest": 20
+            },
+            {
+              "slug": "swim-kick",
+              "sets": 4,
+              "distance": 50,
+              "rest": 20
+            },
+            {
+              "slug": "swim-backstroke",
+              "sets": 1,
+              "distance": 200,
+              "notes": {
+                "en": "Cool-down, easy",
+                "fr": "Retour au calme, facile",
+                "de": "Cool-down, locker"
+              }
+            }
+          ]
+        },
+        {
+          "names": {
+            "en": "Endurance",
+            "fr": "Endurance",
+            "de": "Ausdauer"
+          },
+          "blocks": [
+            {
+              "slug": "swim-freestyle",
+              "sets": 1,
+              "distance": 400,
+              "notes": {
+                "en": "Warm-up",
+                "fr": "Échauffement",
+                "de": "Aufwärmen"
+              }
+            },
+            {
+              "slug": "swim-freestyle",
+              "sets": 8,
+              "distance": 100,
+              "interval": 120,
+              "intensity": {
+                "kind": "rpe",
+                "value": 6
+              }
+            },
+            {
+              "slug": "swim-pull",
+              "sets": 4,
+              "distance": 100,
+              "rest": 20
+            },
+            {
+              "slug": "swim-freestyle",
+              "sets": 1,
+              "distance": 200,
+              "notes": {
+                "en": "Cool-down, easy",
+                "fr": "Retour au calme, facile",
+                "de": "Cool-down, locker"
+              }
+            }
+          ]
+        },
+        {
+          "names": {
+            "en": "Speed",
+            "fr": "Vitesse",
+            "de": "Tempo"
+          },
+          "blocks": [
+            {
+              "slug": "swim-freestyle",
+              "sets": 1,
+              "distance": 300,
+              "notes": {
+                "en": "Warm-up",
+                "fr": "Échauffement",
+                "de": "Aufwärmen"
+              }
+            },
+            {
+              "slug": "drill-fingertip-drag",
+              "sets": 4,
+              "distance": 25,
+              "rest": 20
+            },
+            {
+              "slug": "swim-50-free",
+              "sets": 8,
+              "intensity": {
+                "kind": "rpe",
+                "value": 9
+              },
+              "rest": 60
+            },
+            {
+              "slug": "swim-backstroke",
+              "sets": 1,
+              "distance": 200,
+              "notes": {
+                "en": "Cool-down, easy",
+                "fr": "Retour au calme, facile",
+                "de": "Cool-down, locker"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "preset-program-running-10k",
+      "templateId": "running-10k",
+      "sport": "running",
+      "names": {
+        "en": "Running base",
+        "fr": "Base course à pied",
+        "de": "Lauf-Grundlage"
+      },
+      "goals": {
+        "en": "Build your endurance with four sessions in turn",
+        "fr": "Construire ton endurance avec quatre séances en alternance",
+        "de": "Ausdauer aufbauen mit vier Einheiten im Wechsel"
+      },
+      "days": [
+        {
+          "names": {
+            "en": "Easy run",
+            "fr": "Footing",
+            "de": "Lockerer Lauf"
+          },
+          "blocks": [
+            {
+              "slug": "run-easy",
+              "sets": 1,
+              "distance": 6000,
+              "notes": {
+                "en": "At a pace where you can still talk",
+                "fr": "À une allure où tu peux parler",
+                "de": "In einem Tempo, bei dem du noch reden kannst"
+              }
+            },
+            {
+              "slug": "run-strides",
+              "sets": 4,
+              "distance": 100,
+              "rest": 60
+            }
+          ]
+        },
+        {
+          "names": {
+            "en": "Intervals",
+            "fr": "Fractionné",
+            "de": "Intervalle"
+          },
+          "blocks": [
+            {
+              "slug": "run-easy",
+              "sets": 1,
+              "distance": 2000,
+              "notes": {
+                "en": "Warm-up",
+                "fr": "Échauffement",
+                "de": "Aufwärmen"
+              }
+            },
+            {
+              "slug": "run-400",
+              "sets": 8,
+              "intensity": {
+                "kind": "rpe",
+                "value": 8.5
+              },
+              "rest": 90
+            },
+            {
+              "slug": "run-easy",
+              "sets": 1,
+              "distance": 1500,
+              "notes": {
+                "en": "Cool-down, easy",
+                "fr": "Retour au calme, facile",
+                "de": "Cool-down, locker"
+              }
+            }
+          ]
+        },
+        {
+          "names": {
+            "en": "Tempo",
+            "fr": "Tempo",
+            "de": "Tempolauf"
+          },
+          "blocks": [
+            {
+              "slug": "run-easy",
+              "sets": 1,
+              "distance": 2000,
+              "notes": {
+                "en": "Warm-up",
+                "fr": "Échauffement",
+                "de": "Aufwärmen"
+              }
+            },
+            {
+              "slug": "run-tempo",
+              "sets": 1,
+              "distance": 5000,
+              "intensity": {
+                "kind": "rpe",
+                "value": 7.5
+              }
+            },
+            {
+              "slug": "run-easy",
+              "sets": 1,
+              "distance": 1500,
+              "notes": {
+                "en": "Cool-down, easy",
+                "fr": "Retour au calme, facile",
+                "de": "Cool-down, locker"
+              }
+            }
+          ]
+        },
+        {
+          "names": {
+            "en": "Long run",
+            "fr": "Sortie longue",
+            "de": "Langer Lauf"
+          },
+          "blocks": [
+            {
+              "slug": "run-long",
+              "sets": 1,
+              "distance": 12000,
+              "notes": {
+                "en": "At a pace where you can still talk",
+                "fr": "À une allure où tu peux parler",
+                "de": "In einem Tempo, bei dem du noch reden kannst"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
