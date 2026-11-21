@@ -114,6 +114,7 @@ export function parseBackup(text: string): Backup {
   const version = (raw as { version?: unknown }).version
   if (
     version !== BACKUP_VERSION &&
+    version !== 12 &&
     version !== 11 &&
     version !== 10 &&
     version !== 9 &&
@@ -134,7 +135,7 @@ export function parseBackup(text: string): Backup {
   // Before version 8, no notes, no exercise description, and sessions name their program day by position.
   // Before version 9, exercises have no photo. Before version 10, programs have no resets.
   // Before version 11, blocks have the same sets throughout and exercise names read as English.
-  // Before version 12, a backup holds every part.
+  // Before version 12, a backup holds every part. Before version 13, every block is required.
   if (
     version === 2 ||
     version === 3 ||
@@ -145,7 +146,8 @@ export function parseBackup(text: string): Backup {
     version === 8 ||
     version === 9 ||
     version === 10 ||
-    version === 11
+    version === 11 ||
+    version === 12
   )
     raw = { ...(raw as object), version: BACKUP_VERSION }
   if (version === 1) {

@@ -6,6 +6,9 @@ import type { Discipline, Exercise, Goal, Program, Session } from '../model/sche
  * Version 2 has the user's own disciplines and no built-ins. Old records become: `strength` → Gym, `swim` →
  * Swimming, `run` → Track and field (the demo's disciplines, with the same ids), `other` → no discipline; built-in
  * exercises still referenced are copied into the user's library.
+ *
+ * Version 13 adds `Block.optional`: blocks stored or exported before it have none and read as required, so nothing is
+ * moved, on load or on import.
  */
 
 type Raw = Record<string, unknown>

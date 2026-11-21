@@ -1,6 +1,6 @@
 import { useLocation } from 'wouter'
-import { freeSession, restartSession, sessionFromDay } from '../core/model/program.ts'
-import type { Program, ProgramRef, Session } from '../core/model/schemas.ts'
+import { addOfferedBlock, freeSession, restartSession, sessionFromDay } from '../core/model/program.ts'
+import type { Block, Program, ProgramRef, Session } from '../core/model/schemas.ts'
 import { currentE1rm, lastPerformance } from '../core/stats/metrics.ts'
 import { useData } from './data.tsx'
 
@@ -23,6 +23,12 @@ export function useStartSession() {
         e1rmOf,
         (exerciseId) => lastPerformance(data.sessions, exerciseId, before),
         now,
+      )
+    },
+    /** The session with one of its day's optional blocks added, pre-filled as a planned one. Not stored either. */
+    withOffered(session: Session, block: Block): Session {
+      return addOfferedBlock(session, block, data.index, e1rmOf, (exerciseId) =>
+        lastPerformance(data.sessions, exerciseId, session),
       )
     },
     async fromDay(program: Program, ref: ProgramRef) {

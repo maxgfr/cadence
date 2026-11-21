@@ -29,7 +29,10 @@ interface BlockSheetProps {
   onDelete: () => void
 }
 
-/** Edits one planned block. Normal mode shows volume only; Advanced adds intensity, rest, interval and tempo. */
+/**
+ * Edits one planned block. Normal mode shows volume, notes and whether it is optional; Advanced adds intensity, rest,
+ * interval and tempo.
+ */
 export function BlockSheet({ block, onClose, onSave, onDelete }: BlockSheetProps) {
   const t = useT()
   return (
@@ -87,6 +90,7 @@ function BlockForm({ block, onSave, onDelete }: { block: Block; onSave: (b: Bloc
   const [interval, setSendOff] = useState(clock(block.interval))
   const [tempo, setTempo] = useState(block.tempo ?? '')
   const [notes, setNotes] = useState(block.notes ?? '')
+  const [optional, setOptional] = useState(block.optional === true)
 
   const showReps = metric === 'weight_reps' || metric === 'reps'
   const showDistance = metric === 'distance_time' && ex?.distance === undefined
@@ -140,6 +144,7 @@ function BlockForm({ block, onSave, onDelete }: { block: Block; onSave: (b: Bloc
           if (iv !== undefined && iv > 0) next.interval = Math.round(iv)
           if (tempo.trim()) next.tempo = tempo.trim().slice(0, 20)
           if (notes.trim()) next.notes = notes.trim().slice(0, 300)
+          if (optional) next.optional = true
           // Normal mode never shows these fields: keep what Advanced mode set.
           if (!advanced) {
             if (block.intensity && !next.intensity) next.intensity = block.intensity
@@ -250,6 +255,10 @@ function BlockForm({ block, onSave, onDelete }: { block: Block; onSave: (b: Bloc
           </>
         )}
         <Field label={t.common.notes} value={notes} onChange={(e) => setNotes(e.target.value)} maxLength={300} />
+        <label className={picker.toggle}>
+          <input type="checkbox" checked={optional} onChange={(e) => setOptional(e.target.checked)} />
+          <span>{m.optional}</span>
+        </label>
         <Button type="submit" variant="primary" size="large" full>
           {t.common.done}
         </Button>

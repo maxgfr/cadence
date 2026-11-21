@@ -1,4 +1,4 @@
-# Cadence backup format (version 12)
+# Cadence backup format (version 13)
 
 A backup is one JSON document, written by Settings → Export backup. The source of truth is
 `src/core/model/schemas.ts` in the Cadence repository (zod schemas); this page describes what `cadence.mjs` reads and
@@ -20,7 +20,7 @@ writes.
 | Key           | Content                                                                              |
 | ------------- | ------------------------------------------------------------------------------------ |
 | `app`         | always `"cadence"`                                                                   |
-| `version`     | `12`                                                                                 |
+| `version`     | `13`                                                                                 |
 | `exportedAt`  | when the file was written                                                            |
 | `settings`    | mode, `language`, `exerciseLanguage` (`en`, `fr`, `de`), units, week start, theme…   |
 | `disciplines` | `{ id, name (1–40), color, rest?, updatedAt? }`                                      |
@@ -32,8 +32,9 @@ writes.
 | `deleted`     | tombstones `{ collection, id, deletedAt }` for sync                                  |
 | `parts`       | absent in a whole backup; a partial export lists the parts it holds                  |
 
-Older versions (1 to 11) are migrated by the app on import. `cadence.mjs` writes only version 12: export again from the
-app to bring an old file up to date.
+Older versions (1 to 12) are migrated by the app on import. `cadence.mjs` writes only version 13. It reads version 12
+as 13, since 13 only added optional blocks (a version 12 block is required); for an older file, export again from the
+app to bring it up to date.
 
 ## Exercise
 
@@ -69,11 +70,14 @@ photo?, rest?, updatedAt? }`
   kept as the days of its only week).
 - Week: `{ id, name? (≤60), days }`. Day: `{ id, name (1–60), disciplineId?, blocks, notes? (≤500) }`.
 - Block: `{ id, exerciseId, sets (1–50), reps? (1–500), perSet?, distance? (m), duration? (s), intensity?, rest? (s),
-  interval? (s), tempo? (≤20), notes? (≤300) }`.
+  interval? (s), tempo? (≤20), notes? (≤300), optional? }`.
 - `intensity`: `{ kind, value }`, value above 0. Kinds: `kg` (a load), `pct1rm` (share of the one-rep max), `rpe` (1–10),
   `pace` (seconds per repetition), `pctmax` (share of the athlete's best).
 - `perSet`: up to 50 `{ reps?, value? }`, set by set in order when sets differ (a pyramid); `value` is in the block's
   intensity kind, and what a set leaves out is the block's.
+- `optional`: `true` for a block planned in case there is time. The app offers it beside the session, and it becomes
+  part of the session only when the athlete adds it. Absent or `false` is a required block, as every block before
+  version 13.
 
 ## Restoring a backup in the app
 

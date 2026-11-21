@@ -191,6 +191,10 @@
 }
 
 .blockName {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-1) var(--space-2);
   font-weight: 600;
 }
 

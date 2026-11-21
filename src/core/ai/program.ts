@@ -61,6 +61,9 @@ const AiBlock = z.object({
   intervalSeconds: z.number().nullable().describe('Swim send-off interval in seconds'),
   tempo: z.string().nullable(),
   notes: z.string().nullable(),
+  optional: z
+    .boolean()
+    .describe('true for an exercise done only in case there is time, offered beside the session; false otherwise'),
 })
 
 const AiDay = z.object({
@@ -243,6 +246,7 @@ function toWeek(w: AiWeek, r: Resolver, notes: string[], index: number): Week | 
         if (tempo && /\d/.test(tempo)) out.tempo = tempo
         const n = text(blk.notes, 300)
         if (n) out.notes = n
+        if (blk.optional === true) out.optional = true
         return out
       })
       const disciplineId = r.discipline(d.discipline)
@@ -351,6 +355,8 @@ reps and its intensity value, in order: never average them or keep only one.
 recovery rest (2 to 8 minutes).
 - Swim: give distance per repetition and either a send-off interval (intervalSeconds) or rest, with an rpe intensity.
 - Include warm-up blocks where they matter (swim warm-up, sprint drills).
+- A block is optional only when the athlete asks for exercises "in case there is time", or keeps an optional one: \
+optional blocks go at the end of their day, a few at most, and the rest of the day stands as a full session without them.
 - Progress load or volume week to week; deload or taper in the last week of a block of four or more weeks.
 - Keep each session within the time the athlete has.
 - Every week has the same number of training days, one per session the athlete can do.`
@@ -535,7 +541,7 @@ export function summarizeContext(c: ContextInput): string {
     const w = active.weeks[next?.week ?? 0]
     if (w)
       out.push(
-        `Its current week: ${w.days.map((d) => `${d.name}: ${d.blocks.map((b) => `${c.exercises.get(b.exerciseId)?.name ?? b.exerciseId} ${describeBlock(b, c.exercises.get(b.exerciseId), units)}`).join(', ')}`).join(' | ')}`,
+        `Its current week: ${w.days.map((d) => `${d.name}: ${d.blocks.map((b) => `${c.exercises.get(b.exerciseId)?.name ?? b.exerciseId} ${describeBlock(b, c.exercises.get(b.exerciseId), units)}${b.optional ? ' (optional)' : ''}`).join(', ')}`).join(' | ')}`,
       )
   }
   return out.join('\n')
@@ -582,7 +588,7 @@ export function adjustWeekPrompt(
     ? week.days
         .map(
           (d) =>
-            `${d.name} (${library.disciplines.find((x) => x.id === d.disciplineId)?.name ?? 'no discipline'}): ${d.blocks.map((b) => `${b.exerciseId} ${describeBlock(b, exercises.get(b.exerciseId), units)}`).join('; ')}`,
+            `${d.name} (${library.disciplines.find((x) => x.id === d.disciplineId)?.name ?? 'no discipline'}): ${d.blocks.map((b) => `${b.exerciseId} ${describeBlock(b, exercises.get(b.exerciseId), units)}${b.optional ? ' (optional)' : ''}`).join('; ')}`,
         )
         .join('\n')
     : '(none)'

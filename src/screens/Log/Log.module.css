@@ -441,3 +441,8 @@
 .discard p {
   flex: 1 1 100%;
 }
+
+/* An optional exercise's plan, offered after the session's exercises. */
+.offeredPlan {
+  font-variant-numeric: tabular-nums;
+}

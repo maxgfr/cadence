@@ -69,6 +69,8 @@ export const presets = namespace(
         `${low}–${high} reps. Once every set reaches ${high}, add the smallest load step.`,
       pauseInStretch: 'Pause one second at the bottom, in the stretch.',
       oneArmBehind: 'One arm at a time, the cable behind the body.',
+      onCable: 'On a cable.',
+      withRope: 'On a cable with a rope.',
       backOff: 'A top set, then two lighter back-off sets with more reps.',
     },
     exercises: {
@@ -310,6 +312,8 @@ export const presets = namespace(
         `${low} à ${high} répétitions. Dès que chaque série atteint ${high}, monte la charge du plus petit cran.`,
       pauseInStretch: 'Marque une seconde de pause en bas, en position étirée.',
       oneArmBehind: 'Un bras à la fois, le câble passant derrière le corps.',
+      onCable: 'À la poulie.',
+      withRope: 'À la poulie, avec une corde.',
       backOff: 'Une série lourde, puis deux séries plus légères avec plus de répétitions.',
     },
     exercises: {
@@ -546,6 +550,8 @@ export const presets = namespace(
         `${low}–${high} Wiederholungen. Schaffst du in jedem Satz ${high}, erhöhe das Gewicht um die kleinste Stufe.`,
       pauseInStretch: 'Unten eine Sekunde in der Dehnung halten.',
       oneArmBehind: 'Ein Arm nach dem anderen, das Kabel hinter dem Körper.',
+      onCable: 'Am Kabelzug.',
+      withRope: 'Am Kabelzug mit Seil.',
       backOff: 'Erst ein schwerer Satz, dann zwei leichtere Sätze mit mehr Wiederholungen.',
     },
     exercises: {

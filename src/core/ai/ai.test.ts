@@ -39,6 +39,7 @@ const block = (exercise: string, p: Partial<AiProgram['weeks'][number]['days'][n
   intervalSeconds: null,
   tempo: null,
   notes: null,
+  optional: false,
   ...p,
 })
 

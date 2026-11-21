@@ -41,6 +41,9 @@ const range = (low: number, high: number, intensity: number, rest: number, ...ex
   notes: [...extra, currentMessages().presets.notes.repRange(low, high)].join(' '),
 })
 
+/** A block planned in case there is time: offered during the session, added by the athlete if they want it. */
+const optional = (spec: BlockSpec): BlockSpec => ({ ...spec, optional: true })
+
 export const PRESET_PROGRAMS: readonly PresetProgram[] = [
   {
     id: 'gym-machines-ppl',
@@ -56,6 +59,7 @@ export const PRESET_PROGRAMS: readonly PresetProgram[] = [
           b('machine-lateral-raise', 4, range(12, 20, 9, 90)),
           b('triceps-pushdown', 3, range(10, 15, 9, 90)),
           b('ab-crunch-machine', 3, range(10, 15, 8, 60)),
+          b('overhead-triceps-extension', 2, optional(range(10, 15, 9, 90, notes.onCable))),
         ]),
         d(days.pull, [
           b('lat-pulldown', 4, range(8, 12, 8, 150, notes.rampUp)),
@@ -64,6 +68,9 @@ export const PRESET_PROGRAMS: readonly PresetProgram[] = [
           b('machine-lateral-raise', 4, range(12, 20, 9, 90)),
           b('machine-biceps-curl', 4, range(10, 15, 9, 90)),
           b('cable-curl', 3, range(10, 15, 9, 60)),
+          b('shrug', 2, optional(range(10, 15, 9, 60))),
+          b('hammer-curl', 2, optional(range(10, 15, 9, 60, notes.withRope))),
+          b('cable-crunch', 2, optional(range(10, 15, 8, 60))),
         ]),
         d(days.legs, [
           b('leg-press', 4, range(10, 15, 8, 180, notes.rampUp)),

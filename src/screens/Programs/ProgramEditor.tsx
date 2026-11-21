@@ -12,6 +12,7 @@ import {
   cloneWeek,
   completedDays,
   describeBlock,
+  isOptional,
   isSessionSet,
   nextDay,
   restartProgram,
@@ -23,6 +24,7 @@ import { Field } from '../../ui/components/Field.tsx'
 import { IconButton } from '../../ui/components/IconButton.tsx'
 import { Segmented } from '../../ui/components/Segmented.tsx'
 import { SelectField } from '../../ui/components/SelectField.tsx'
+import { Tag } from '../../ui/components/Tag.tsx'
 import { TextArea } from '../../ui/components/TextArea.tsx'
 import { ExercisePicker } from '../../ui/ExercisePicker.tsx'
 import { Screen } from '../../ui/shell/Screen.tsx'
@@ -102,7 +104,7 @@ function ProgramForm({ initial, draft, saved }: { initial: Program; draft?: Prog
   const shown = (week?.days ?? [])
     .map(
       (d) =>
-        `${d.name}: ${d.blocks.map((b) => `${exName(b.exerciseId)} ${describeBlock(b, exOf(b.exerciseId), units)}`).join(', ') || 'no exercise yet'}`,
+        `${d.name}: ${d.blocks.map((b) => `${exName(b.exerciseId)} ${describeBlock(b, exOf(b.exerciseId), units)}${isOptional(b) ? ' (optional)' : ''}`).join(', ') || 'no exercise yet'}`,
     )
     .join(' | ')
   useCoachScreen({
@@ -343,7 +345,10 @@ function ProgramForm({ initial, draft, saved }: { initial: Program; draft?: Prog
                           className={styles.blockButton}
                           onClick={() => setEditing({ day: d, block: b })}
                         >
-                          <span className={styles.blockName}>{exName(b.exerciseId)}</span>
+                          <span className={styles.blockName}>
+                            {exName(b.exerciseId)}
+                            {isOptional(b) && <Tag>{m.optional}</Tag>}
+                          </span>
                           <span className={styles.blockPlan}>
                             {describeBlock(b, exOf(b.exerciseId), units, advanced)}
                           </span>

@@ -14,6 +14,7 @@ import {
   describeSets,
   emptySet,
   entriesFromSession,
+  offeredBlocks,
   previousSessionFor,
   replaceBlockExercise,
   restFor,
@@ -28,6 +29,7 @@ import { Button } from '../../ui/components/Button.tsx'
 import { DisciplineTag } from '../../ui/components/Discipline.tsx'
 import { EmptyState } from '../../ui/components/EmptyState.tsx'
 import { IconButton } from '../../ui/components/IconButton.tsx'
+import { ListGroup, ListRow } from '../../ui/components/List.tsx'
 import { cx } from '../../ui/cx.ts'
 import { ExercisePicker } from '../../ui/ExercisePicker.tsx'
 import { LinkedText } from '../../ui/links.tsx'
@@ -52,11 +54,17 @@ export function Log() {
   const [picking, setPicking] = useState<'add' | Entry | null>(null)
   const [finishing, setFinishing] = useState(false)
   const rest = useRestTimer()
+  // Optional blocks of the session's day not added yet: offered after its exercises, stored only once added.
+  const offered = session ? offeredBlocks(session, data.programs) : []
   // The coach logs what the athlete tells it into this session, even while they rest.
   useCoachScreen(
     session
       ? {
-          where: `logging the session in progress, "${session.title}": the sets they say go there`,
+          where: `logging the session in progress, "${session.title}": the sets they say go there${
+            offered.length > 0
+              ? `; optional exercises offered in case there is time: ${offered.map((b) => data.index.get(b.exerciseId)?.name ?? b.exerciseId).join(', ')}`
+              : ''
+          }`,
           sessionId: session.id,
           starters: [t.coach.starters.sameAsLast, t.coach.starters.nextLoad],
           raised: rest.endsAt !== null,
@@ -262,6 +270,32 @@ export function Log() {
           )
         })}
       </ol>
+
+      {offered.length > 0 && (
+        <ListGroup title={t.log.offeredTitle} footer={t.log.offeredBody}>
+          {offered.map((block) => {
+            const ex = data.index.get(block.exerciseId)
+            const name = ex?.name ?? t.log.unknownExercise
+            return (
+              <ListRow
+                key={block.id}
+                title={name}
+                subtitle={<span className={styles.offeredPlan}>{describeBlock(block, ex, units, advanced)}</span>}
+                trailing={
+                  <Button
+                    variant="secondary"
+                    icon={<Plus size={18} strokeWidth={2} aria-hidden="true" />}
+                    aria-label={t.log.addOfferedTo(name)}
+                    onClick={() => update(start.withOffered(session, block))}
+                  >
+                    {t.log.addOffered}
+                  </Button>
+                }
+              />
+            )
+          })}
+        </ListGroup>
+      )}
 
       <Button
         variant="secondary"

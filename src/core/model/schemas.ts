@@ -121,6 +121,11 @@ export const Block = z.object({
   interval: positive.optional(),
   tempo: z.string().max(20).optional(),
   notes: z.string().max(300).optional(),
+  /**
+   * Planned in case there is time: offered beside the session, not part of it until the athlete adds it. Absent or
+   * false is required (every block before version 13).
+   */
+  optional: z.boolean().optional(),
 })
 export type Block = z.infer<typeof Block>
 
@@ -301,9 +306,11 @@ export const DEFAULT_SETTINGS: Settings = Settings.parse({})
  * versions read with none. 10: a program can hold `resets` of its progress; earlier versions read with none.
  * 11: a block can differ set by set (`perSet`) and settings hold the language of exercise names (`exerciseLanguage`);
  * earlier versions read with the same sets throughout and English names. 12: a backup can hold only some parts
- * (`parts`), with the exercises and disciplines what it holds uses; earlier versions read as whole.
+ * (`parts`), with the exercises and disciplines what it holds uses; earlier versions read as whole. 13: a block can
+ * be `optional`, offered in case there is time rather than part of the session; earlier versions read with every
+ * block required.
  */
-export const BACKUP_VERSION = 12
+export const BACKUP_VERSION = 13
 
 /** What an export can hold, and an import take: history is the sessions, exercises come with their disciplines. */
 export const BackupPart = z.enum(['history', 'exercises', 'programs', 'goals', 'notes', 'settings'])

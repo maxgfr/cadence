@@ -1,0 +1,14 @@
+/* A short label beside a name ("Optional"): an outlined pill in Caption, neutral, so its word carries the meaning. */
+.tag {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  padding: 0 var(--space-2);
+  border: var(--hairline-width) solid var(--hairline-strong);
+  border-radius: var(--radius-pill);
+  color: var(--ink-2);
+  font-size: var(--text-caption);
+  font-weight: 600;
+  line-height: 1.45;
+  white-space: nowrap;
+}

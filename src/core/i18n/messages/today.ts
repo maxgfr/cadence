@@ -41,6 +41,8 @@ export const today = namespace(
     doneOn: (date: string) => `Done ${date}`,
     inProgress: 'In progress',
     toDo: (n: number) => `To do · ${n} ${plural(n, 'exercise', 'exercises')}`,
+    /** Optional exercises of a day, after its count of exercises. */
+    optional: (n: number) => `${n} optional`,
   },
   {
     title: 'Aujourd’hui',
@@ -82,6 +84,7 @@ export const today = namespace(
     doneOn: (date) => `Faite le ${date}`,
     inProgress: 'En cours',
     toDo: (n) => `À faire · ${n} ${pluralFr(n, 'exercice', 'exercices')}`,
+    optional: (n) => pluralFr(n, `${n} facultatif`, `${n} facultatifs`),
   },
   {
     title: 'Heute',
@@ -123,5 +126,6 @@ export const today = namespace(
     doneOn: (date) => `Erledigt am ${date}`,
     inProgress: 'Läuft',
     toDo: (n) => `Offen · ${n} ${plural(n, 'Übung', 'Übungen')}`,
+    optional: (n) => `${n} optional`,
   },
 )

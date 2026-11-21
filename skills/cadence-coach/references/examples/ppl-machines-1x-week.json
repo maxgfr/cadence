@@ -60,6 +60,15 @@
           "intensity": { "kind": "rpe", "value": 8 },
           "rest": 60,
           "notes": "10–15 reps. Once every set reaches 15, add the smallest load step."
+        },
+        {
+          "slug": "overhead-triceps-extension",
+          "sets": 2,
+          "reps": 10,
+          "intensity": { "kind": "rpe", "value": 9 },
+          "rest": 90,
+          "optional": true,
+          "notes": "On a cable. 10–15 reps. Once every set reaches 15, add the smallest load step."
         }
       ]
     },
@@ -112,6 +121,33 @@
           "reps": 10,
           "intensity": { "kind": "rpe", "value": 9 },
           "rest": 60,
+          "notes": "10–15 reps. Once every set reaches 15, add the smallest load step."
+        },
+        {
+          "slug": "shrug",
+          "sets": 2,
+          "reps": 10,
+          "intensity": { "kind": "rpe", "value": 9 },
+          "rest": 60,
+          "optional": true,
+          "notes": "10–15 reps. Once every set reaches 15, add the smallest load step."
+        },
+        {
+          "slug": "hammer-curl",
+          "sets": 2,
+          "reps": 10,
+          "intensity": { "kind": "rpe", "value": 9 },
+          "rest": 60,
+          "optional": true,
+          "notes": "On a cable with a rope. 10–15 reps. Once every set reaches 15, add the smallest load step."
+        },
+        {
+          "slug": "cable-crunch",
+          "sets": 2,
+          "reps": 10,
+          "intensity": { "kind": "rpe", "value": 8 },
+          "rest": 60,
+          "optional": true,
           "notes": "10–15 reps. Once every set reaches 15, add the smallest load step."
         }
       ]

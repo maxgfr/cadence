@@ -1,7 +1,15 @@
 import { useData } from '../../app/data.tsx'
 import { useT } from '../../app/i18n.tsx'
 import { startOfWeek } from '../../core/model/dates.ts'
-import { choosableDays, dayAt, isSessionSet, nextDay, programsUnderWay } from '../../core/model/program.ts'
+import {
+  choosableDays,
+  dayAt,
+  isOptional,
+  isSessionSet,
+  nextDay,
+  programsUnderWay,
+  requiredBlocks,
+} from '../../core/model/program.ts'
 import type { Program, ProgramRef } from '../../core/model/schemas.ts'
 import { DisciplineDot } from '../../ui/components/Discipline.tsx'
 import { ListGroup, ListRow } from '../../ui/components/List.tsx'
@@ -50,7 +58,8 @@ export function SessionList({
             title={day.name}
             subtitle={[
               isSessionSet(program) ? '' : (program.weeks[ref.week]?.name ?? t.today.week(ref.week + 1)),
-              t.today.exercises(day.blocks.length),
+              t.today.exercises(requiredBlocks(day).length),
+              day.blocks.some(isOptional) ? t.today.optional(day.blocks.filter(isOptional).length) : '',
               isRunning(ref) ? t.today.inProgressLower : sameRef(next, ref) ? t.today.nextUp : '',
             ]
               .filter(Boolean)

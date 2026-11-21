@@ -184,6 +184,7 @@ test('asked for a program, the coach describes it and the designer builds it: a 
     intervalSeconds: null,
     tempo: null,
     notes: null,
+    optional: false,
   })
   const prompts: string[] = []
   await answerWith(page, (body) => {

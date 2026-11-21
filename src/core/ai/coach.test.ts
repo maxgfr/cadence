@@ -292,6 +292,7 @@ describe('what the coach has built', () => {
                 intervalSeconds: null,
                 tempo: null,
                 notes: null,
+                optional: false,
               },
             ],
           })),

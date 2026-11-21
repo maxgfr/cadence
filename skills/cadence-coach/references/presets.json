@@ -1,6 +1,6 @@
 {
   "app": "cadence",
-  "backupVersion": 12,
+  "backupVersion": 13,
   "locales": ["en", "fr", "de"],
   "muscles": {
     "quads": {
@@ -2179,6 +2179,22 @@
                 "fr": "10 à 15 répétitions. Dès que chaque série atteint 15, monte la charge du plus petit cran.",
                 "de": "10–15 Wiederholungen. Schaffst du in jedem Satz 15, erhöhe das Gewicht um die kleinste Stufe."
               }
+            },
+            {
+              "slug": "overhead-triceps-extension",
+              "sets": 2,
+              "reps": 10,
+              "intensity": {
+                "kind": "rpe",
+                "value": 9
+              },
+              "rest": 90,
+              "optional": true,
+              "notes": {
+                "en": "On a cable. 10–15 reps. Once every set reaches 15, add the smallest load step.",
+                "fr": "À la poulie. 10 à 15 répétitions. Dès que chaque série atteint 15, monte la charge du plus petit cran.",
+                "de": "Am Kabelzug. 10–15 Wiederholungen. Schaffst du in jedem Satz 15, erhöhe das Gewicht um die kleinste Stufe."
+              }
             }
           ]
         },
@@ -2273,6 +2289,54 @@
                 "value": 9
               },
               "rest": 60,
+              "notes": {
+                "en": "10–15 reps. Once every set reaches 15, add the smallest load step.",
+                "fr": "10 à 15 répétitions. Dès que chaque série atteint 15, monte la charge du plus petit cran.",
+                "de": "10–15 Wiederholungen. Schaffst du in jedem Satz 15, erhöhe das Gewicht um die kleinste Stufe."
+              }
+            },
+            {
+              "slug": "shrug",
+              "sets": 2,
+              "reps": 10,
+              "intensity": {
+                "kind": "rpe",
+                "value": 9
+              },
+              "rest": 60,
+              "optional": true,
+              "notes": {
+                "en": "10–15 reps. Once every set reaches 15, add the smallest load step.",
+                "fr": "10 à 15 répétitions. Dès que chaque série atteint 15, monte la charge du plus petit cran.",
+                "de": "10–15 Wiederholungen. Schaffst du in jedem Satz 15, erhöhe das Gewicht um die kleinste Stufe."
+              }
+            },
+            {
+              "slug": "hammer-curl",
+              "sets": 2,
+              "reps": 10,
+              "intensity": {
+                "kind": "rpe",
+                "value": 9
+              },
+              "rest": 60,
+              "optional": true,
+              "notes": {
+                "en": "On a cable with a rope. 10–15 reps. Once every set reaches 15, add the smallest load step.",
+                "fr": "À la poulie, avec une corde. 10 à 15 répétitions. Dès que chaque série atteint 15, monte la charge du plus petit cran.",
+                "de": "Am Kabelzug mit Seil. 10–15 Wiederholungen. Schaffst du in jedem Satz 15, erhöhe das Gewicht um die kleinste Stufe."
+              }
+            },
+            {
+              "slug": "cable-crunch",
+              "sets": 2,
+              "reps": 10,
+              "intensity": {
+                "kind": "rpe",
+                "value": 8
+              },
+              "rest": 60,
+              "optional": true,
               "notes": {
                 "en": "10–15 reps. Once every set reaches 15, add the smallest load step.",
                 "fr": "10 à 15 répétitions. Dès que chaque série atteint 15, monte la charge du plus petit cran.",

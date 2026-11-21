@@ -34,6 +34,11 @@ export const log = namespace(
     exerciseLower: 'exercise',
     set: 'Set',
     addSet: 'Add set',
+    /** Optional blocks of the day, offered in case there is time. */
+    offeredTitle: 'Optional',
+    offeredBody: 'In case there is time: an exercise added joins the session.',
+    addOffered: 'Add',
+    addOfferedTo: (name: string) => `Add ${name} to the session`,
     removeLastSet: 'Remove last set',
     column: {
       reps: 'Reps',
@@ -107,6 +112,10 @@ export const log = namespace(
     exerciseLower: 'l’exercice',
     set: 'N°',
     addSet: 'Ajouter une série',
+    offeredTitle: 'Facultatif',
+    offeredBody: 'Si tu as le temps : un exercice ajouté rejoint la séance.',
+    addOffered: 'Ajouter',
+    addOfferedTo: (name) => `Ajouter ${name} à la séance`,
     removeLastSet: 'Retirer la dernière série',
     column: {
       reps: 'Rép.',
@@ -177,6 +186,10 @@ export const log = namespace(
     exerciseLower: 'Übung',
     set: 'Satz',
     addSet: 'Satz hinzufügen',
+    offeredTitle: 'Optional',
+    offeredBody: 'Falls Zeit bleibt: Eine hinzugefügte Übung gehört dann zur Einheit.',
+    addOffered: 'Hinzufügen',
+    addOfferedTo: (name) => `${name} zur Einheit hinzufügen`,
     removeLastSet: 'Letzten Satz entfernen',
     column: {
       reps: 'Wdh.',

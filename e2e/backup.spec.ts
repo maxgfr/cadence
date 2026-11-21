@@ -24,7 +24,7 @@ test('history alone comes back from a backup, without the programs', async ({ pa
   expect(download.suggestedFilename()).toMatch(/^cadence-history-\d{4}-\d{2}-\d{2}\.json$/)
   const path = (await download.path()) ?? ''
   const backup = JSON.parse(await readFile(path, 'utf8'))
-  expect(backup.version).toBe(12)
+  expect(backup.version).toBe(13)
   expect(backup.parts).toEqual(['history'])
   expect(backup.programs).toEqual([])
   expect(backup.sessions.length).toBeGreaterThan(0)

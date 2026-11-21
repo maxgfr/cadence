@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, test } from 'bun:test'
 import { LOCALES, messagesFor, setDisplayLocale } from '../i18n/index.ts'
+import { isOptional, requiredBlocks } from '../model/program.ts'
 import { Discipline, Exercise, Program } from '../model/schemas.ts'
 import { PRESET_EXERCISES, PRESET_SPORTS } from './catalog.ts'
 import { buildPreset, PRESET_PROGRAMS } from './presets.ts'
@@ -93,6 +94,24 @@ describe('presets', () => {
     expect(press?.perSet?.map((s) => s.reps)).toEqual([6, 8, 10])
   })
 
+  test('the Push Pull Legs offers a few exercises in case there is time, at the end of Push and Pull', () => {
+    const ppl = all({ sports: ['gym'] }).programs.find((p) => p.id === 'preset-program-gym-machines-ppl')
+    const days = ppl?.weeks[0]?.days ?? []
+    expect(days.map((d) => d.blocks.filter(isOptional).map((b) => [b.exerciseId, b.sets]))).toEqual([
+      [['preset-overhead-triceps-extension', 2]],
+      [
+        ['preset-shrug', 2],
+        ['preset-hammer-curl', 2],
+        ['preset-cable-crunch', 2],
+      ],
+      [],
+    ])
+    const hammer = days[1]?.blocks.find((b) => b.exerciseId === 'preset-hammer-curl')
+    expect(hammer?.notes).toStartWith('On a cable with a rope.')
+    expect(hammer?.intensity).toEqual({ kind: 'rpe', value: 9 })
+    expect(hammer?.rest).toBe(60)
+  })
+
   test('every gym program uses gym exercises only, with few blocks and sets a day, in every language', () => {
     const gym = new Set(PRESET_EXERCISES.filter((e) => e.sport === 'gym').map((e) => `preset-${e.slug}`))
     const gymPrograms = PRESET_PROGRAMS.filter((p) => p.sport === 'gym').map((p) => `preset-program-${p.id}`)
@@ -113,8 +132,14 @@ describe('presets', () => {
         const days = Program.parse(program).weeks[0]?.days ?? []
         expect(days.length).toBe(dayCounts[program.id as keyof typeof dayCounts])
         for (const d of days) {
-          expect(d.blocks.length).toBeLessThanOrEqual(program.id === 'preset-program-gym-machines-ppl' ? 7 : 8)
-          expect(d.blocks.reduce((n, b) => n + b.sets, 0)).toBeLessThanOrEqual(23)
+          // The limits hold for the session as it starts: optional blocks are only offered.
+          const required = requiredBlocks(d)
+          expect(required.length).toBeLessThanOrEqual(program.id === 'preset-program-gym-machines-ppl' ? 7 : 8)
+          expect(required.reduce((n, b) => n + b.sets, 0)).toBeLessThanOrEqual(23)
+          // Optional blocks come last, a few at most.
+          const optional = d.blocks.filter(isOptional)
+          expect(optional.length).toBeLessThanOrEqual(3)
+          expect(d.blocks.slice(required.length)).toEqual(optional)
           for (const b of d.blocks) {
             expect(gym.has(b.exerciseId)).toBe(true)
             expect(ids.has(b.exerciseId)).toBe(true)

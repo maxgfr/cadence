@@ -11,7 +11,8 @@ the athlete's file: every command that writes takes an `-o` path and refuses to 
 
 References:
 
-- `references/backup-format.md`: the backup's shape (version 12) and how to restore a backup in the app.
+- `references/backup-format.md`: the backup's shape (version 13; version 12 reads the same) and how to restore a
+  backup in the app.
 - `references/presets.json`: every preset exercise (slug, id, sport, metric, muscles, names in English, French and
   German), the preset disciplines and the app's preset programs. Generated from the app's source.
 - `references/programming.md`: an evidence summary for designing hypertrophy programs (volume, per-session ceiling,
@@ -34,7 +35,8 @@ Per session: date, title, exercises, ticked sets, duration (min), RPE. Per exerc
 sessions, ticked sets, sets per session, best estimated 1RM (Epley, from sets of 1 to 12 reps, as the app computes it),
 heaviest set, best reps, hold, time or pace for exercises not measured by load, and the last session's sets. Sets per
 muscle per ISO week: a crude count where a set counts once for every muscle its exercise lists. Only ticked sets count.
-On assisted machines the weight is the assistance, never a load: they get no 1RM.
+On assisted machines the weight is the assistance, never a load: they get no 1RM. Per program: layout, weeks, days, and
+its optional blocks (`optionalBlocks` in the JSON; named in the text only when there are some).
 
 ### presets
 
@@ -90,7 +92,8 @@ Adds a program to a backup. The spec:
       "notes": "optional",
       "blocks": [
         { "slug": "barbell-bench-press", "sets": 4, "reps": 6, "intensity": { "kind": "rpe", "value": 8 }, "rest": 150 },
-        { "slug": "plank", "sets": 3, "duration": 45, "rest": 60, "notes": "optional" }
+        { "slug": "plank", "sets": 3, "duration": 45, "rest": 60, "notes": "optional" },
+        { "slug": "cable-crunch", "sets": 2, "reps": 10, "rest": 60, "optional": true }
       ]
     }
   ]
@@ -101,12 +104,14 @@ Limits, from the app's schema: name 1–80 characters, goal up to 300, day name 
 least one block. Block: `sets` 1–50, `reps` 1–500 (whole numbers), `duration` and `distance` above 0 (s, m), `rest`
 0 or more (s), `interval` above 0 (s), `tempo` up to 20 characters, `notes` up to 300. `intensity.kind`: `kg`, `pct1rm`,
 `rpe` (1–10), `pace`, `pctmax`, with a value above 0. `perSet`: up to 50 `{ reps?, value? }` for sets that differ,
-`value` in the block's intensity kind. Unknown fields are refused. Every slug must be a preset (see `presets`).
+`value` in the block's intensity kind. `optional`: `true` or `false`, `true` for a block done in case there is time
+(written as `"optional": true`; left out when `false` or absent, which is a required block). Unknown fields are refused.
+Every slug must be a preset (see `presets`).
 
 The program is a set of sessions done in turn (`layout: "sessions"`, one week), marked as written by AI. Its days go in
 the discipline of their exercises' sport (the backup's own, found as the app finds it, else a new preset discipline).
 Preset exercises the backup lacks are added; an exercise the athlete already has under a preset's name in any language
-is used as it is.
+is used as it is. The output is a version 13 backup; the backup given to `--into` can be version 12 or 13.
 
 ### volume
 
@@ -124,6 +129,14 @@ week, sorted from the most. Flags, advice only (the exit code stays 0): `above c
 fractional sets in one session; `below floor`, a muscle under `--floor` fractional sets in the week, `no work` at 0
 (`full_body` is never flagged); `repeated`, an exercise on more than one day, where another exercise for the same
 muscle gives variety.
+
+Optional blocks are left out of every count above and of the flags: those describe the required session. They are
+reported apart, only when the program has some. Per day, `with optional blocks (+<block> <sets>, …)`: the day's sets,
+exercises and fractional sets per muscle with every optional block done too (JSON: `optional` lists the day's optional
+blocks, `withOptional` holds the combined counts). Per week, `with optional blocks`: the combined sets per muscle
+(`perWeek.withOptional`). Then `With every optional block done, the flags would change`: `+` a flag that appears (a
+session above the ceiling, an exercise repeated), `-` a flag that disappears (a muscle that reaches the floor, with its
+combined sets), or `none` (`optionalFlags` in the JSON, each with `change: "appears"` or `"disappears"`).
 
 ## Workflow
 
@@ -150,6 +163,9 @@ muscle gives variety.
    - Write program and day names and notes in the language the athlete asks for (English by default). Exercise names
      come from `settings.exerciseLanguage`.
    - Keep the exercises the athlete says they like; put compound movements first.
+   - An exercise the athlete wants in case there is time becomes an optional block (`"optional": true`): at the end of
+     its day, a few per day at most. The required blocks alone keep the session within the per-session limits (sets
+     and length); the flags are computed on them, and `volume` shows what the optional blocks would change.
    - Run `volume` on the draft spec and fix what it flags before building, or tell the athlete why a flag is accepted.
    - The app's preset program `gym-machines-ppl` (`src/core/presets/presets.ts` in the Cadence repository, also in
      `references/presets.json`) and `references/examples/` are worked examples.
@@ -159,7 +175,8 @@ muscle gives variety.
 7. **Hand over.** Tell the athlete how to restore (erase, then import the whole file, every part ticked: see
    `references/backup-format.md`), what changed and why, the sets per session and per muscle, the starting loads and
    the progression rule. The data stays on the athlete's device: they erase and import on the device themselves.
-8. **Later runs.** With a newer backup, run the same steps against the program: adherence (ticked over planned sets),
-   exercises where every set reached the top of the range (raise the load), then write an updated program. A program
+8. **Later runs.** With a newer backup, run the same steps against the program: adherence (ticked over planned sets,
+   on the required blocks; an optional block counts only in the sessions where the athlete added it), exercises where
+   every set reached the top of the range (raise the load), then write an updated program. A program
    added to a backup of the device's current data is imported with **Add**, without erasing; the athlete can then
    delete the old program in the app.

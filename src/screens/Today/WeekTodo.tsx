@@ -1,7 +1,7 @@
 import { CheckCircle2, Circle, Play } from 'lucide-react'
 import { useT } from '../../app/i18n.tsx'
 import { formatShortDay } from '../../core/model/dates.ts'
-import type { WeekTodo } from '../../core/model/program.ts'
+import { isOptional, requiredBlocks, type WeekTodo } from '../../core/model/program.ts'
 import type { ProgramRef } from '../../core/model/schemas.ts'
 import { Button } from '../../ui/components/Button.tsx'
 import { ListGroup, ListRow } from '../../ui/components/List.tsx'
@@ -51,7 +51,12 @@ export function WeekTodoCard({
                   ? t.today.inProgress
                   : done
                     ? t.today.doneOn(formatShortDay(done.date))
-                    : t.today.toDo(day.blocks.length)
+                    : [
+                        t.today.toDo(requiredBlocks(day).length),
+                        day.blocks.some(isOptional) ? t.today.optional(day.blocks.filter(isOptional).length) : '',
+                      ]
+                        .filter(Boolean)
+                        .join(' · ')
               }
               onClick={() => onStart(ref)}
               chevron

@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Reads and writes Cadence backups (version 12) for the cadence-coach skill. Plain Node (18 or later), no dependencies.
+// Reads and writes Cadence backups (version 13; version 12 reads the same) for the cadence-coach skill. Plain Node (18 or later), no dependencies.
 // Run `node cadence.mjs` for the list of commands. The preset reference is ../references/presets.json.
 
 import { randomBytes } from 'node:crypto'
@@ -7,7 +7,9 @@ import { existsSync, readFileSync, realpathSync, renameSync, unlinkSync, writeFi
 import { basename, dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-const BACKUP_VERSION = 12
+const BACKUP_VERSION = 13
+/** Older versions that mean the same as this one: version 13 only added optional blocks, absent meaning required. */
+const SAME_AS_CURRENT = new Set([12])
 const BACKUP_PARTS = ['history', 'exercises', 'programs', 'goals', 'notes', 'settings']
 const INTENSITY_KINDS = ['kg', 'pct1rm', 'rpe', 'pace', 'pctmax']
 const LOCALES = ['en', 'fr', 'de']
@@ -24,10 +26,13 @@ Commands:
   remap <backup.json> <mapping.json> -o <out.json> [--drop-programs] [--keep-unused]
       A backup whose exercises are all presets, sessions and programs moved onto them.
   program <spec.json> --into <backup.json> -o <out.json>
-      Adds a program, built from preset exercises, to a backup.
+      Adds a program, built from preset exercises, to a backup. Blocks can be optional.
   volume <spec.json> [--json] [--ceiling 11] [--floor 6]
   volume <backup.json> --program <name or id> [--week 1] [--json] [--ceiling 11] [--floor 6]
-      Fractional sets per muscle per day and per week of a program, with what to look at.
+      Fractional sets per muscle per day and per week of a program, with what to look at;
+      optional blocks are counted apart.
+
+Backups: version 13 is read and written; version 12 is read as 13. Outputs are version 13.
 `
 
 /** A failure to report as is: printed to stderr, exit code 1. */
@@ -85,13 +90,15 @@ function toSlug(value) {
 }
 
 /**
- * Reads a backup and checks what this script relies on. Writing commands need version 12, what the app exports
- * today; older files are read by the app on import, so export them again from it first.
+ * Reads a backup and checks what this script relies on. Writing commands need version 13, what the app exports
+ * today, or version 12, which means the same (13 only added optional blocks) and is read as 13. Older files are read
+ * by the app on import, so export them again from it first.
  */
 function readBackup(path, { write }) {
   const b = readJson(path, 'backup')
   if (typeof b !== 'object' || b === null || b.app !== 'cadence') fail(`${path} is not a Cadence backup`)
-  if (b.version !== BACKUP_VERSION) {
+  if (SAME_AS_CURRENT.has(b.version)) b.version = BACKUP_VERSION
+  else if (b.version !== BACKUP_VERSION) {
     const msg = `${path} is a version ${b.version} backup; this script handles version ${BACKUP_VERSION}. Import it in the app and export it again.`
     if (write) fail(msg)
     process.stderr.write(`warning: ${msg}\n`)
@@ -670,6 +677,10 @@ function summarize(backup) {
       layout: p.layout ?? 'weeks',
       weeks: p.weeks?.length ?? 0,
       days: (p.weeks ?? []).reduce((n, w) => n + (w.days?.length ?? 0), 0),
+      optionalBlocks: (p.weeks ?? [])
+        .flatMap((w) => w.days ?? [])
+        .flatMap((d) => d.blocks ?? [])
+        .filter((b) => b?.optional === true).length,
     })),
     sessions: sessionRows,
     exercises: exerciseRows,
@@ -733,7 +744,10 @@ function printSummary(s) {
   )
   if (s.programs.length > 0) {
     out.push('', 'Programs')
-    for (const p of s.programs) out.push(`  ${p.name} [${p.id}]: ${p.layout}, ${p.weeks} weeks, ${p.days} days`)
+    for (const p of s.programs)
+      out.push(
+        `  ${p.name} [${p.id}]: ${p.layout}, ${p.weeks} weeks, ${p.days} days${p.optionalBlocks > 0 ? `, ${p.optionalBlocks} optional block${p.optionalBlocks === 1 ? '' : 's'}` : ''}`,
+      )
   }
   out.push('', 'Sessions')
   for (const r of s.sessions)
@@ -1035,6 +1049,7 @@ const BLOCK_KEYS = new Set([
   'interval',
   'tempo',
   'notes',
+  'optional',
 ])
 
 const isInt = (v) => Number.isInteger(v)
@@ -1095,6 +1110,7 @@ function checkSpec(spec) {
       if (b.rest !== undefined && !isNonNegative(b.rest)) err(`${bp}.rest`, 'must be a number of seconds, 0 or more')
       text(b.tempo, `${bp}.tempo`, { max: 20 })
       text(b.notes, `${bp}.notes`, { max: 300 })
+      if (b.optional !== undefined && typeof b.optional !== 'boolean') err(`${bp}.optional`, 'must be true or false')
       if (b.intensity !== undefined) {
         const it = b.intensity
         if (typeof it !== 'object' || it === null || Array.isArray(it))
@@ -1135,7 +1151,13 @@ function addProgram(backup, spec, { now }) {
   const errors = checkSpec(spec)
   if (errors.length > 0) fail(`invalid program spec:\n  ${errors.join('\n  ')}`)
   const at = Date.parse(now)
-  const out = { ...backup, exportedAt: now, disciplines: [...backup.disciplines], exercises: [...backup.exercises] }
+  const out = {
+    ...backup,
+    version: BACKUP_VERSION,
+    exportedAt: now,
+    disciplines: [...backup.disciplines],
+    exercises: [...backup.exercises],
+  }
   const byName = new Map()
   for (const e of out.exercises)
     if (!byName.has(normalizeName(String(e.name ?? '')))) byName.set(normalizeName(String(e.name ?? '')), e.id)
@@ -1170,13 +1192,15 @@ function addProgram(backup, spec, { now }) {
         const slug = slugs[i]
         const own =
           presetBySlug().get(slug).sport === sport ? disciplineId : disciplineOf(presetBySlug().get(slug).sport)
-        const { slug: _slug, intensity, perSet, ...rest } = b
+        const { slug: _slug, intensity, perSet, optional, ...rest } = b
         return {
           id: newId(at),
           exerciseId: exerciseFor(slug, own),
           ...rest,
           ...(intensity ? { intensity: { kind: intensity.kind, value: intensity.value } } : {}),
           ...(perSet ? { perSet: perSet.map((t) => ({ ...t })) } : {}),
+          // Written only when true: absent is required, as in the app.
+          ...(optional === true ? { optional: true } : {}),
         }
       }),
       ...(day.notes ? { notes: day.notes } : {}),
@@ -1208,6 +1232,8 @@ const VOLUME_ASSUMPTION = "Each day is one session of the week: the week is the 
 const VOLUME_COUNTING =
   'Fractional sets: a set counts 1 for the first muscle its exercise lists (direct) and 0.5 for each other one (indirect).'
 const REPEATED_HINT = 'Another exercise for the same muscle gives variety (machine vs cable, for example).'
+const VOLUME_OPTIONAL =
+  'Optional blocks (in case there is time) are left out of the counts and the flags; "with optional blocks" adds them.'
 
 /** The days of a program spec, each block resolved to its preset: key, name, sets, muscles. */
 function specDays(spec) {
@@ -1219,7 +1245,7 @@ function specDays(spec) {
       name: day.name.trim(),
       blocks: day.blocks.map((b) => {
         const p = presetBySlug().get(toSlug(b.slug))
-        return { key: p.slug, name: p.names.en, sets: b.sets, muscles: p.muscles ?? [] }
+        return { key: p.slug, name: p.names.en, sets: b.sets, muscles: p.muscles ?? [], optional: b.optional === true }
       }),
     })),
   }
@@ -1253,22 +1279,29 @@ function backupDays(backup, which, weekNumber) {
         name: ex?.name ?? preset?.names[exerciseLanguage(backup.settings)] ?? `(missing exercise ${b.exerciseId})`,
         sets: isInt(b.sets) && b.sets > 0 ? b.sets : 0,
         muscles: musclesOf(b.exerciseId, ex),
+        optional: b.optional === true,
       }
     }),
   }))
   return { name: String(program.name ?? ''), id: program.id, weeks: weeks.length, week: weekNumber, days }
 }
 
-/** Fractional sets per muscle per day and per week, and the flags: above the ceiling, below the floor, repeated. */
-function volume(program, { ceiling, floor }) {
+const roundedMuscles = (o) => sortedMuscles(Object.fromEntries(Object.entries(o).map(([m, n]) => [m, round(n)])))
+
+/**
+ * Fractional sets per muscle per day and per week over the blocks `pick` keeps, and their flags: above the ceiling,
+ * below the floor, repeated.
+ */
+function tally(program, pick, { ceiling, floor }) {
   const week = {}
   let weekNotCounted = 0
   const seen = new Map()
   const flags = []
   const days = program.days.map((day) => {
+    const blocks = day.blocks.filter(pick)
     const muscles = {}
     const notCounted = []
-    for (const b of day.blocks) {
+    for (const b of blocks) {
       const list = [...new Set(b.muscles)]
       if (list.length === 0) notCounted.push({ exercise: b.key, name: b.name, sets: b.sets })
       for (const [i, m] of list.entries()) muscles[m] = (muscles[m] ?? 0) + (i === 0 ? b.sets : b.sets * 0.5)
@@ -1284,10 +1317,9 @@ function volume(program, { ceiling, floor }) {
       if (n > ceiling) flags.push({ flag: 'above ceiling', day: day.name, muscle: m, sets: round(n), ceiling })
     weekNotCounted += notCounted.reduce((n, x) => n + x.sets, 0)
     return {
-      name: day.name,
-      sets: day.blocks.reduce((n, b) => n + b.sets, 0),
-      exercises: day.blocks.length,
-      muscles: sortedMuscles(Object.fromEntries(Object.entries(muscles).map(([m, n]) => [m, round(n)]))),
+      sets: blocks.reduce((n, b) => n + b.sets, 0),
+      exercises: blocks.length,
+      muscles: roundedMuscles(muscles),
       notCounted,
     }
   })
@@ -1305,19 +1337,69 @@ function volume(program, { ceiling, floor }) {
   for (const [key, where] of seen)
     if (where.days.length > 1)
       flags.push({ flag: 'repeated', exercise: key, name: where.name, days: where.days, hint: REPEATED_HINT })
+  return { days, week: roundedMuscles(week), weekNotCounted, flags }
+}
+
+/** What a flag is about, whatever its numbers: two flags with the same key are the same advice. */
+const flagKey = (f) => [f.flag, f.day ?? '', f.muscle ?? '', f.exercise ?? ''].join('|')
+
+/**
+ * Fractional sets per muscle per day and per week, and the flags, on the required blocks: what every session holds.
+ * Optional blocks are reported apart: per day and per week with them done too, and the flags that doing every one
+ * would make appear or disappear.
+ */
+function volume(program, { ceiling, floor }) {
+  const required = tally(program, (b) => !b.optional, { ceiling, floor })
+  const hasOptional = program.days.some((d) => d.blocks.some((b) => b.optional))
+  const all = hasOptional ? tally(program, () => true, { ceiling, floor }) : undefined
+  const days = program.days.map((day, i) => {
+    const optional = day.blocks.filter((b) => b.optional)
+    return {
+      name: day.name,
+      ...required.days[i],
+      ...(all && optional.length > 0
+        ? {
+            optional: {
+              sets: optional.reduce((n, b) => n + b.sets, 0),
+              exercises: optional.length,
+              blocks: optional.map((b) => ({ exercise: b.key, name: b.name, sets: b.sets })),
+            },
+            withOptional: all.days[i],
+          }
+        : {}),
+    }
+  })
+  let optionalFlags
+  if (all) {
+    const before = new Set(required.flags.map(flagKey))
+    const after = new Set(all.flags.map(flagKey))
+    optionalFlags = [
+      ...all.flags.filter((f) => !before.has(flagKey(f))).map((f) => ({ change: 'appears', ...f })),
+      ...required.flags
+        .filter((f) => !after.has(flagKey(f)))
+        .map((f) => ({
+          change: 'disappears',
+          ...f,
+          ...(f.flag === 'below floor' ? { withOptional: all.week[f.muscle] ?? 0 } : {}),
+        })),
+    ]
+  }
   return {
     program: program.name,
     ...(program.id ? { id: program.id, week: program.week, weeks: program.weeks } : {}),
     assumption: VOLUME_ASSUMPTION,
     counting: VOLUME_COUNTING,
+    ...(all ? { optional: VOLUME_OPTIONAL } : {}),
     ceiling,
     floor,
     days,
     perWeek: {
-      muscles: sortedMuscles(Object.fromEntries(Object.entries(week).map(([m, n]) => [m, round(n)]))),
-      notCounted: weekNotCounted,
+      muscles: required.week,
+      notCounted: required.weekNotCounted,
+      ...(all ? { withOptional: { muscles: all.week, notCounted: all.weekNotCounted } } : {}),
     },
-    flags,
+    flags: required.flags,
+    ...(optionalFlags ? { optionalFlags } : {}),
   }
 }
 
@@ -1326,22 +1408,48 @@ function printVolume(v) {
     Object.entries(o)
       .map(([m, n]) => `${m} ${n}`)
       .join(', ') || '-'
+  const listed = (list) => list.map((x) => `${x.name} ${x.sets}`).join(', ')
+  const flagLine = (f) => {
+    if (f.flag === 'above ceiling') return `above ceiling: ${f.muscle} ${f.sets} on ${f.day}`
+    if (f.flag === 'below floor') return `below floor: ${f.muscle} ${f.sets}${f.noWork ? ' (no work)' : ''}`
+    return `repeated: ${f.name} on ${f.days.join(', ')}. ${f.hint}`
+  }
   const out = [`${v.program}: ${v.days.length} days`]
   if (v.weeks > 1) out.push(`Week ${v.week} of ${v.weeks} (--week to choose another).`)
   out.push(v.assumption, v.counting)
+  if (v.optional) out.push(v.optional)
   for (const d of v.days) {
     out.push('', `${d.name}: ${d.sets} sets, ${d.exercises} exercises`, `  ${muscles(d.muscles)}`)
-    if (d.notCounted.length > 0)
-      out.push(`  not counted (no muscles): ${d.notCounted.map((x) => `${x.name} ${x.sets}`).join(', ')}`)
+    if (d.notCounted.length > 0) out.push(`  not counted (no muscles): ${listed(d.notCounted)}`)
+    if (d.optional) {
+      const w = d.withOptional
+      out.push(
+        `  with optional blocks (+${listed(d.optional.blocks)}): ${w.sets} sets, ${w.exercises} exercises`,
+        `    ${muscles(w.muscles)}`,
+      )
+      if (w.notCounted.length > 0) out.push(`    not counted (no muscles): ${listed(w.notCounted)}`)
+    }
   }
   out.push('', 'Per week', `  ${muscles(v.perWeek.muscles)}`)
   if (v.perWeek.notCounted > 0) out.push(`  not counted (no muscles): ${v.perWeek.notCounted} sets`)
+  const withOptional = v.perWeek.withOptional
+  if (withOptional) {
+    out.push(`  with optional blocks: ${muscles(withOptional.muscles)}`)
+    if (withOptional.notCounted !== v.perWeek.notCounted)
+      out.push(`    not counted (no muscles): ${withOptional.notCounted} sets`)
+  }
   out.push('', `Flags (advice: ceiling ${v.ceiling} per muscle per session, floor ${v.floor} per muscle per week)`)
   if (v.flags.length === 0) out.push('  none')
-  for (const f of v.flags) {
-    if (f.flag === 'above ceiling') out.push(`  above ceiling: ${f.muscle} ${f.sets} on ${f.day}`)
-    else if (f.flag === 'below floor') out.push(`  below floor: ${f.muscle} ${f.sets}${f.noWork ? ' (no work)' : ''}`)
-    else out.push(`  repeated: ${f.name} on ${f.days.join(', ')}. ${f.hint}`)
+  for (const f of v.flags) out.push(`  ${flagLine(f)}`)
+  if (v.optionalFlags) {
+    out.push('', 'With every optional block done, the flags would change:')
+    if (v.optionalFlags.length === 0) out.push('  none')
+    for (const f of v.optionalFlags)
+      out.push(
+        f.change === 'appears'
+          ? `  + ${flagLine(f)}`
+          : `  - ${flagLine(f)}${f.withOptional !== undefined ? `, ${f.withOptional} with optional blocks` : ''}`,
+      )
   }
   return `${out.join('\n')}\n`
 }

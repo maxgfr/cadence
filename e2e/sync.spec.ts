@@ -123,7 +123,7 @@ test('two devices end with the same data, the AI settings included, never into a
   await phone.getByRole('button', { name: /Export backup/ }).click()
   await phone.getByRole('dialog').getByRole('button', { name: 'Export', exact: true }).click()
   const backup = await readFile((await (await downloading).path()) ?? '', 'utf8')
-  expect(backup).toContain('"version": 12')
+  expect(backup).toContain('"version": 13')
   expect(backup).not.toContain('sk-sync-secret')
   expect(backup).not.toContain('127.0.0.1:9')
   await phoneContext.close()

@@ -184,7 +184,7 @@ Flat and tonal. Surfaces separate from the ground by colour plus one 1px lift (`
 
 ## Shapes
 
-Four radii, one job each: small (4px) for chart bar tops and cells in the calendar; control (10px) for buttons, fields, log cells, rows; surface (12px) for cards, groups, sheets, toasts; pill for the set tick, week chips, record badges and discipline dots. Icons are Lucide at 1.75 stroke (2.25 for the active tab, 2.5 inside the tick).
+Four radii, one job each: small (4px) for chart bar tops and cells in the calendar; control (10px) for buttons, fields, log cells, rows; surface (12px) for cards, groups, sheets, toasts; pill for the set tick, week chips, record badges, discipline dots and tags. Icons are Lucide at 1.75 stroke (2.25 for the active tab, 2.5 inside the tick).
 
 ## Components
 
@@ -196,6 +196,9 @@ Control radius, min height 44px (50px large). Primary orange; secondary soft ora
 
 ### Rest bar (signature)
 Started by hand from an exercise's *Rest* button (its planned rest, or the length set in Settings), never by a tick. Pinned to the bottom of the logging screen, ink ground, a 4px orange band draining left to right, the countdown in Headline, then −15, +15 and Skip as 44px outlined buttons. It buzzes (where vibration exists) when the rest ends, says "Rest over, go", and leaves after four seconds.
+
+### Optional exercises
+A planned exercise marked optional carries an **Optional** tag beside its name in the program (an outlined pill in Caption, Ink 2 on a strong hairline: the word carries the meaning, never a colour). On the logging screen the day's optional exercises not added yet follow the session's exercises as a grouped list titled "Optional": name, plan line in Footnote, and a secondary **Add** button; one tap makes it an entry like the others.
 
 ### Coach's card
 On Today and in the program editor: exercise name left (600), the prescription right in Footnote tabular figures, hairline between lines. Today's card ends with the full-width Start button and a progress line ("3 of 16 sessions done · See program").

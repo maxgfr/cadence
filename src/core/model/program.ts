@@ -383,7 +383,30 @@ export function replaceBlockExercise(
   }
 }
 
-/** A new active session for a program day, entries pre-filled from the plan and from last time. */
+/** A block planned in case there is time: offered beside the session, not part of it until added. */
+export const isOptional = (block: Block): boolean => block.optional === true
+
+/** The blocks a session of this day starts with: every block but the optional ones. */
+export function requiredBlocks(day: Day): Block[] {
+  return day.blocks.filter((b) => !isOptional(b))
+}
+
+/** A planned block as an entry of a session: its plan kept, its sets pre-filled from it and from last time. */
+export function entryFromBlock(
+  block: Block,
+  exercises: ExerciseIndex,
+  e1rmOf: (exerciseId: string) => number | undefined,
+  lastOf?: (exerciseId: string) => LastPerformance | undefined,
+): Entry {
+  return {
+    id: newId(),
+    exerciseId: block.exerciseId,
+    planned: block,
+    sets: plannedSets(block, exercises.get(block.exerciseId), e1rmOf(block.exerciseId), lastOf?.(block.exerciseId)),
+  }
+}
+
+/** A new active session for a program day, entries pre-filled from the plan and from last time; optional blocks wait. */
 export function sessionFromDay(
   program: Program,
   ref: ProgramRef,
@@ -394,12 +417,9 @@ export function sessionFromDay(
   lastOf?: (exerciseId: string) => LastPerformance | undefined,
 ): Session {
   const day = dayAt(program, ref)
-  const entries: Entry[] = (day?.blocks ?? []).map((block) => ({
-    id: newId(),
-    exerciseId: block.exerciseId,
-    planned: block,
-    sets: plannedSets(block, exercises.get(block.exerciseId), e1rmOf(block.exerciseId), lastOf?.(block.exerciseId)),
-  }))
+  const entries: Entry[] = (day ? requiredBlocks(day) : []).map((block) =>
+    entryFromBlock(block, exercises, e1rmOf, lastOf),
+  )
   const weekName = program.weeks[ref.week]?.name ?? currentMessages().core.week(ref.week + 1)
   return {
     id: newId(),
@@ -411,6 +431,30 @@ export function sessionFromDay(
     status: 'active',
     startedAt: now.toISOString(),
   }
+}
+
+/**
+ * The optional blocks of a session's program day not in the session yet, in the day's order: what the logging screen
+ * offers to add. Nothing of them is stored until one is added; one removed again is offered again.
+ */
+export function offeredBlocks(session: Session, programs: readonly Program[]): Block[] {
+  const ref = currentRef(programs, session.programRef)
+  const program = ref && programs.find((p) => p.id === ref.programId)
+  const day = program && ref && dayAt(program, ref)
+  if (!day) return []
+  const planned = new Set(session.entries.flatMap((e) => (e.planned ? [e.planned.id] : [])))
+  return day.blocks.filter((b) => isOptional(b) && !planned.has(b.id))
+}
+
+/** The session with an optional block added: an entry like any other, after the others. */
+export function addOfferedBlock(
+  session: Session,
+  block: Block,
+  exercises: ExerciseIndex,
+  e1rmOf: (exerciseId: string) => number | undefined,
+  lastOf?: (exerciseId: string) => LastPerformance | undefined,
+): Session {
+  return { ...session, entries: [...session.entries, entryFromBlock(block, exercises, e1rmOf, lastOf)] }
 }
 
 /** A session with no plan: the athlete adds exercises as they go. */

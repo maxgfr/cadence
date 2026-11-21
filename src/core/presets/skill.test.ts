@@ -41,21 +41,35 @@ interface Volume {
     exercises: number
     muscles: Record<string, number>
     notCounted: { exercise: string; name: string; sets: number }[]
+    optional?: { sets: number; exercises: number; blocks: { exercise: string; name: string; sets: number }[] }
+    withOptional?: {
+      sets: number
+      exercises: number
+      muscles: Record<string, number>
+      notCounted: { exercise: string; name: string; sets: number }[]
+    }
   }[]
-  perWeek: { muscles: Record<string, number>; notCounted: number }
-  flags: {
-    flag: string
-    day?: string
-    muscle?: string
-    sets?: number
-    noWork?: boolean
-    ceiling?: number
-    floor?: number
-    exercise?: string
-    name?: string
-    days?: string[]
-    hint?: string
-  }[]
+  perWeek: {
+    muscles: Record<string, number>
+    notCounted: number
+    withOptional?: { muscles: Record<string, number>; notCounted: number }
+  }
+  flags: VolumeFlag[]
+  optionalFlags?: (VolumeFlag & { change: 'appears' | 'disappears'; withOptional?: number })[]
+}
+
+interface VolumeFlag {
+  flag: string
+  day?: string
+  muscle?: string
+  sets?: number
+  noWork?: boolean
+  ceiling?: number
+  floor?: number
+  exercise?: string
+  name?: string
+  days?: string[]
+  hint?: string
 }
 
 const fr = messagesFor('fr').presets.exercises
@@ -254,6 +268,72 @@ describe('cadence-coach skill', () => {
     expect(reps.stderr).toContain('reps')
   })
 
+  test('program: an optional block is written as optional, a required one without the field', () => {
+    const into = join(dir, 'optional-remapped.json')
+    if (run('remap', input, file('optional-mapping.json', mapping), '-o', into, '--drop-programs').code !== 0)
+      throw new Error('remap failed')
+    const spec = {
+      name: 'With extras',
+      days: [
+        {
+          name: 'Upper',
+          blocks: [
+            { slug: 'barbell-bench-press', sets: 4, reps: 6 },
+            { slug: 'lat-pulldown', sets: 3, reps: 10, optional: false },
+            { slug: 'cable-crunch', sets: 2, reps: 10, optional: true },
+          ],
+        },
+      ],
+    }
+    const out = join(dir, 'optional-with-program.json')
+    const r = run('program', file('optional-spec.json', spec), '--into', into, '-o', out)
+    expect(r.stderr).toBe('')
+    expect(r.code).toBe(0)
+    const raw = JSON.parse(readFileSync(out, 'utf8')) as { version: number }
+    expect(raw.version).toBe(BACKUP_VERSION)
+    const result = parseBackup(readFileSync(out, 'utf8'))
+    const blocks = result.programs.find((p) => p.name === 'With extras')?.weeks[0]?.days[0]?.blocks ?? []
+    expect(blocks.map((b) => b.optional)).toEqual([undefined, undefined, true])
+    expect(blocks.map((b) => 'optional' in b)).toEqual([false, false, true])
+
+    const bad = run(
+      'program',
+      file('optional-bad.json', {
+        ...spec,
+        days: [{ name: 'X', blocks: [{ slug: 'plank', sets: 3, optional: 'yes' }] }],
+      }),
+      '--into',
+      into,
+      '-o',
+      join(dir, 'never.json'),
+    )
+    expect(bad.code).not.toBe(0)
+    expect(bad.stderr).toContain('days[0].blocks[0].optional')
+  })
+
+  test('a version 12 backup reads as the current version; older ones still fail to write', () => {
+    const into = join(dir, 'v12-remapped.json')
+    if (run('remap', input, file('v12-mapping.json', mapping), '-o', into, '--drop-programs').code !== 0)
+      throw new Error('remap failed')
+    const v12 = file('v12.json', { ...JSON.parse(readFileSync(into, 'utf8')), version: 12 })
+    const spec = file('v12-spec.json', { name: 'From 12', days: [{ name: 'A', blocks: [{ slug: 'plank', sets: 3 }] }] })
+    const out = join(dir, 'v12-with-program.json')
+    const r = run('program', spec, '--into', v12, '-o', out)
+    expect(r.stderr).toBe('')
+    expect(r.code).toBe(0)
+    expect((JSON.parse(readFileSync(out, 'utf8')) as { version: number }).version).toBe(BACKUP_VERSION)
+    expect(parseBackup(readFileSync(out, 'utf8')).programs.map((p) => p.name)).toContain('From 12')
+    const summary = run('summary', v12)
+    expect(summary.stderr).toBe('')
+    expect(summary.code).toBe(0)
+
+    const v11 = file('v11.json', { ...JSON.parse(readFileSync(into, 'utf8')), version: 11 })
+    const old = run('program', spec, '--into', v11, '-o', join(dir, 'never.json'))
+    expect(old.code).not.toBe(0)
+    expect(old.stderr).toContain('version 11')
+    expect(run('summary', v11).stderr).toContain('warning')
+  })
+
   test('volume: direct sets count 1 for the first muscle, 0.5 for the others; no muscle is not counted', () => {
     const spec = {
       name: 'Small',
@@ -396,6 +476,112 @@ describe('cadence-coach skill', () => {
     expect(run('volume', specPath, '--program', 'Upper lower volume').code).toBe(1)
   })
 
+  test('volume: optional blocks are counted apart, with the flags they would change', () => {
+    const required = {
+      A: [
+        { slug: 'pec-deck', sets: 8, reps: 10 },
+        { slug: 'triceps-pushdown', sets: 3, reps: 10 },
+      ],
+      B: [{ slug: 'leg-press', sets: 5, reps: 10 }],
+    }
+    const plainSpec = {
+      name: 'Extras',
+      days: [
+        { name: 'A', blocks: required.A },
+        { name: 'B', blocks: required.B },
+      ],
+    }
+    const spec = {
+      name: 'Extras',
+      days: [
+        {
+          name: 'A',
+          blocks: [
+            ...required.A,
+            { slug: 'machine-chest-press', sets: 4, reps: 10, optional: true },
+            { slug: 'cable-crunch', sets: 3, reps: 10, optional: true },
+          ],
+        },
+        { name: 'B', blocks: [...required.B, { slug: 'ab-crunch-machine', sets: 3, reps: 10, optional: true }] },
+      ],
+    }
+    const plainPath = file('volume-plain.json', plainSpec)
+    const specPath = file('volume-optional.json', spec)
+    const plain = JSON.parse(run('volume', plainPath, '--json').stdout) as Volume
+    const r = run('volume', specPath, '--json')
+    expect(r.stderr).toBe('')
+    expect(r.code).toBe(0)
+    const v = JSON.parse(r.stdout) as Volume
+
+    // The required blocks count exactly as the same program without the optional ones.
+    expect(v.days.map(({ optional: _o, withOptional: _w, ...d }) => d)).toEqual(plain.days)
+    expect(v.perWeek.muscles).toEqual(plain.perWeek.muscles)
+    expect(v.perWeek.notCounted).toBe(plain.perWeek.notCounted)
+    expect(v.flags).toEqual(plain.flags)
+    expect(plain.days.every((d) => d.optional === undefined && d.withOptional === undefined)).toBe(true)
+    expect(plain.perWeek.withOptional).toBeUndefined()
+    expect(plain.optionalFlags).toBeUndefined()
+
+    const [a, b] = v.days
+    expect(a?.sets).toBe(11)
+    expect(a?.optional).toEqual({
+      sets: 7,
+      exercises: 2,
+      blocks: [
+        { exercise: 'machine-chest-press', name: 'Seated chest press', sets: 4 },
+        { exercise: 'cable-crunch', name: 'Cable crunch', sets: 3 },
+      ],
+    })
+    // Machine chest press: chest, triceps.
+    expect(a?.withOptional).toEqual({
+      sets: 18,
+      exercises: 4,
+      muscles: { chest: 12, triceps: 5, core: 3 },
+      notCounted: [],
+    })
+    expect(b?.withOptional?.muscles).toEqual({ quads: 5, core: 3, glutes: 2.5 })
+    expect(v.perWeek.withOptional).toEqual({
+      muscles: { chest: 12, core: 6, quads: 5, triceps: 5, glutes: 2.5 },
+      notCounted: 0,
+    })
+    expect(Object.keys(v.perWeek.withOptional?.muscles ?? {})).toEqual(['chest', 'core', 'quads', 'triceps', 'glutes'])
+    // Chest passes the ceiling on A with the chest press; core reaches the floor with both crunches.
+    expect(v.optionalFlags).toEqual([
+      { change: 'appears', flag: 'above ceiling', day: 'A', muscle: 'chest', sets: 12, ceiling: 11 },
+      { change: 'disappears', flag: 'below floor', muscle: 'core', sets: 0, floor: 6, noWork: true, withOptional: 6 },
+    ])
+
+    const text = run('volume', specPath).stdout
+    expect(text).toContain(
+      'A: 11 sets, 2 exercises\n  chest 8, triceps 3\n  with optional blocks (+Seated chest press 4, Cable crunch 3): 18 sets, 4 exercises\n    chest 12, triceps 5, core 3',
+    )
+    expect(text).toContain('\n  with optional blocks: chest 12, core 6, quads 5, triceps 5, glutes 2.5\n')
+    expect(text).toContain(
+      'With every optional block done, the flags would change:\n  + above ceiling: chest 12 on A\n  - below floor: core 0 (no work), 6 with optional blocks\n',
+    )
+    expect(run('volume', plainPath).stdout).not.toContain('optional')
+
+    // From a backup, the blocks read their optional flag as the spec gives it.
+    const into = join(dir, 'volume-optional-remapped.json')
+    if (run('remap', input, file('volume-optional-mapping.json', mapping), '-o', into, '--drop-programs').code !== 0)
+      throw new Error('remap failed')
+    const out = join(dir, 'volume-optional-with-program.json')
+    expect(run('program', specPath, '--into', into, '-o', out).code).toBe(0)
+    const fromBackup = JSON.parse(run('volume', out, '--program', 'Extras', '--json').stdout) as Volume
+    expect(fromBackup.days.map((d) => d.withOptional?.muscles)).toEqual(v.days.map((d) => d.withOptional?.muscles))
+    expect(fromBackup.perWeek).toEqual(v.perWeek)
+    expect(fromBackup.optionalFlags).toEqual(v.optionalFlags)
+
+    // The summary counts a program's optional blocks.
+    const summary = JSON.parse(run('summary', out, '--json').stdout) as {
+      programs: { name: string; optionalBlocks: number }[]
+    }
+    expect(summary.programs.find((p) => p.name === 'Extras')?.optionalBlocks).toBe(3)
+    expect(run('summary', out).stdout).toMatch(
+      / {2}Extras \[[0-9A-Z]{26}\]: sessions, 1 weeks, 2 days, 3 optional blocks\n/,
+    )
+  })
+
   test('the worked example builds into a backup the app accepts, and volume reads it', () => {
     const example = skill('references/examples/ppl-machines-1x-week.json')
     const into = join(dir, 'example-remapped.json')
@@ -410,6 +596,12 @@ describe('cadence-coach skill', () => {
     expect(program?.weeks[0]?.days.map((d) => d.name)).toEqual(['Push', 'Pull', 'Legs'])
     const blocks = program?.weeks[0]?.days.flatMap((d) => d.blocks) ?? []
     expect(blocks.every((b) => b.intensity?.kind === 'rpe')).toBe(true)
+    expect(blocks.filter((b) => b.optional).map((b) => b.exerciseId)).toEqual([
+      'preset-overhead-triceps-extension',
+      'preset-shrug',
+      'preset-hammer-curl',
+      'preset-cable-crunch',
+    ])
 
     const v = run('volume', example, '--json')
     expect(v.code).toBe(0)

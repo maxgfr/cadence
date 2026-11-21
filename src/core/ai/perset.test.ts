@@ -24,6 +24,7 @@ const aiBlock = (p: Partial<AiProgram['weeks'][number]['days'][number]['blocks']
   intervalSeconds: null,
   tempo: null,
   notes: null,
+  optional: false,
   ...p,
 })
 
