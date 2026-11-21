@@ -172,7 +172,7 @@
         },
         {
           "slug": "hip-adduction-machine",
-          "sets": 3,
+          "sets": 4,
           "reps": 12,
           "intensity": { "kind": "rpe", "value": 8 },
           "rest": 90,

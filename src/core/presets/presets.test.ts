@@ -118,7 +118,7 @@ describe('presets', () => {
       ['preset-leg-press', 4, false],
       ['preset-leg-extension', 4, false],
       ['preset-lying-leg-curl', 5, false],
-      ['preset-hip-adduction-machine', 3, false],
+      ['preset-hip-adduction-machine', 4, false],
       ['preset-hip-abduction-machine', 4, false],
       ['preset-standing-calf-raise', 5, false],
       ['preset-ab-crunch-machine', 3, true],
@@ -150,7 +150,7 @@ describe('presets', () => {
           const ppl = program.id === 'preset-program-gym-machines-ppl'
           expect(required.length).toBeLessThanOrEqual(ppl ? 7 : 8)
           // The Push Pull Legs' Legs day trains four counted muscle groups and the adductors in one weekly session.
-          expect(required.reduce((n, b) => n + b.sets, 0)).toBeLessThanOrEqual(ppl && index === 2 ? 25 : 23)
+          expect(required.reduce((n, b) => n + b.sets, 0)).toBeLessThanOrEqual(ppl && index === 2 ? 26 : 23)
           // Optional blocks come last, a few at most.
           const optional = d.blocks.filter(isOptional)
           expect(optional.length).toBeLessThanOrEqual(3)

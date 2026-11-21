@@ -26,7 +26,7 @@ It was built with an athlete from their own last Push, Pull and Legs sessions:
 - A cable curl was added on Pull, for more biceps work.
 - Four optional blocks of 3 sets were added at the end of the days, for sessions with time to spare: an overhead
   triceps extension on a cable on Push; a shrug and a hammer curl on a cable with a rope on Pull; an ab crunch machine
-  on Legs. The required sessions hold 23 sets on Push and Pull and 25 on Legs, and the flags are computed without
+  on Legs. The required sessions hold 23 sets on Push and Pull and 26 on Legs, and the flags are computed without
   them.
 
 ## Volume
@@ -49,16 +49,16 @@ Pull: 23 sets, 6 exercises
   with optional blocks (+Shrug 3, Hammer curl 3): 29 sets, 8 exercises
     biceps 14, back 13, shoulders 8
 
-Legs: 25 sets, 6 exercises
+Legs: 26 sets, 6 exercises
   quads 8, glutes 6, calves 5, hamstrings 5
-  not counted (no muscles): Hip adduction machine 3
-  with optional blocks (+Ab crunch machine 3): 28 sets, 7 exercises
+  not counted (no muscles): Hip adduction machine 4
+  with optional blocks (+Ab crunch machine 3): 29 sets, 7 exercises
     quads 8, glutes 6, calves 5, hamstrings 5, core 3
-    not counted (no muscles): Hip adduction machine 3
+    not counted (no muscles): Hip adduction machine 4
 
 Per week
   shoulders 13.5, chest 11.5, biceps 11, back 10, quads 8, triceps 8, glutes 6, calves 5, hamstrings 5, core 3
-  not counted (no muscles): 3 sets
+  not counted (no muscles): 4 sets
   with optional blocks: biceps 14, shoulders 13.5, back 13, chest 11.5, triceps 11, quads 8, core 6, glutes 6, calves 5, hamstrings 5
 
 Flags (advice: ceiling 11 per muscle per session, floor 6 per muscle per week)
@@ -84,7 +84,7 @@ With every optional block done, the flags would change:
 - **Calves**: 5 sets a week, from the standing calf raise alone, one below the floor.
 - **Glutes**: 6 fractional sets a week, at the floor: 4 from the hip abduction machine and 2 counted indirectly from
   the leg press.
-- **Hip adduction**: its 3 sets are not counted, because the preset lists no muscle for it.
+- **Hip adduction**: its 4 sets are not counted, because the preset lists no muscle for it.
 - **Above the ceiling**: chest (11.5 on Push) passes the 11 fractional sets per session past which no extra hypertrophy
   is detectable, by 0.5. With chest trained once a week, the extra sets add little rather than harm (see
   `../programming.md`).
