@@ -55,20 +55,20 @@ describe('presets', () => {
   })
 
   test('an exercise or discipline they already have is used, under any language', () => {
-    const mine: Exercise = { id: 'mine', name: 'Développé couché barre', metric: 'weight_reps' }
+    const mine: Exercise = { id: 'mine', name: 'Développé assis à la machine', metric: 'weight_reps' }
     const sport: Discipline = { id: 'my-gym', name: 'Musculation', color: 'red' }
     const { exercises, disciplines, programs } = all({
       sports: ['gym'],
       library: { exercises: [mine], disciplines: [sport] },
     })
-    expect(exercises.some((e) => e.id === 'preset-barbell-bench-press')).toBe(false)
+    expect(exercises.some((e) => e.id === 'preset-machine-chest-press')).toBe(false)
     expect(exercises.every((e) => e.disciplineId === 'my-gym')).toBe(true)
     expect(disciplines).toEqual([])
     const ids = programs.flatMap((p) =>
       p.weeks.flatMap((w) => w.days.flatMap((d) => d.blocks.map((b) => b.exerciseId))),
     )
     expect(ids).toContain('mine')
-    expect(ids).not.toContain('preset-barbell-bench-press')
+    expect(ids).not.toContain('preset-machine-chest-press')
   })
 
   test('adding twice brings nothing new', () => {
@@ -87,28 +87,39 @@ describe('presets', () => {
   })
 
   test('a lift few know the max of is planned by effort, set by set', () => {
-    const pull = all({ sports: ['gym'] }).programs.find((p) => p.id === 'preset-program-gym-push-pull-legs')
-    const row = pull?.weeks[0]?.days[1]?.blocks[0]
-    expect(row?.intensity?.kind).toBe('rpe')
-    expect(row?.perSet?.map((s) => s.reps)).toEqual([15, 10, 8, 6])
+    const upperLower = all({ sports: ['gym'] }).programs.find((p) => p.id === 'preset-program-gym-machines-upper-lower')
+    const press = upperLower?.weeks[0]?.days[0]?.blocks[0]
+    expect(press?.intensity?.kind).toBe('rpe')
+    expect(press?.perSet?.map((s) => s.reps)).toEqual([6, 8, 10])
   })
 
-  test('the machine Push Pull Legs uses gym exercises only, with few blocks and sets a day, in every language', () => {
+  test('every gym program uses gym exercises only, with few blocks and sets a day, in every language', () => {
     const gym = new Set(PRESET_EXERCISES.filter((e) => e.sport === 'gym').map((e) => `preset-${e.slug}`))
+    const gymPrograms = PRESET_PROGRAMS.filter((p) => p.sport === 'gym').map((p) => `preset-program-${p.id}`)
+    expect(gymPrograms[0]).toBe('preset-program-gym-machines-ppl')
+    const dayCounts = {
+      'preset-program-gym-machines-ppl': 3,
+      'preset-program-gym-machines-full-body': 3,
+      'preset-program-gym-machines-upper-lower': 4,
+      'preset-program-gym-machines-full-body-2x': 2,
+    }
+    expect(gymPrograms).toEqual(Object.keys(dayCounts))
     for (const l of LOCALES) {
       setDisplayLocale(l)
       const { exercises, programs } = all({ sports: ['gym'] })
       const ids = new Set(exercises.map((e) => e.id))
-      const machines = programs.find((p) => p.id === 'preset-program-gym-machines-ppl')
-      expect(machines).toBeDefined()
-      expect(Program.parse(machines).weeks[0]?.days.length).toBe(3)
-      for (const d of machines?.weeks[0]?.days ?? []) {
-        expect(d.blocks.length).toBeLessThanOrEqual(7)
-        expect(d.blocks.reduce((n, b) => n + b.sets, 0)).toBeLessThanOrEqual(20)
-        for (const b of d.blocks) {
-          expect(gym.has(b.exerciseId)).toBe(true)
-          expect(ids.has(b.exerciseId)).toBe(true)
-          expect(b.notes?.length).toBeGreaterThan(0)
+      expect(programs.map((p) => p.id)).toEqual(gymPrograms)
+      for (const program of programs) {
+        const days = Program.parse(program).weeks[0]?.days ?? []
+        expect(days.length).toBe(dayCounts[program.id as keyof typeof dayCounts])
+        for (const d of days) {
+          expect(d.blocks.length).toBeLessThanOrEqual(program.id === 'preset-program-gym-machines-ppl' ? 7 : 8)
+          expect(d.blocks.reduce((n, b) => n + b.sets, 0)).toBeLessThanOrEqual(23)
+          for (const b of d.blocks) {
+            expect(gym.has(b.exerciseId)).toBe(true)
+            expect(ids.has(b.exerciseId)).toBe(true)
+            expect(b.notes?.length).toBeGreaterThan(0)
+          }
         }
       }
     }

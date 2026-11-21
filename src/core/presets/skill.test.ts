@@ -415,15 +415,16 @@ describe('cadence-coach skill', () => {
     expect(v.code).toBe(0)
     const volume = JSON.parse(v.stdout) as Volume
     expect(volume.perWeek.muscles).toEqual({
-      shoulders: 15,
-      back: 13,
+      shoulders: 13.5,
       chest: 11.5,
-      biceps: 9.5,
+      biceps: 11,
+      back: 10,
       triceps: 8,
       hamstrings: 7,
       quads: 7,
       glutes: 5,
       calves: 3,
+      core: 3,
     })
     const readme = readFileSync(skill('references/examples/README.md'), 'utf8')
     expect(readme).toContain(run('volume', example).stdout.trim())

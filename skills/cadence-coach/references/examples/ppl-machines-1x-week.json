@@ -52,6 +52,14 @@
           "intensity": { "kind": "rpe", "value": 9 },
           "rest": 90,
           "notes": "10–15 reps. Once every set reaches 15, add the smallest load step."
+        },
+        {
+          "slug": "ab-crunch-machine",
+          "sets": 3,
+          "reps": 10,
+          "intensity": { "kind": "rpe", "value": 8 },
+          "rest": 60,
+          "notes": "10–15 reps. Once every set reaches 15, add the smallest load step."
         }
       ]
     },
@@ -72,14 +80,6 @@
           "reps": 8,
           "intensity": { "kind": "rpe", "value": 8 },
           "rest": 150,
-          "notes": "8–12 reps. Once every set reaches 12, add the smallest load step."
-        },
-        {
-          "slug": "machine-high-row",
-          "sets": 3,
-          "reps": 8,
-          "intensity": { "kind": "rpe", "value": 8 },
-          "rest": 120,
           "notes": "8–12 reps. Once every set reaches 12, add the smallest load step."
         },
         {
@@ -104,6 +104,14 @@
           "reps": 10,
           "intensity": { "kind": "rpe", "value": 9 },
           "rest": 90,
+          "notes": "10–15 reps. Once every set reaches 15, add the smallest load step."
+        },
+        {
+          "slug": "cable-curl",
+          "sets": 3,
+          "reps": 10,
+          "intensity": { "kind": "rpe", "value": 9 },
+          "rest": 60,
           "notes": "10–15 reps. Once every set reaches 15, add the smallest load step."
         }
       ]

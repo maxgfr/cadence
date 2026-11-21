@@ -2054,353 +2054,6 @@
   ],
   "programs": [
     {
-      "id": "preset-program-gym-full-body",
-      "templateId": "gym-full-body",
-      "sport": "gym",
-      "names": {
-        "en": "Full body",
-        "fr": "Full body",
-        "de": "Ganzkörper"
-      },
-      "goals": {
-        "en": "Build strength with two sessions repeated in turn",
-        "fr": "Gagner en force avec deux séances en alternance",
-        "de": "Kraft aufbauen mit zwei Einheiten im Wechsel"
-      },
-      "days": [
-        {
-          "names": {
-            "en": "Full body A",
-            "fr": "Full body A",
-            "de": "Ganzkörper A"
-          },
-          "blocks": [
-            {
-              "slug": "back-squat",
-              "sets": 3,
-              "reps": 8,
-              "intensity": {
-                "kind": "rpe",
-                "value": 7
-              },
-              "rest": 150
-            },
-            {
-              "slug": "barbell-bench-press",
-              "sets": 3,
-              "reps": 8,
-              "intensity": {
-                "kind": "rpe",
-                "value": 7
-              },
-              "rest": 120
-            },
-            {
-              "slug": "seated-cable-row",
-              "sets": 3,
-              "reps": 10,
-              "intensity": {
-                "kind": "rpe",
-                "value": 7
-              },
-              "rest": 90
-            },
-            {
-              "slug": "lateral-raise",
-              "sets": 3,
-              "reps": 12,
-              "rest": 60
-            },
-            {
-              "slug": "plank",
-              "sets": 3,
-              "duration": 45,
-              "rest": 60
-            }
-          ]
-        },
-        {
-          "names": {
-            "en": "Full body B",
-            "fr": "Full body B",
-            "de": "Ganzkörper B"
-          },
-          "blocks": [
-            {
-              "slug": "romanian-deadlift",
-              "sets": 3,
-              "reps": 10,
-              "intensity": {
-                "kind": "rpe",
-                "value": 7
-              },
-              "rest": 120
-            },
-            {
-              "slug": "overhead-press",
-              "sets": 3,
-              "reps": 8,
-              "intensity": {
-                "kind": "rpe",
-                "value": 7
-              },
-              "rest": 120
-            },
-            {
-              "slug": "lat-pulldown",
-              "sets": 3,
-              "reps": 10,
-              "intensity": {
-                "kind": "rpe",
-                "value": 7
-              },
-              "rest": 90
-            },
-            {
-              "slug": "leg-press",
-              "sets": 3,
-              "reps": 12,
-              "intensity": {
-                "kind": "rpe",
-                "value": 7
-              },
-              "rest": 90
-            },
-            {
-              "slug": "hanging-leg-raise",
-              "sets": 3,
-              "reps": 10,
-              "rest": 60
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "id": "preset-program-gym-push-pull-legs",
-      "templateId": "gym-push-pull-legs",
-      "sport": "gym",
-      "names": {
-        "en": "Push Pull Legs",
-        "fr": "Push Pull Legs",
-        "de": "Push Pull Legs"
-      },
-      "goals": {
-        "en": "Build muscle and strength, main lifts in pyramid sets",
-        "fr": "Prendre du muscle et de la force, exercices clés en pyramide",
-        "de": "Muskeln und Kraft aufbauen, Hauptübungen als Pyramide"
-      },
-      "days": [
-        {
-          "names": {
-            "en": "Push",
-            "fr": "Poussée",
-            "de": "Drücken"
-          },
-          "blocks": [
-            {
-              "slug": "barbell-bench-press",
-              "sets": 4,
-              "reps": 15,
-              "intensity": {
-                "kind": "pct1rm",
-                "value": 55
-              },
-              "perSet": [
-                {
-                  "reps": 15,
-                  "value": 55
-                },
-                {
-                  "reps": 10,
-                  "value": 65
-                },
-                {
-                  "reps": 8,
-                  "value": 75
-                },
-                {
-                  "reps": 6,
-                  "value": 82
-                }
-              ],
-              "rest": 150
-            },
-            {
-              "slug": "incline-dumbbell-press",
-              "sets": 3,
-              "reps": 10,
-              "intensity": {
-                "kind": "rpe",
-                "value": 8
-              },
-              "rest": 90
-            },
-            {
-              "slug": "machine-shoulder-press",
-              "sets": 3,
-              "reps": 10,
-              "intensity": {
-                "kind": "rpe",
-                "value": 8
-              },
-              "rest": 90
-            },
-            {
-              "slug": "lateral-raise",
-              "sets": 3,
-              "reps": 15,
-              "rest": 60
-            },
-            {
-              "slug": "triceps-pushdown",
-              "sets": 3,
-              "reps": 12,
-              "rest": 60
-            }
-          ]
-        },
-        {
-          "names": {
-            "en": "Pull",
-            "fr": "Tirage",
-            "de": "Ziehen"
-          },
-          "blocks": [
-            {
-              "slug": "barbell-row",
-              "sets": 4,
-              "reps": 15,
-              "intensity": {
-                "kind": "rpe",
-                "value": 6.5
-              },
-              "perSet": [
-                {
-                  "reps": 15,
-                  "value": 6.5
-                },
-                {
-                  "reps": 10,
-                  "value": 7
-                },
-                {
-                  "reps": 8,
-                  "value": 7.5
-                },
-                {
-                  "reps": 6,
-                  "value": 8
-                }
-              ],
-              "rest": 150
-            },
-            {
-              "slug": "lat-pulldown",
-              "sets": 3,
-              "reps": 10,
-              "intensity": {
-                "kind": "rpe",
-                "value": 8
-              },
-              "rest": 90
-            },
-            {
-              "slug": "seated-cable-row",
-              "sets": 3,
-              "reps": 12,
-              "intensity": {
-                "kind": "rpe",
-                "value": 8
-              },
-              "rest": 90
-            },
-            {
-              "slug": "face-pull",
-              "sets": 3,
-              "reps": 15,
-              "rest": 60
-            },
-            {
-              "slug": "barbell-curl",
-              "sets": 3,
-              "reps": 12,
-              "rest": 60
-            }
-          ]
-        },
-        {
-          "names": {
-            "en": "Legs",
-            "fr": "Jambes",
-            "de": "Beine"
-          },
-          "blocks": [
-            {
-              "slug": "back-squat",
-              "sets": 4,
-              "reps": 15,
-              "intensity": {
-                "kind": "pct1rm",
-                "value": 55
-              },
-              "perSet": [
-                {
-                  "reps": 15,
-                  "value": 55
-                },
-                {
-                  "reps": 10,
-                  "value": 65
-                },
-                {
-                  "reps": 8,
-                  "value": 75
-                },
-                {
-                  "reps": 6,
-                  "value": 82
-                }
-              ],
-              "rest": 180
-            },
-            {
-              "slug": "romanian-deadlift",
-              "sets": 3,
-              "reps": 10,
-              "intensity": {
-                "kind": "rpe",
-                "value": 8
-              },
-              "rest": 120
-            },
-            {
-              "slug": "leg-press",
-              "sets": 3,
-              "reps": 12,
-              "intensity": {
-                "kind": "rpe",
-                "value": 8
-              },
-              "rest": 90
-            },
-            {
-              "slug": "seated-leg-curl",
-              "sets": 3,
-              "reps": 12,
-              "rest": 60
-            },
-            {
-              "slug": "standing-calf-raise",
-              "sets": 3,
-              "reps": 15,
-              "rest": 60
-            }
-          ]
-        }
-      ]
-    },
-    {
       "id": "preset-program-gym-machines-ppl",
       "templateId": "gym-machines-ppl",
       "sport": "gym",
@@ -2410,9 +2063,9 @@
         "de": "Push Pull Legs – Maschinen"
       },
       "goals": {
-        "en": "Build muscle on machines and cables, one session of each per week: few sets close to failure, more load once the top of the range is reached",
-        "fr": "Prendre du muscle sur machines et poulies, une séance de chaque par semaine : peu de séries, proches de l’échec, et plus de charge dès le haut de la fourchette atteint",
-        "de": "Muskeln aufbauen an Maschinen und Kabelzug, jede Einheit einmal pro Woche: wenige Sätze nah am Muskelversagen, mehr Gewicht, sobald das obere Ende des Bereichs erreicht ist"
+        "en": "Build muscle on machines and cables, one session of each per week: sets close to failure, more load once the top of the range is reached",
+        "fr": "Prendre du muscle sur machines et poulies, une séance de chaque par semaine : des séries proches de l’échec, et plus de charge dès le haut de la fourchette atteint",
+        "de": "Muskeln aufbauen an Maschinen und Kabelzug, jede Einheit einmal pro Woche: Sätze nah am Muskelversagen, mehr Gewicht, sobald das obere Ende des Bereichs erreicht ist"
       },
       "days": [
         {
@@ -2424,7 +2077,7 @@
           "blocks": [
             {
               "slug": "machine-chest-press",
-              "sets": 3,
+              "sets": 4,
               "reps": 6,
               "intensity": {
                 "kind": "rpe",
@@ -2439,6 +2092,21 @@
             },
             {
               "slug": "incline-machine-press",
+              "sets": 3,
+              "reps": 8,
+              "intensity": {
+                "kind": "rpe",
+                "value": 8
+              },
+              "rest": 120,
+              "notes": {
+                "en": "8–12 reps. Once every set reaches 12, add the smallest load step.",
+                "fr": "8 à 12 répétitions. Dès que chaque série atteint 12, monte la charge du plus petit cran.",
+                "de": "8–12 Wiederholungen. Schaffst du in jedem Satz 12, erhöhe das Gewicht um die kleinste Stufe."
+              }
+            },
+            {
+              "slug": "seated-dip-machine",
               "sets": 3,
               "reps": 8,
               "intensity": {
@@ -2483,22 +2151,7 @@
               }
             },
             {
-              "slug": "seated-dip-machine",
-              "sets": 3,
-              "reps": 8,
-              "intensity": {
-                "kind": "rpe",
-                "value": 8
-              },
-              "rest": 120,
-              "notes": {
-                "en": "8–12 reps. Once every set reaches 12, add the smallest load step.",
-                "fr": "8 à 12 répétitions. Dès que chaque série atteint 12, monte la charge du plus petit cran.",
-                "de": "8–12 Wiederholungen. Schaffst du in jedem Satz 12, erhöhe das Gewicht um die kleinste Stufe."
-              }
-            },
-            {
-              "slug": "overhead-triceps-extension",
+              "slug": "triceps-pushdown",
               "sets": 3,
               "reps": 10,
               "intensity": {
@@ -2507,9 +2160,24 @@
               },
               "rest": 90,
               "notes": {
-                "en": "On a cable. 10–15 reps. Once every set reaches 15, add the smallest load step.",
-                "fr": "À la poulie. 10 à 15 répétitions. Dès que chaque série atteint 15, monte la charge du plus petit cran.",
-                "de": "Am Kabelzug. 10–15 Wiederholungen. Schaffst du in jedem Satz 15, erhöhe das Gewicht um die kleinste Stufe."
+                "en": "10–15 reps. Once every set reaches 15, add the smallest load step.",
+                "fr": "10 à 15 répétitions. Dès que chaque série atteint 15, monte la charge du plus petit cran.",
+                "de": "10–15 Wiederholungen. Schaffst du in jedem Satz 15, erhöhe das Gewicht um die kleinste Stufe."
+              }
+            },
+            {
+              "slug": "ab-crunch-machine",
+              "sets": 3,
+              "reps": 10,
+              "intensity": {
+                "kind": "rpe",
+                "value": 8
+              },
+              "rest": 60,
+              "notes": {
+                "en": "10–15 reps. Once every set reaches 15, add the smallest load step.",
+                "fr": "10 à 15 répétitions. Dès que chaque série atteint 15, monte la charge du plus petit cran.",
+                "de": "10–15 Wiederholungen. Schaffst du in jedem Satz 15, erhöhe das Gewicht um die kleinste Stufe."
               }
             }
           ]
@@ -2523,7 +2191,7 @@
           "blocks": [
             {
               "slug": "lat-pulldown",
-              "sets": 3,
+              "sets": 4,
               "reps": 8,
               "intensity": {
                 "kind": "rpe",
@@ -2538,7 +2206,7 @@
             },
             {
               "slug": "machine-row",
-              "sets": 3,
+              "sets": 4,
               "reps": 8,
               "intensity": {
                 "kind": "rpe",
@@ -2552,23 +2220,8 @@
               }
             },
             {
-              "slug": "machine-high-row",
-              "sets": 3,
-              "reps": 8,
-              "intensity": {
-                "kind": "rpe",
-                "value": 8
-              },
-              "rest": 120,
-              "notes": {
-                "en": "8–12 reps. Once every set reaches 12, add the smallest load step.",
-                "fr": "8 à 12 répétitions. Dès que chaque série atteint 12, monte la charge du plus petit cran.",
-                "de": "8–12 Wiederholungen. Schaffst du in jedem Satz 12, erhöhe das Gewicht um die kleinste Stufe."
-              }
-            },
-            {
               "slug": "reverse-pec-deck",
-              "sets": 3,
+              "sets": 4,
               "reps": 12,
               "intensity": {
                 "kind": "rpe",
@@ -2582,8 +2235,23 @@
               }
             },
             {
+              "slug": "cable-lateral-raise",
+              "sets": 4,
+              "reps": 12,
+              "intensity": {
+                "kind": "rpe",
+                "value": 9
+              },
+              "rest": 60,
+              "notes": {
+                "en": "One arm at a time, the cable behind the body. 12–20 reps. Once every set reaches 20, add the smallest load step.",
+                "fr": "Un bras à la fois, le câble passant derrière le corps. 12 à 20 répétitions. Dès que chaque série atteint 20, monte la charge du plus petit cran.",
+                "de": "Ein Arm nach dem anderen, das Kabel hinter dem Körper. 12–20 Wiederholungen. Schaffst du in jedem Satz 20, erhöhe das Gewicht um die kleinste Stufe."
+              }
+            },
+            {
               "slug": "machine-biceps-curl",
-              "sets": 3,
+              "sets": 4,
               "reps": 10,
               "intensity": {
                 "kind": "rpe",
@@ -2598,7 +2266,7 @@
             },
             {
               "slug": "cable-curl",
-              "sets": 2,
+              "sets": 3,
               "reps": 10,
               "intensity": {
                 "kind": "rpe",
@@ -2609,21 +2277,6 @@
                 "en": "10–15 reps. Once every set reaches 15, add the smallest load step.",
                 "fr": "10 à 15 répétitions. Dès que chaque série atteint 15, monte la charge du plus petit cran.",
                 "de": "10–15 Wiederholungen. Schaffst du in jedem Satz 15, erhöhe das Gewicht um die kleinste Stufe."
-              }
-            },
-            {
-              "slug": "cable-lateral-raise",
-              "sets": 3,
-              "reps": 12,
-              "intensity": {
-                "kind": "rpe",
-                "value": 9
-              },
-              "rest": 60,
-              "notes": {
-                "en": "12–20 reps. Once every set reaches 20, add the smallest load step.",
-                "fr": "12 à 20 répétitions. Dès que chaque série atteint 20, monte la charge du plus petit cran.",
-                "de": "12–20 Wiederholungen. Schaffst du in jedem Satz 20, erhöhe das Gewicht um die kleinste Stufe."
               }
             }
           ]
@@ -2638,16 +2291,31 @@
             {
               "slug": "leg-press",
               "sets": 4,
-              "reps": 8,
+              "reps": 10,
               "intensity": {
                 "kind": "rpe",
                 "value": 8
               },
               "rest": 180,
               "notes": {
-                "en": "Two warm-up sets first (about 50% then 75% of the working load), not logged. 8–12 reps. Once every set reaches 12, add the smallest load step.",
-                "fr": "D’abord deux séries d’échauffement (environ 50 % puis 75 % de la charge de travail), sans les noter. 8 à 12 répétitions. Dès que chaque série atteint 12, monte la charge du plus petit cran.",
-                "de": "Vorher zwei Aufwärmsätze (etwa 50 %, dann 75 % des Arbeitsgewichts), nicht eingetragen. 8–12 Wiederholungen. Schaffst du in jedem Satz 12, erhöhe das Gewicht um die kleinste Stufe."
+                "en": "Two warm-up sets first (about 50% then 75% of the working load), not logged. 10–15 reps. Once every set reaches 15, add the smallest load step.",
+                "fr": "D’abord deux séries d’échauffement (environ 50 % puis 75 % de la charge de travail), sans les noter. 10 à 15 répétitions. Dès que chaque série atteint 15, monte la charge du plus petit cran.",
+                "de": "Vorher zwei Aufwärmsätze (etwa 50 %, dann 75 % des Arbeitsgewichts), nicht eingetragen. 10–15 Wiederholungen. Schaffst du in jedem Satz 15, erhöhe das Gewicht um die kleinste Stufe."
+              }
+            },
+            {
+              "slug": "leg-extension",
+              "sets": 3,
+              "reps": 10,
+              "intensity": {
+                "kind": "rpe",
+                "value": 9
+              },
+              "rest": 90,
+              "notes": {
+                "en": "10–15 reps. Once every set reaches 15, add the smallest load step.",
+                "fr": "10 à 15 répétitions. Dès que chaque série atteint 15, monte la charge du plus petit cran.",
+                "de": "10–15 Wiederholungen. Schaffst du in jedem Satz 15, erhöhe das Gewicht um die kleinste Stufe."
               }
             },
             {
@@ -2666,7 +2334,7 @@
               }
             },
             {
-              "slug": "leg-extension",
+              "slug": "lying-leg-curl",
               "sets": 3,
               "reps": 10,
               "intensity": {
@@ -2696,8 +2364,268 @@
               }
             },
             {
+              "slug": "hip-abduction-machine",
+              "sets": 3,
+              "reps": 12,
+              "intensity": {
+                "kind": "rpe",
+                "value": 8
+              },
+              "rest": 60,
+              "notes": {
+                "en": "12–15 reps. Once every set reaches 15, add the smallest load step.",
+                "fr": "12 à 15 répétitions. Dès que chaque série atteint 15, monte la charge du plus petit cran.",
+                "de": "12–15 Wiederholungen. Schaffst du in jedem Satz 15, erhöhe das Gewicht um die kleinste Stufe."
+              }
+            },
+            {
               "slug": "standing-calf-raise",
-              "sets": 4,
+              "sets": 3,
+              "reps": 10,
+              "intensity": {
+                "kind": "rpe",
+                "value": 9
+              },
+              "rest": 90,
+              "notes": {
+                "en": "Pause one second at the bottom, in the stretch. 10–15 reps. Once every set reaches 15, add the smallest load step.",
+                "fr": "Marque une seconde de pause en bas, en position étirée. 10 à 15 répétitions. Dès que chaque série atteint 15, monte la charge du plus petit cran.",
+                "de": "Unten eine Sekunde in der Dehnung halten. 10–15 Wiederholungen. Schaffst du in jedem Satz 15, erhöhe das Gewicht um die kleinste Stufe."
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "preset-program-gym-machines-full-body",
+      "templateId": "gym-machines-full-body",
+      "sport": "gym",
+      "names": {
+        "en": "Full body — machines (3×/week)",
+        "fr": "Full body — machines (3×/semaine)",
+        "de": "Ganzkörper – Maschinen (3×/Woche)"
+      },
+      "goals": {
+        "en": "Every muscle three times a week on machines and cables, a few hard sets each time; more load once the top of the range is reached",
+        "fr": "Chaque muscle trois fois par semaine sur machines et poulies, quelques séries difficiles à chaque fois ; plus de charge dès le haut de la fourchette atteint",
+        "de": "Jeder Muskel dreimal pro Woche an Maschinen und Kabelzug, jedes Mal wenige harte Sätze; mehr Gewicht, sobald das obere Ende des Bereichs erreicht ist"
+      },
+      "days": [
+        {
+          "names": {
+            "en": "Full body A",
+            "fr": "Full body A",
+            "de": "Ganzkörper A"
+          },
+          "blocks": [
+            {
+              "slug": "leg-press",
+              "sets": 3,
+              "reps": 8,
+              "intensity": {
+                "kind": "rpe",
+                "value": 8
+              },
+              "rest": 180,
+              "notes": {
+                "en": "Two warm-up sets first (about 50% then 75% of the working load), not logged. 8–12 reps. Once every set reaches 12, add the smallest load step.",
+                "fr": "D’abord deux séries d’échauffement (environ 50 % puis 75 % de la charge de travail), sans les noter. 8 à 12 répétitions. Dès que chaque série atteint 12, monte la charge du plus petit cran.",
+                "de": "Vorher zwei Aufwärmsätze (etwa 50 %, dann 75 % des Arbeitsgewichts), nicht eingetragen. 8–12 Wiederholungen. Schaffst du in jedem Satz 12, erhöhe das Gewicht um die kleinste Stufe."
+              }
+            },
+            {
+              "slug": "machine-chest-press",
+              "sets": 3,
+              "reps": 6,
+              "intensity": {
+                "kind": "rpe",
+                "value": 8
+              },
+              "rest": 150,
+              "notes": {
+                "en": "6–10 reps. Once every set reaches 10, add the smallest load step.",
+                "fr": "6 à 10 répétitions. Dès que chaque série atteint 10, monte la charge du plus petit cran.",
+                "de": "6–10 Wiederholungen. Schaffst du in jedem Satz 10, erhöhe das Gewicht um die kleinste Stufe."
+              }
+            },
+            {
+              "slug": "lat-pulldown",
+              "sets": 3,
+              "reps": 8,
+              "intensity": {
+                "kind": "rpe",
+                "value": 8
+              },
+              "rest": 150,
+              "notes": {
+                "en": "8–12 reps. Once every set reaches 12, add the smallest load step.",
+                "fr": "8 à 12 répétitions. Dès que chaque série atteint 12, monte la charge du plus petit cran.",
+                "de": "8–12 Wiederholungen. Schaffst du in jedem Satz 12, erhöhe das Gewicht um die kleinste Stufe."
+              }
+            },
+            {
+              "slug": "seated-leg-curl",
+              "sets": 2,
+              "reps": 10,
+              "intensity": {
+                "kind": "rpe",
+                "value": 9
+              },
+              "rest": 90,
+              "notes": {
+                "en": "10–15 reps. Once every set reaches 15, add the smallest load step.",
+                "fr": "10 à 15 répétitions. Dès que chaque série atteint 15, monte la charge du plus petit cran.",
+                "de": "10–15 Wiederholungen. Schaffst du in jedem Satz 15, erhöhe das Gewicht um die kleinste Stufe."
+              }
+            },
+            {
+              "slug": "machine-lateral-raise",
+              "sets": 3,
+              "reps": 12,
+              "intensity": {
+                "kind": "rpe",
+                "value": 9
+              },
+              "rest": 90,
+              "notes": {
+                "en": "12–20 reps. Once every set reaches 20, add the smallest load step.",
+                "fr": "12 à 20 répétitions. Dès que chaque série atteint 20, monte la charge du plus petit cran.",
+                "de": "12–20 Wiederholungen. Schaffst du in jedem Satz 20, erhöhe das Gewicht um die kleinste Stufe."
+              }
+            },
+            {
+              "slug": "triceps-pushdown",
+              "sets": 2,
+              "reps": 10,
+              "intensity": {
+                "kind": "rpe",
+                "value": 9
+              },
+              "rest": 90,
+              "notes": {
+                "en": "10–15 reps. Once every set reaches 15, add the smallest load step.",
+                "fr": "10 à 15 répétitions. Dès que chaque série atteint 15, monte la charge du plus petit cran.",
+                "de": "10–15 Wiederholungen. Schaffst du in jedem Satz 15, erhöhe das Gewicht um die kleinste Stufe."
+              }
+            },
+            {
+              "slug": "standing-calf-raise",
+              "sets": 2,
+              "reps": 10,
+              "intensity": {
+                "kind": "rpe",
+                "value": 9
+              },
+              "rest": 90,
+              "notes": {
+                "en": "Pause one second at the bottom, in the stretch. 10–15 reps. Once every set reaches 15, add the smallest load step.",
+                "fr": "Marque une seconde de pause en bas, en position étirée. 10 à 15 répétitions. Dès que chaque série atteint 15, monte la charge du plus petit cran.",
+                "de": "Unten eine Sekunde in der Dehnung halten. 10–15 Wiederholungen. Schaffst du in jedem Satz 15, erhöhe das Gewicht um die kleinste Stufe."
+              }
+            }
+          ]
+        },
+        {
+          "names": {
+            "en": "Full body B",
+            "fr": "Full body B",
+            "de": "Ganzkörper B"
+          },
+          "blocks": [
+            {
+              "slug": "hack-squat",
+              "sets": 3,
+              "reps": 8,
+              "intensity": {
+                "kind": "rpe",
+                "value": 8
+              },
+              "rest": 180,
+              "notes": {
+                "en": "Two warm-up sets first (about 50% then 75% of the working load), not logged. 8–12 reps. Once every set reaches 12, add the smallest load step.",
+                "fr": "D’abord deux séries d’échauffement (environ 50 % puis 75 % de la charge de travail), sans les noter. 8 à 12 répétitions. Dès que chaque série atteint 12, monte la charge du plus petit cran.",
+                "de": "Vorher zwei Aufwärmsätze (etwa 50 %, dann 75 % des Arbeitsgewichts), nicht eingetragen. 8–12 Wiederholungen. Schaffst du in jedem Satz 12, erhöhe das Gewicht um die kleinste Stufe."
+              }
+            },
+            {
+              "slug": "machine-row",
+              "sets": 3,
+              "reps": 8,
+              "intensity": {
+                "kind": "rpe",
+                "value": 8
+              },
+              "rest": 150,
+              "notes": {
+                "en": "8–12 reps. Once every set reaches 12, add the smallest load step.",
+                "fr": "8 à 12 répétitions. Dès que chaque série atteint 12, monte la charge du plus petit cran.",
+                "de": "8–12 Wiederholungen. Schaffst du in jedem Satz 12, erhöhe das Gewicht um die kleinste Stufe."
+              }
+            },
+            {
+              "slug": "incline-machine-press",
+              "sets": 3,
+              "reps": 8,
+              "intensity": {
+                "kind": "rpe",
+                "value": 8
+              },
+              "rest": 120,
+              "notes": {
+                "en": "8–12 reps. Once every set reaches 12, add the smallest load step.",
+                "fr": "8 à 12 répétitions. Dès que chaque série atteint 12, monte la charge du plus petit cran.",
+                "de": "8–12 Wiederholungen. Schaffst du in jedem Satz 12, erhöhe das Gewicht um die kleinste Stufe."
+              }
+            },
+            {
+              "slug": "lying-leg-curl",
+              "sets": 2,
+              "reps": 10,
+              "intensity": {
+                "kind": "rpe",
+                "value": 9
+              },
+              "rest": 90,
+              "notes": {
+                "en": "10–15 reps. Once every set reaches 15, add the smallest load step.",
+                "fr": "10 à 15 répétitions. Dès que chaque série atteint 15, monte la charge du plus petit cran.",
+                "de": "10–15 Wiederholungen. Schaffst du in jedem Satz 15, erhöhe das Gewicht um die kleinste Stufe."
+              }
+            },
+            {
+              "slug": "overhead-triceps-extension",
+              "sets": 2,
+              "reps": 10,
+              "intensity": {
+                "kind": "rpe",
+                "value": 9
+              },
+              "rest": 90,
+              "notes": {
+                "en": "10–15 reps. Once every set reaches 15, add the smallest load step.",
+                "fr": "10 à 15 répétitions. Dès que chaque série atteint 15, monte la charge du plus petit cran.",
+                "de": "10–15 Wiederholungen. Schaffst du in jedem Satz 15, erhöhe das Gewicht um die kleinste Stufe."
+              }
+            },
+            {
+              "slug": "machine-biceps-curl",
+              "sets": 2,
+              "reps": 10,
+              "intensity": {
+                "kind": "rpe",
+                "value": 9
+              },
+              "rest": 90,
+              "notes": {
+                "en": "10–15 reps. Once every set reaches 15, add the smallest load step.",
+                "fr": "10 à 15 répétitions. Dès que chaque série atteint 15, monte la charge du plus petit cran.",
+                "de": "10–15 Wiederholungen. Schaffst du in jedem Satz 15, erhöhe das Gewicht um die kleinste Stufe."
+              }
+            },
+            {
+              "slug": "standing-calf-raise",
+              "sets": 2,
               "reps": 10,
               "intensity": {
                 "kind": "rpe",
@@ -2723,6 +2651,852 @@
                 "en": "10–15 reps. Once every set reaches 15, add the smallest load step.",
                 "fr": "10 à 15 répétitions. Dès que chaque série atteint 15, monte la charge du plus petit cran.",
                 "de": "10–15 Wiederholungen. Schaffst du in jedem Satz 15, erhöhe das Gewicht um die kleinste Stufe."
+              }
+            }
+          ]
+        },
+        {
+          "names": {
+            "en": "Full body C",
+            "fr": "Full body C",
+            "de": "Ganzkörper C"
+          },
+          "blocks": [
+            {
+              "slug": "machine-shoulder-press",
+              "sets": 3,
+              "reps": 8,
+              "intensity": {
+                "kind": "rpe",
+                "value": 8
+              },
+              "rest": 120,
+              "notes": {
+                "en": "Two warm-up sets first (about 50% then 75% of the working load), not logged. 8–12 reps. Once every set reaches 12, add the smallest load step.",
+                "fr": "D’abord deux séries d’échauffement (environ 50 % puis 75 % de la charge de travail), sans les noter. 8 à 12 répétitions. Dès que chaque série atteint 12, monte la charge du plus petit cran.",
+                "de": "Vorher zwei Aufwärmsätze (etwa 50 %, dann 75 % des Arbeitsgewichts), nicht eingetragen. 8–12 Wiederholungen. Schaffst du in jedem Satz 12, erhöhe das Gewicht um die kleinste Stufe."
+              }
+            },
+            {
+              "slug": "machine-high-row",
+              "sets": 3,
+              "reps": 8,
+              "intensity": {
+                "kind": "rpe",
+                "value": 8
+              },
+              "rest": 120,
+              "notes": {
+                "en": "8–12 reps. Once every set reaches 12, add the smallest load step.",
+                "fr": "8 à 12 répétitions. Dès que chaque série atteint 12, monte la charge du plus petit cran.",
+                "de": "8–12 Wiederholungen. Schaffst du in jedem Satz 12, erhöhe das Gewicht um die kleinste Stufe."
+              }
+            },
+            {
+              "slug": "leg-extension",
+              "sets": 3,
+              "reps": 10,
+              "intensity": {
+                "kind": "rpe",
+                "value": 9
+              },
+              "rest": 90,
+              "notes": {
+                "en": "10–15 reps. Once every set reaches 15, add the smallest load step.",
+                "fr": "10 à 15 répétitions. Dès que chaque série atteint 15, monte la charge du plus petit cran.",
+                "de": "10–15 Wiederholungen. Schaffst du in jedem Satz 15, erhöhe das Gewicht um die kleinste Stufe."
+              }
+            },
+            {
+              "slug": "hip-thrust-machine",
+              "sets": 2,
+              "reps": 8,
+              "intensity": {
+                "kind": "rpe",
+                "value": 8
+              },
+              "rest": 120,
+              "notes": {
+                "en": "8–12 reps. Once every set reaches 12, add the smallest load step.",
+                "fr": "8 à 12 répétitions. Dès que chaque série atteint 12, monte la charge du plus petit cran.",
+                "de": "8–12 Wiederholungen. Schaffst du in jedem Satz 12, erhöhe das Gewicht um die kleinste Stufe."
+              }
+            },
+            {
+              "slug": "seated-leg-curl",
+              "sets": 3,
+              "reps": 10,
+              "intensity": {
+                "kind": "rpe",
+                "value": 9
+              },
+              "rest": 90,
+              "notes": {
+                "en": "10–15 reps. Once every set reaches 15, add the smallest load step.",
+                "fr": "10 à 15 répétitions. Dès que chaque série atteint 15, monte la charge du plus petit cran.",
+                "de": "10–15 Wiederholungen. Schaffst du in jedem Satz 15, erhöhe das Gewicht um die kleinste Stufe."
+              }
+            },
+            {
+              "slug": "pec-deck",
+              "sets": 2,
+              "reps": 10,
+              "intensity": {
+                "kind": "rpe",
+                "value": 9
+              },
+              "rest": 90,
+              "notes": {
+                "en": "10–15 reps. Once every set reaches 15, add the smallest load step.",
+                "fr": "10 à 15 répétitions. Dès que chaque série atteint 15, monte la charge du plus petit cran.",
+                "de": "10–15 Wiederholungen. Schaffst du in jedem Satz 15, erhöhe das Gewicht um die kleinste Stufe."
+              }
+            },
+            {
+              "slug": "reverse-pec-deck",
+              "sets": 3,
+              "reps": 12,
+              "intensity": {
+                "kind": "rpe",
+                "value": 9
+              },
+              "rest": 90,
+              "notes": {
+                "en": "12–20 reps. Once every set reaches 20, add the smallest load step.",
+                "fr": "12 à 20 répétitions. Dès que chaque série atteint 20, monte la charge du plus petit cran.",
+                "de": "12–20 Wiederholungen. Schaffst du in jedem Satz 20, erhöhe das Gewicht um die kleinste Stufe."
+              }
+            },
+            {
+              "slug": "cable-curl",
+              "sets": 2,
+              "reps": 10,
+              "intensity": {
+                "kind": "rpe",
+                "value": 9
+              },
+              "rest": 60,
+              "notes": {
+                "en": "10–15 reps. Once every set reaches 15, add the smallest load step.",
+                "fr": "10 à 15 répétitions. Dès que chaque série atteint 15, monte la charge du plus petit cran.",
+                "de": "10–15 Wiederholungen. Schaffst du in jedem Satz 15, erhöhe das Gewicht um die kleinste Stufe."
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "preset-program-gym-machines-upper-lower",
+      "templateId": "gym-machines-upper-lower",
+      "sport": "gym",
+      "names": {
+        "en": "Upper Lower — machines (4×/week)",
+        "fr": "Upper Lower — machines (4×/semaine)",
+        "de": "Upper Lower – Maschinen (4×/Woche)"
+      },
+      "goals": {
+        "en": "Upper and lower body twice a week each on machines and cables, sets close to failure; more load once the top of the range is reached",
+        "fr": "Haut et bas du corps deux fois par semaine chacun sur machines et poulies, des séries proches de l’échec ; plus de charge dès le haut de la fourchette atteint",
+        "de": "Ober- und Unterkörper je zweimal pro Woche an Maschinen und Kabelzug, Sätze nah am Muskelversagen; mehr Gewicht, sobald das obere Ende des Bereichs erreicht ist"
+      },
+      "days": [
+        {
+          "names": {
+            "en": "Upper A",
+            "fr": "Haut du corps A",
+            "de": "Oberkörper A"
+          },
+          "blocks": [
+            {
+              "slug": "machine-chest-press",
+              "sets": 3,
+              "reps": 6,
+              "intensity": {
+                "kind": "rpe",
+                "value": 8
+              },
+              "perSet": [
+                {
+                  "reps": 6,
+                  "value": 8
+                },
+                {
+                  "reps": 8,
+                  "value": 8
+                },
+                {
+                  "reps": 10,
+                  "value": 8
+                }
+              ],
+              "rest": 150,
+              "notes": {
+                "en": "Two warm-up sets first (about 50% then 75% of the working load), not logged. A top set, then two lighter back-off sets with more reps.",
+                "fr": "D’abord deux séries d’échauffement (environ 50 % puis 75 % de la charge de travail), sans les noter. Une série lourde, puis deux séries plus légères avec plus de répétitions.",
+                "de": "Vorher zwei Aufwärmsätze (etwa 50 %, dann 75 % des Arbeitsgewichts), nicht eingetragen. Erst ein schwerer Satz, dann zwei leichtere Sätze mit mehr Wiederholungen."
+              }
+            },
+            {
+              "slug": "lat-pulldown",
+              "sets": 3,
+              "reps": 8,
+              "intensity": {
+                "kind": "rpe",
+                "value": 8
+              },
+              "rest": 150,
+              "notes": {
+                "en": "8–12 reps. Once every set reaches 12, add the smallest load step.",
+                "fr": "8 à 12 répétitions. Dès que chaque série atteint 12, monte la charge du plus petit cran.",
+                "de": "8–12 Wiederholungen. Schaffst du in jedem Satz 12, erhöhe das Gewicht um die kleinste Stufe."
+              }
+            },
+            {
+              "slug": "incline-machine-press",
+              "sets": 3,
+              "reps": 8,
+              "intensity": {
+                "kind": "rpe",
+                "value": 8
+              },
+              "rest": 120,
+              "notes": {
+                "en": "8–12 reps. Once every set reaches 12, add the smallest load step.",
+                "fr": "8 à 12 répétitions. Dès que chaque série atteint 12, monte la charge du plus petit cran.",
+                "de": "8–12 Wiederholungen. Schaffst du in jedem Satz 12, erhöhe das Gewicht um die kleinste Stufe."
+              }
+            },
+            {
+              "slug": "machine-row",
+              "sets": 3,
+              "reps": 8,
+              "intensity": {
+                "kind": "rpe",
+                "value": 8
+              },
+              "rest": 150,
+              "notes": {
+                "en": "8–12 reps. Once every set reaches 12, add the smallest load step.",
+                "fr": "8 à 12 répétitions. Dès que chaque série atteint 12, monte la charge du plus petit cran.",
+                "de": "8–12 Wiederholungen. Schaffst du in jedem Satz 12, erhöhe das Gewicht um die kleinste Stufe."
+              }
+            },
+            {
+              "slug": "machine-lateral-raise",
+              "sets": 3,
+              "reps": 12,
+              "intensity": {
+                "kind": "rpe",
+                "value": 9
+              },
+              "rest": 90,
+              "notes": {
+                "en": "12–20 reps. Once every set reaches 20, add the smallest load step.",
+                "fr": "12 à 20 répétitions. Dès que chaque série atteint 20, monte la charge du plus petit cran.",
+                "de": "12–20 Wiederholungen. Schaffst du in jedem Satz 20, erhöhe das Gewicht um die kleinste Stufe."
+              }
+            },
+            {
+              "slug": "triceps-pushdown",
+              "sets": 2,
+              "reps": 10,
+              "intensity": {
+                "kind": "rpe",
+                "value": 9
+              },
+              "rest": 90,
+              "notes": {
+                "en": "10–15 reps. Once every set reaches 15, add the smallest load step.",
+                "fr": "10 à 15 répétitions. Dès que chaque série atteint 15, monte la charge du plus petit cran.",
+                "de": "10–15 Wiederholungen. Schaffst du in jedem Satz 15, erhöhe das Gewicht um die kleinste Stufe."
+              }
+            },
+            {
+              "slug": "machine-biceps-curl",
+              "sets": 2,
+              "reps": 10,
+              "intensity": {
+                "kind": "rpe",
+                "value": 9
+              },
+              "rest": 90,
+              "notes": {
+                "en": "10–15 reps. Once every set reaches 15, add the smallest load step.",
+                "fr": "10 à 15 répétitions. Dès que chaque série atteint 15, monte la charge du plus petit cran.",
+                "de": "10–15 Wiederholungen. Schaffst du in jedem Satz 15, erhöhe das Gewicht um die kleinste Stufe."
+              }
+            }
+          ]
+        },
+        {
+          "names": {
+            "en": "Lower A",
+            "fr": "Bas du corps A",
+            "de": "Unterkörper A"
+          },
+          "blocks": [
+            {
+              "slug": "leg-press",
+              "sets": 4,
+              "reps": 8,
+              "intensity": {
+                "kind": "rpe",
+                "value": 8
+              },
+              "rest": 180,
+              "notes": {
+                "en": "Two warm-up sets first (about 50% then 75% of the working load), not logged. 8–12 reps. Once every set reaches 12, add the smallest load step.",
+                "fr": "D’abord deux séries d’échauffement (environ 50 % puis 75 % de la charge de travail), sans les noter. 8 à 12 répétitions. Dès que chaque série atteint 12, monte la charge du plus petit cran.",
+                "de": "Vorher zwei Aufwärmsätze (etwa 50 %, dann 75 % des Arbeitsgewichts), nicht eingetragen. 8–12 Wiederholungen. Schaffst du in jedem Satz 12, erhöhe das Gewicht um die kleinste Stufe."
+              }
+            },
+            {
+              "slug": "seated-leg-curl",
+              "sets": 3,
+              "reps": 10,
+              "intensity": {
+                "kind": "rpe",
+                "value": 9
+              },
+              "rest": 90,
+              "notes": {
+                "en": "10–15 reps. Once every set reaches 15, add the smallest load step.",
+                "fr": "10 à 15 répétitions. Dès que chaque série atteint 15, monte la charge du plus petit cran.",
+                "de": "10–15 Wiederholungen. Schaffst du in jedem Satz 15, erhöhe das Gewicht um die kleinste Stufe."
+              }
+            },
+            {
+              "slug": "leg-extension",
+              "sets": 3,
+              "reps": 10,
+              "intensity": {
+                "kind": "rpe",
+                "value": 9
+              },
+              "rest": 90,
+              "notes": {
+                "en": "10–15 reps. Once every set reaches 15, add the smallest load step.",
+                "fr": "10 à 15 répétitions. Dès que chaque série atteint 15, monte la charge du plus petit cran.",
+                "de": "10–15 Wiederholungen. Schaffst du in jedem Satz 15, erhöhe das Gewicht um die kleinste Stufe."
+              }
+            },
+            {
+              "slug": "hip-adduction-machine",
+              "sets": 2,
+              "reps": 12,
+              "intensity": {
+                "kind": "rpe",
+                "value": 8
+              },
+              "rest": 90,
+              "notes": {
+                "en": "12–15 reps. Once every set reaches 15, add the smallest load step.",
+                "fr": "12 à 15 répétitions. Dès que chaque série atteint 15, monte la charge du plus petit cran.",
+                "de": "12–15 Wiederholungen. Schaffst du in jedem Satz 15, erhöhe das Gewicht um die kleinste Stufe."
+              }
+            },
+            {
+              "slug": "standing-calf-raise",
+              "sets": 3,
+              "reps": 10,
+              "intensity": {
+                "kind": "rpe",
+                "value": 9
+              },
+              "rest": 90,
+              "notes": {
+                "en": "Pause one second at the bottom, in the stretch. 10–15 reps. Once every set reaches 15, add the smallest load step.",
+                "fr": "Marque une seconde de pause en bas, en position étirée. 10 à 15 répétitions. Dès que chaque série atteint 15, monte la charge du plus petit cran.",
+                "de": "Unten eine Sekunde in der Dehnung halten. 10–15 Wiederholungen. Schaffst du in jedem Satz 15, erhöhe das Gewicht um die kleinste Stufe."
+              }
+            },
+            {
+              "slug": "ab-crunch-machine",
+              "sets": 2,
+              "reps": 10,
+              "intensity": {
+                "kind": "rpe",
+                "value": 8
+              },
+              "rest": 60,
+              "notes": {
+                "en": "10–15 reps. Once every set reaches 15, add the smallest load step.",
+                "fr": "10 à 15 répétitions. Dès que chaque série atteint 15, monte la charge du plus petit cran.",
+                "de": "10–15 Wiederholungen. Schaffst du in jedem Satz 15, erhöhe das Gewicht um die kleinste Stufe."
+              }
+            }
+          ]
+        },
+        {
+          "names": {
+            "en": "Upper B",
+            "fr": "Haut du corps B",
+            "de": "Oberkörper B"
+          },
+          "blocks": [
+            {
+              "slug": "machine-shoulder-press",
+              "sets": 3,
+              "reps": 8,
+              "intensity": {
+                "kind": "rpe",
+                "value": 8
+              },
+              "rest": 120,
+              "notes": {
+                "en": "Two warm-up sets first (about 50% then 75% of the working load), not logged. 8–12 reps. Once every set reaches 12, add the smallest load step.",
+                "fr": "D’abord deux séries d’échauffement (environ 50 % puis 75 % de la charge de travail), sans les noter. 8 à 12 répétitions. Dès que chaque série atteint 12, monte la charge du plus petit cran.",
+                "de": "Vorher zwei Aufwärmsätze (etwa 50 %, dann 75 % des Arbeitsgewichts), nicht eingetragen. 8–12 Wiederholungen. Schaffst du in jedem Satz 12, erhöhe das Gewicht um die kleinste Stufe."
+              }
+            },
+            {
+              "slug": "machine-high-row",
+              "sets": 3,
+              "reps": 8,
+              "intensity": {
+                "kind": "rpe",
+                "value": 8
+              },
+              "rest": 120,
+              "notes": {
+                "en": "8–12 reps. Once every set reaches 12, add the smallest load step.",
+                "fr": "8 à 12 répétitions. Dès que chaque série atteint 12, monte la charge du plus petit cran.",
+                "de": "8–12 Wiederholungen. Schaffst du in jedem Satz 12, erhöhe das Gewicht um die kleinste Stufe."
+              }
+            },
+            {
+              "slug": "pec-deck",
+              "sets": 3,
+              "reps": 10,
+              "intensity": {
+                "kind": "rpe",
+                "value": 9
+              },
+              "rest": 90,
+              "notes": {
+                "en": "10–15 reps. Once every set reaches 15, add the smallest load step.",
+                "fr": "10 à 15 répétitions. Dès que chaque série atteint 15, monte la charge du plus petit cran.",
+                "de": "10–15 Wiederholungen. Schaffst du in jedem Satz 15, erhöhe das Gewicht um die kleinste Stufe."
+              }
+            },
+            {
+              "slug": "reverse-pec-deck",
+              "sets": 3,
+              "reps": 12,
+              "intensity": {
+                "kind": "rpe",
+                "value": 9
+              },
+              "rest": 90,
+              "notes": {
+                "en": "12–20 reps. Once every set reaches 20, add the smallest load step.",
+                "fr": "12 à 20 répétitions. Dès que chaque série atteint 20, monte la charge du plus petit cran.",
+                "de": "12–20 Wiederholungen. Schaffst du in jedem Satz 20, erhöhe das Gewicht um die kleinste Stufe."
+              }
+            },
+            {
+              "slug": "cable-lateral-raise",
+              "sets": 3,
+              "reps": 12,
+              "intensity": {
+                "kind": "rpe",
+                "value": 9
+              },
+              "rest": 60,
+              "notes": {
+                "en": "One arm at a time, the cable behind the body. 12–20 reps. Once every set reaches 20, add the smallest load step.",
+                "fr": "Un bras à la fois, le câble passant derrière le corps. 12 à 20 répétitions. Dès que chaque série atteint 20, monte la charge du plus petit cran.",
+                "de": "Ein Arm nach dem anderen, das Kabel hinter dem Körper. 12–20 Wiederholungen. Schaffst du in jedem Satz 20, erhöhe das Gewicht um die kleinste Stufe."
+              }
+            },
+            {
+              "slug": "overhead-triceps-extension",
+              "sets": 2,
+              "reps": 10,
+              "intensity": {
+                "kind": "rpe",
+                "value": 9
+              },
+              "rest": 90,
+              "notes": {
+                "en": "10–15 reps. Once every set reaches 15, add the smallest load step.",
+                "fr": "10 à 15 répétitions. Dès que chaque série atteint 15, monte la charge du plus petit cran.",
+                "de": "10–15 Wiederholungen. Schaffst du in jedem Satz 15, erhöhe das Gewicht um die kleinste Stufe."
+              }
+            },
+            {
+              "slug": "cable-curl",
+              "sets": 2,
+              "reps": 10,
+              "intensity": {
+                "kind": "rpe",
+                "value": 9
+              },
+              "rest": 60,
+              "notes": {
+                "en": "10–15 reps. Once every set reaches 15, add the smallest load step.",
+                "fr": "10 à 15 répétitions. Dès que chaque série atteint 15, monte la charge du plus petit cran.",
+                "de": "10–15 Wiederholungen. Schaffst du in jedem Satz 15, erhöhe das Gewicht um die kleinste Stufe."
+              }
+            }
+          ]
+        },
+        {
+          "names": {
+            "en": "Lower B",
+            "fr": "Bas du corps B",
+            "de": "Unterkörper B"
+          },
+          "blocks": [
+            {
+              "slug": "hack-squat",
+              "sets": 3,
+              "reps": 8,
+              "intensity": {
+                "kind": "rpe",
+                "value": 8
+              },
+              "rest": 180,
+              "notes": {
+                "en": "Two warm-up sets first (about 50% then 75% of the working load), not logged. 8–12 reps. Once every set reaches 12, add the smallest load step.",
+                "fr": "D’abord deux séries d’échauffement (environ 50 % puis 75 % de la charge de travail), sans les noter. 8 à 12 répétitions. Dès que chaque série atteint 12, monte la charge du plus petit cran.",
+                "de": "Vorher zwei Aufwärmsätze (etwa 50 %, dann 75 % des Arbeitsgewichts), nicht eingetragen. 8–12 Wiederholungen. Schaffst du in jedem Satz 12, erhöhe das Gewicht um die kleinste Stufe."
+              }
+            },
+            {
+              "slug": "hip-thrust-machine",
+              "sets": 3,
+              "reps": 8,
+              "intensity": {
+                "kind": "rpe",
+                "value": 8
+              },
+              "rest": 120,
+              "notes": {
+                "en": "8–12 reps. Once every set reaches 12, add the smallest load step.",
+                "fr": "8 à 12 répétitions. Dès que chaque série atteint 12, monte la charge du plus petit cran.",
+                "de": "8–12 Wiederholungen. Schaffst du in jedem Satz 12, erhöhe das Gewicht um die kleinste Stufe."
+              }
+            },
+            {
+              "slug": "lying-leg-curl",
+              "sets": 3,
+              "reps": 10,
+              "intensity": {
+                "kind": "rpe",
+                "value": 9
+              },
+              "rest": 90,
+              "notes": {
+                "en": "10–15 reps. Once every set reaches 15, add the smallest load step.",
+                "fr": "10 à 15 répétitions. Dès que chaque série atteint 15, monte la charge du plus petit cran.",
+                "de": "10–15 Wiederholungen. Schaffst du in jedem Satz 15, erhöhe das Gewicht um die kleinste Stufe."
+              }
+            },
+            {
+              "slug": "leg-extension",
+              "sets": 2,
+              "reps": 10,
+              "intensity": {
+                "kind": "rpe",
+                "value": 9
+              },
+              "rest": 90,
+              "notes": {
+                "en": "10–15 reps. Once every set reaches 15, add the smallest load step.",
+                "fr": "10 à 15 répétitions. Dès que chaque série atteint 15, monte la charge du plus petit cran.",
+                "de": "10–15 Wiederholungen. Schaffst du in jedem Satz 15, erhöhe das Gewicht um die kleinste Stufe."
+              }
+            },
+            {
+              "slug": "hip-abduction-machine",
+              "sets": 2,
+              "reps": 12,
+              "intensity": {
+                "kind": "rpe",
+                "value": 8
+              },
+              "rest": 60,
+              "notes": {
+                "en": "12–15 reps. Once every set reaches 15, add the smallest load step.",
+                "fr": "12 à 15 répétitions. Dès que chaque série atteint 15, monte la charge du plus petit cran.",
+                "de": "12–15 Wiederholungen. Schaffst du in jedem Satz 15, erhöhe das Gewicht um die kleinste Stufe."
+              }
+            },
+            {
+              "slug": "seated-calf-raise",
+              "sets": 3,
+              "reps": 10,
+              "intensity": {
+                "kind": "rpe",
+                "value": 9
+              },
+              "rest": 90,
+              "notes": {
+                "en": "Pause one second at the bottom, in the stretch. 10–15 reps. Once every set reaches 15, add the smallest load step.",
+                "fr": "Marque une seconde de pause en bas, en position étirée. 10 à 15 répétitions. Dès que chaque série atteint 15, monte la charge du plus petit cran.",
+                "de": "Unten eine Sekunde in der Dehnung halten. 10–15 Wiederholungen. Schaffst du in jedem Satz 15, erhöhe das Gewicht um die kleinste Stufe."
+              }
+            },
+            {
+              "slug": "cable-crunch",
+              "sets": 2,
+              "reps": 10,
+              "intensity": {
+                "kind": "rpe",
+                "value": 8
+              },
+              "rest": 60,
+              "notes": {
+                "en": "10–15 reps. Once every set reaches 15, add the smallest load step.",
+                "fr": "10 à 15 répétitions. Dès que chaque série atteint 15, monte la charge du plus petit cran.",
+                "de": "10–15 Wiederholungen. Schaffst du in jedem Satz 15, erhöhe das Gewicht um die kleinste Stufe."
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "preset-program-gym-machines-full-body-2x",
+      "templateId": "gym-machines-full-body-2x",
+      "sport": "gym",
+      "names": {
+        "en": "Full body — machines (2×/week)",
+        "fr": "Full body — machines (2×/semaine)",
+        "de": "Ganzkörper – Maschinen (2×/Woche)"
+      },
+      "goals": {
+        "en": "The least that keeps progress going: two full-body sessions a week on machines and cables, a few hard sets per muscle; more load once the top of the range is reached",
+        "fr": "Le minimum pour continuer à progresser : deux séances full body par semaine sur machines et poulies, quelques séries difficiles par muscle ; plus de charge dès le haut de la fourchette atteint",
+        "de": "Das Minimum, um weiter Fortschritte zu machen: zwei Ganzkörper-Einheiten pro Woche an Maschinen und Kabelzug, wenige harte Sätze pro Muskel; mehr Gewicht, sobald das obere Ende des Bereichs erreicht ist"
+      },
+      "days": [
+        {
+          "names": {
+            "en": "Full body A",
+            "fr": "Full body A",
+            "de": "Ganzkörper A"
+          },
+          "blocks": [
+            {
+              "slug": "leg-press",
+              "sets": 3,
+              "reps": 8,
+              "intensity": {
+                "kind": "rpe",
+                "value": 8
+              },
+              "rest": 180,
+              "notes": {
+                "en": "Two warm-up sets first (about 50% then 75% of the working load), not logged. 8–12 reps. Once every set reaches 12, add the smallest load step.",
+                "fr": "D’abord deux séries d’échauffement (environ 50 % puis 75 % de la charge de travail), sans les noter. 8 à 12 répétitions. Dès que chaque série atteint 12, monte la charge du plus petit cran.",
+                "de": "Vorher zwei Aufwärmsätze (etwa 50 %, dann 75 % des Arbeitsgewichts), nicht eingetragen. 8–12 Wiederholungen. Schaffst du in jedem Satz 12, erhöhe das Gewicht um die kleinste Stufe."
+              }
+            },
+            {
+              "slug": "machine-chest-press",
+              "sets": 3,
+              "reps": 6,
+              "intensity": {
+                "kind": "rpe",
+                "value": 8
+              },
+              "rest": 150,
+              "notes": {
+                "en": "6–10 reps. Once every set reaches 10, add the smallest load step.",
+                "fr": "6 à 10 répétitions. Dès que chaque série atteint 10, monte la charge du plus petit cran.",
+                "de": "6–10 Wiederholungen. Schaffst du in jedem Satz 10, erhöhe das Gewicht um die kleinste Stufe."
+              }
+            },
+            {
+              "slug": "lat-pulldown",
+              "sets": 3,
+              "reps": 8,
+              "intensity": {
+                "kind": "rpe",
+                "value": 8
+              },
+              "rest": 150,
+              "notes": {
+                "en": "8–12 reps. Once every set reaches 12, add the smallest load step.",
+                "fr": "8 à 12 répétitions. Dès que chaque série atteint 12, monte la charge du plus petit cran.",
+                "de": "8–12 Wiederholungen. Schaffst du in jedem Satz 12, erhöhe das Gewicht um die kleinste Stufe."
+              }
+            },
+            {
+              "slug": "seated-leg-curl",
+              "sets": 3,
+              "reps": 10,
+              "intensity": {
+                "kind": "rpe",
+                "value": 9
+              },
+              "rest": 90,
+              "notes": {
+                "en": "10–15 reps. Once every set reaches 15, add the smallest load step.",
+                "fr": "10 à 15 répétitions. Dès que chaque série atteint 15, monte la charge du plus petit cran.",
+                "de": "10–15 Wiederholungen. Schaffst du in jedem Satz 15, erhöhe das Gewicht um die kleinste Stufe."
+              }
+            },
+            {
+              "slug": "machine-lateral-raise",
+              "sets": 3,
+              "reps": 12,
+              "intensity": {
+                "kind": "rpe",
+                "value": 9
+              },
+              "rest": 90,
+              "notes": {
+                "en": "12–20 reps. Once every set reaches 20, add the smallest load step.",
+                "fr": "12 à 20 répétitions. Dès que chaque série atteint 20, monte la charge du plus petit cran.",
+                "de": "12–20 Wiederholungen. Schaffst du in jedem Satz 20, erhöhe das Gewicht um die kleinste Stufe."
+              }
+            },
+            {
+              "slug": "triceps-pushdown",
+              "sets": 2,
+              "reps": 10,
+              "intensity": {
+                "kind": "rpe",
+                "value": 9
+              },
+              "rest": 90,
+              "notes": {
+                "en": "10–15 reps. Once every set reaches 15, add the smallest load step.",
+                "fr": "10 à 15 répétitions. Dès que chaque série atteint 15, monte la charge du plus petit cran.",
+                "de": "10–15 Wiederholungen. Schaffst du in jedem Satz 15, erhöhe das Gewicht um die kleinste Stufe."
+              }
+            },
+            {
+              "slug": "ab-crunch-machine",
+              "sets": 2,
+              "reps": 10,
+              "intensity": {
+                "kind": "rpe",
+                "value": 8
+              },
+              "rest": 60,
+              "notes": {
+                "en": "10–15 reps. Once every set reaches 15, add the smallest load step.",
+                "fr": "10 à 15 répétitions. Dès que chaque série atteint 15, monte la charge du plus petit cran.",
+                "de": "10–15 Wiederholungen. Schaffst du in jedem Satz 15, erhöhe das Gewicht um die kleinste Stufe."
+              }
+            }
+          ]
+        },
+        {
+          "names": {
+            "en": "Full body B",
+            "fr": "Full body B",
+            "de": "Ganzkörper B"
+          },
+          "blocks": [
+            {
+              "slug": "hack-squat",
+              "sets": 3,
+              "reps": 8,
+              "intensity": {
+                "kind": "rpe",
+                "value": 8
+              },
+              "rest": 180,
+              "notes": {
+                "en": "Two warm-up sets first (about 50% then 75% of the working load), not logged. 8–12 reps. Once every set reaches 12, add the smallest load step.",
+                "fr": "D’abord deux séries d’échauffement (environ 50 % puis 75 % de la charge de travail), sans les noter. 8 à 12 répétitions. Dès que chaque série atteint 12, monte la charge du plus petit cran.",
+                "de": "Vorher zwei Aufwärmsätze (etwa 50 %, dann 75 % des Arbeitsgewichts), nicht eingetragen. 8–12 Wiederholungen. Schaffst du in jedem Satz 12, erhöhe das Gewicht um die kleinste Stufe."
+              }
+            },
+            {
+              "slug": "machine-row",
+              "sets": 3,
+              "reps": 8,
+              "intensity": {
+                "kind": "rpe",
+                "value": 8
+              },
+              "rest": 150,
+              "notes": {
+                "en": "8–12 reps. Once every set reaches 12, add the smallest load step.",
+                "fr": "8 à 12 répétitions. Dès que chaque série atteint 12, monte la charge du plus petit cran.",
+                "de": "8–12 Wiederholungen. Schaffst du in jedem Satz 12, erhöhe das Gewicht um die kleinste Stufe."
+              }
+            },
+            {
+              "slug": "incline-machine-press",
+              "sets": 3,
+              "reps": 8,
+              "intensity": {
+                "kind": "rpe",
+                "value": 8
+              },
+              "rest": 120,
+              "notes": {
+                "en": "8–12 reps. Once every set reaches 12, add the smallest load step.",
+                "fr": "8 à 12 répétitions. Dès que chaque série atteint 12, monte la charge du plus petit cran.",
+                "de": "8–12 Wiederholungen. Schaffst du in jedem Satz 12, erhöhe das Gewicht um die kleinste Stufe."
+              }
+            },
+            {
+              "slug": "lying-leg-curl",
+              "sets": 2,
+              "reps": 10,
+              "intensity": {
+                "kind": "rpe",
+                "value": 9
+              },
+              "rest": 90,
+              "notes": {
+                "en": "10–15 reps. Once every set reaches 15, add the smallest load step.",
+                "fr": "10 à 15 répétitions. Dès que chaque série atteint 15, monte la charge du plus petit cran.",
+                "de": "10–15 Wiederholungen. Schaffst du in jedem Satz 15, erhöhe das Gewicht um die kleinste Stufe."
+              }
+            },
+            {
+              "slug": "reverse-pec-deck",
+              "sets": 2,
+              "reps": 12,
+              "intensity": {
+                "kind": "rpe",
+                "value": 9
+              },
+              "rest": 90,
+              "notes": {
+                "en": "12–20 reps. Once every set reaches 20, add the smallest load step.",
+                "fr": "12 à 20 répétitions. Dès que chaque série atteint 20, monte la charge du plus petit cran.",
+                "de": "12–20 Wiederholungen. Schaffst du in jedem Satz 20, erhöhe das Gewicht um die kleinste Stufe."
+              }
+            },
+            {
+              "slug": "machine-biceps-curl",
+              "sets": 2,
+              "reps": 10,
+              "intensity": {
+                "kind": "rpe",
+                "value": 9
+              },
+              "rest": 90,
+              "notes": {
+                "en": "10–15 reps. Once every set reaches 15, add the smallest load step.",
+                "fr": "10 à 15 répétitions. Dès que chaque série atteint 15, monte la charge du plus petit cran.",
+                "de": "10–15 Wiederholungen. Schaffst du in jedem Satz 15, erhöhe das Gewicht um die kleinste Stufe."
+              }
+            },
+            {
+              "slug": "standing-calf-raise",
+              "sets": 3,
+              "reps": 10,
+              "intensity": {
+                "kind": "rpe",
+                "value": 9
+              },
+              "rest": 90,
+              "notes": {
+                "en": "Pause one second at the bottom, in the stretch. 10–15 reps. Once every set reaches 15, add the smallest load step.",
+                "fr": "Marque une seconde de pause en bas, en position étirée. 10 à 15 répétitions. Dès que chaque série atteint 15, monte la charge du plus petit cran.",
+                "de": "Unten eine Sekunde in der Dehnung halten. 10–15 Wiederholungen. Schaffst du in jedem Satz 15, erhöhe das Gewicht um die kleinste Stufe."
               }
             }
           ]

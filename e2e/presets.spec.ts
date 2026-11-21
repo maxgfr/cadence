@@ -14,18 +14,18 @@ test('presets add real libraries, named in English even in French, and a block c
   await page.getByRole('checkbox', { name: /^Musculation/ }).check()
   await page.getByRole('checkbox', { name: /^Course à pied/ }).check()
   await page.getByRole('button', { name: 'Ajouter à ma bibliothèque' }).click()
-  await expect(page.getByText(/exercices ajoutés et 4 programmes/)).toBeVisible()
+  await expect(page.getByText(/exercices ajoutés et 5 programmes/)).toBeVisible()
 
   await page.goto('./#/exercises')
   await expect(page.getByRole('button', { name: /^Leg press/ })).toBeVisible()
   await expect(page.getByRole('button', { name: /^Presse à cuisses/ })).toHaveCount(0)
 
   await page.goto('./#/programs')
-  await page.getByRole('link', { name: /^Push Pull Legs(?! —)/ }).click()
-  await expect(page.getByText('1×15, 1×10, 1×8, 1×6').first()).toBeVisible()
+  await page.getByRole('link', { name: /^Upper Lower/ }).click()
+  await expect(page.getByText('1×6, 1×8, 1×10').first()).toBeVisible()
 
   await page
-    .getByRole('button', { name: /^Lateral raise/ })
+    .getByRole('button', { name: /^Machine lateral raise/ })
     .first()
     .click()
   const sheet = page.getByRole('dialog')

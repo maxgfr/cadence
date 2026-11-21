@@ -22,11 +22,21 @@ export const presets = namespace(
     sport: { gym: 'Gym', swim: 'Swimming', running: 'Running' },
     disciplines: { gym: 'Gym', swim: 'Swimming', running: 'Running' },
     programs: {
-      'gym-full-body': { name: 'Full body', goal: 'Build strength with two sessions repeated in turn' },
-      'gym-push-pull-legs': { name: 'Push Pull Legs', goal: 'Build muscle and strength, main lifts in pyramid sets' },
       'gym-machines-ppl': {
         name: 'Push Pull Legs — machines',
-        goal: 'Build muscle on machines and cables, one session of each per week: few sets close to failure, more load once the top of the range is reached',
+        goal: 'Build muscle on machines and cables, one session of each per week: sets close to failure, more load once the top of the range is reached',
+      },
+      'gym-machines-full-body': {
+        name: 'Full body — machines (3×/week)',
+        goal: 'Every muscle three times a week on machines and cables, a few hard sets each time; more load once the top of the range is reached',
+      },
+      'gym-machines-upper-lower': {
+        name: 'Upper Lower — machines (4×/week)',
+        goal: 'Upper and lower body twice a week each on machines and cables, sets close to failure; more load once the top of the range is reached',
+      },
+      'gym-machines-full-body-2x': {
+        name: 'Full body — machines (2×/week)',
+        goal: 'The least that keeps progress going: two full-body sessions a week on machines and cables, a few hard sets per muscle; more load once the top of the range is reached',
       },
       'swim-endurance': { name: 'Swim endurance', goal: 'Swim longer and smoother' },
       'running-10k': { name: 'Running base', goal: 'Build your endurance with four sessions in turn' },
@@ -34,6 +44,11 @@ export const presets = namespace(
     days: {
       fullBodyA: 'Full body A',
       fullBodyB: 'Full body B',
+      fullBodyC: 'Full body C',
+      upperA: 'Upper A',
+      lowerA: 'Lower A',
+      upperB: 'Upper B',
+      lowerB: 'Lower B',
       push: 'Push',
       pull: 'Pull',
       legs: 'Legs',
@@ -53,7 +68,8 @@ export const presets = namespace(
       repRange: (low: number, high: number) =>
         `${low}–${high} reps. Once every set reaches ${high}, add the smallest load step.`,
       pauseInStretch: 'Pause one second at the bottom, in the stretch.',
-      onCable: 'On a cable.',
+      oneArmBehind: 'One arm at a time, the cable behind the body.',
+      backOff: 'A top set, then two lighter back-off sets with more reps.',
     },
     exercises: {
       'barbell-bench-press': 'Barbell bench press',
@@ -247,14 +263,21 @@ export const presets = namespace(
     sport: { gym: 'Musculation', swim: 'Natation', running: 'Course à pied' },
     disciplines: { gym: 'Musculation', swim: 'Natation', running: 'Course à pied' },
     programs: {
-      'gym-full-body': { name: 'Full body', goal: 'Gagner en force avec deux séances en alternance' },
-      'gym-push-pull-legs': {
-        name: 'Push Pull Legs',
-        goal: 'Prendre du muscle et de la force, exercices clés en pyramide',
-      },
       'gym-machines-ppl': {
         name: 'Push Pull Legs — machines',
-        goal: 'Prendre du muscle sur machines et poulies, une séance de chaque par semaine : peu de séries, proches de l’échec, et plus de charge dès le haut de la fourchette atteint',
+        goal: 'Prendre du muscle sur machines et poulies, une séance de chaque par semaine : des séries proches de l’échec, et plus de charge dès le haut de la fourchette atteint',
+      },
+      'gym-machines-full-body': {
+        name: 'Full body — machines (3×/semaine)',
+        goal: 'Chaque muscle trois fois par semaine sur machines et poulies, quelques séries difficiles à chaque fois ; plus de charge dès le haut de la fourchette atteint',
+      },
+      'gym-machines-upper-lower': {
+        name: 'Upper Lower — machines (4×/semaine)',
+        goal: 'Haut et bas du corps deux fois par semaine chacun sur machines et poulies, des séries proches de l’échec ; plus de charge dès le haut de la fourchette atteint',
+      },
+      'gym-machines-full-body-2x': {
+        name: 'Full body — machines (2×/semaine)',
+        goal: 'Le minimum pour continuer à progresser : deux séances full body par semaine sur machines et poulies, quelques séries difficiles par muscle ; plus de charge dès le haut de la fourchette atteint',
       },
       'swim-endurance': { name: 'Endurance natation', goal: 'Nager plus longtemps et plus fluide' },
       'running-10k': { name: 'Base course à pied', goal: 'Construire ton endurance avec quatre séances en alternance' },
@@ -262,6 +285,11 @@ export const presets = namespace(
     days: {
       fullBodyA: 'Full body A',
       fullBodyB: 'Full body B',
+      fullBodyC: 'Full body C',
+      upperA: 'Haut du corps A',
+      lowerA: 'Bas du corps A',
+      upperB: 'Haut du corps B',
+      lowerB: 'Bas du corps B',
       push: 'Poussée',
       pull: 'Tirage',
       legs: 'Jambes',
@@ -281,7 +309,8 @@ export const presets = namespace(
       repRange: (low: number, high: number) =>
         `${low} à ${high} répétitions. Dès que chaque série atteint ${high}, monte la charge du plus petit cran.`,
       pauseInStretch: 'Marque une seconde de pause en bas, en position étirée.',
-      onCable: 'À la poulie.',
+      oneArmBehind: 'Un bras à la fois, le câble passant derrière le corps.',
+      backOff: 'Une série lourde, puis deux séries plus légères avec plus de répétitions.',
     },
     exercises: {
       'barbell-bench-press': 'Développé couché barre',
@@ -470,11 +499,21 @@ export const presets = namespace(
     sport: { gym: 'Krafttraining', swim: 'Schwimmen', running: 'Laufen' },
     disciplines: { gym: 'Krafttraining', swim: 'Schwimmen', running: 'Laufen' },
     programs: {
-      'gym-full-body': { name: 'Ganzkörper', goal: 'Kraft aufbauen mit zwei Einheiten im Wechsel' },
-      'gym-push-pull-legs': { name: 'Push Pull Legs', goal: 'Muskeln und Kraft aufbauen, Hauptübungen als Pyramide' },
       'gym-machines-ppl': {
         name: 'Push Pull Legs – Maschinen',
-        goal: 'Muskeln aufbauen an Maschinen und Kabelzug, jede Einheit einmal pro Woche: wenige Sätze nah am Muskelversagen, mehr Gewicht, sobald das obere Ende des Bereichs erreicht ist',
+        goal: 'Muskeln aufbauen an Maschinen und Kabelzug, jede Einheit einmal pro Woche: Sätze nah am Muskelversagen, mehr Gewicht, sobald das obere Ende des Bereichs erreicht ist',
+      },
+      'gym-machines-full-body': {
+        name: 'Ganzkörper – Maschinen (3×/Woche)',
+        goal: 'Jeder Muskel dreimal pro Woche an Maschinen und Kabelzug, jedes Mal wenige harte Sätze; mehr Gewicht, sobald das obere Ende des Bereichs erreicht ist',
+      },
+      'gym-machines-upper-lower': {
+        name: 'Upper Lower – Maschinen (4×/Woche)',
+        goal: 'Ober- und Unterkörper je zweimal pro Woche an Maschinen und Kabelzug, Sätze nah am Muskelversagen; mehr Gewicht, sobald das obere Ende des Bereichs erreicht ist',
+      },
+      'gym-machines-full-body-2x': {
+        name: 'Ganzkörper – Maschinen (2×/Woche)',
+        goal: 'Das Minimum, um weiter Fortschritte zu machen: zwei Ganzkörper-Einheiten pro Woche an Maschinen und Kabelzug, wenige harte Sätze pro Muskel; mehr Gewicht, sobald das obere Ende des Bereichs erreicht ist',
       },
       'swim-endurance': { name: 'Schwimmausdauer', goal: 'Länger und runder schwimmen' },
       'running-10k': { name: 'Lauf-Grundlage', goal: 'Ausdauer aufbauen mit vier Einheiten im Wechsel' },
@@ -482,6 +521,11 @@ export const presets = namespace(
     days: {
       fullBodyA: 'Ganzkörper A',
       fullBodyB: 'Ganzkörper B',
+      fullBodyC: 'Ganzkörper C',
+      upperA: 'Oberkörper A',
+      lowerA: 'Unterkörper A',
+      upperB: 'Oberkörper B',
+      lowerB: 'Unterkörper B',
       push: 'Drücken',
       pull: 'Ziehen',
       legs: 'Beine',
@@ -501,7 +545,8 @@ export const presets = namespace(
       repRange: (low: number, high: number) =>
         `${low}–${high} Wiederholungen. Schaffst du in jedem Satz ${high}, erhöhe das Gewicht um die kleinste Stufe.`,
       pauseInStretch: 'Unten eine Sekunde in der Dehnung halten.',
-      onCable: 'Am Kabelzug.',
+      oneArmBehind: 'Ein Arm nach dem anderen, das Kabel hinter dem Körper.',
+      backOff: 'Erst ein schwerer Satz, dann zwei leichtere Sätze mit mehr Wiederholungen.',
     },
     exercises: {
       'barbell-bench-press': 'Bankdrücken mit Langhantel',

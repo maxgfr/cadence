@@ -1,17 +1,7 @@
 import { currentMessages, LOCALES, type Messages, messagesFor } from '../i18n/index.ts'
 import { normalizeName } from '../library/exercises.ts'
 import { newId } from '../model/ids.ts'
-import type {
-  Block,
-  Day,
-  Discipline,
-  Exercise,
-  ExerciseLanguage,
-  Intensity,
-  Program,
-  SetTarget,
-  Week,
-} from '../model/schemas.ts'
+import type { Block, Day, Discipline, Exercise, ExerciseLanguage, Program, SetTarget, Week } from '../model/schemas.ts'
 import {
   PRESET_COLORS,
   PRESET_EXERCISES,
@@ -35,125 +25,168 @@ interface PresetProgram {
 }
 
 const rpe = (value: number) => ({ kind: 'rpe' as const, value })
-const pct = (value: number) => ({ kind: 'pct1rm' as const, value })
 
-/** A pyramid, `[reps, value]` for each set, heaviest last; in % of 1RM unless said. */
-const pyramid = (
-  sets: readonly (readonly [number, number])[],
-  rest: number,
-  at: (value: number) => Intensity = pct,
-): BlockSpec => {
+/** A pyramid by effort, `[reps, RPE]` for each set. */
+const pyramid = (sets: readonly (readonly [number, number])[], rest: number, notes: string): BlockSpec => {
   const perSet: SetTarget[] = sets.map(([reps, value]) => ({ reps, value }))
   const [first] = sets
-  return { reps: first?.[0] ?? 1, intensity: at(first?.[1] ?? 1), perSet, rest }
+  return { reps: first?.[0] ?? 1, intensity: rpe(first?.[1] ?? 1), perSet, rest, notes }
 }
 
-const MAIN_LIFT = [
-  [15, 55],
-  [10, 65],
-  [8, 75],
-  [6, 82],
-] as const
-
-/** By effort, for a lift whose one-rep max few athletes know. */
-const MAIN_LIFT_EFFORT = [
-  [15, 6.5],
-  [10, 7],
-  [8, 7.5],
-  [6, 8],
-] as const
+/** A double progression: the bottom of the range is the target, the top is when the load goes up. */
+const range = (low: number, high: number, intensity: number, rest: number, ...extra: string[]): BlockSpec => ({
+  reps: low,
+  intensity: rpe(intensity),
+  rest,
+  notes: [...extra, currentMessages().presets.notes.repRange(low, high)].join(' '),
+})
 
 export const PRESET_PROGRAMS: readonly PresetProgram[] = [
-  {
-    id: 'gym-full-body',
-    sport: 'gym',
-    build: (b, d) => {
-      const { days } = currentMessages().presets
-      return [
-        d(days.fullBodyA, [
-          b('back-squat', 3, { reps: 8, intensity: rpe(7), rest: 150 }),
-          b('barbell-bench-press', 3, { reps: 8, intensity: rpe(7), rest: 120 }),
-          b('seated-cable-row', 3, { reps: 10, intensity: rpe(7), rest: 90 }),
-          b('lateral-raise', 3, { reps: 12, rest: 60 }),
-          b('plank', 3, { duration: 45, rest: 60 }),
-        ]),
-        d(days.fullBodyB, [
-          b('romanian-deadlift', 3, { reps: 10, intensity: rpe(7), rest: 120 }),
-          b('overhead-press', 3, { reps: 8, intensity: rpe(7), rest: 120 }),
-          b('lat-pulldown', 3, { reps: 10, intensity: rpe(7), rest: 90 }),
-          b('leg-press', 3, { reps: 12, intensity: rpe(7), rest: 90 }),
-          b('hanging-leg-raise', 3, { reps: 10, rest: 60 }),
-        ]),
-      ]
-    },
-  },
-  {
-    id: 'gym-push-pull-legs',
-    sport: 'gym',
-    build: (b, d) => {
-      const { days } = currentMessages().presets
-      return [
-        d(days.push, [
-          b('barbell-bench-press', 4, pyramid(MAIN_LIFT, 150)),
-          b('incline-dumbbell-press', 3, { reps: 10, intensity: rpe(8), rest: 90 }),
-          b('machine-shoulder-press', 3, { reps: 10, intensity: rpe(8), rest: 90 }),
-          b('lateral-raise', 3, { reps: 15, rest: 60 }),
-          b('triceps-pushdown', 3, { reps: 12, rest: 60 }),
-        ]),
-        d(days.pull, [
-          b('barbell-row', 4, pyramid(MAIN_LIFT_EFFORT, 150, rpe)),
-          b('lat-pulldown', 3, { reps: 10, intensity: rpe(8), rest: 90 }),
-          b('seated-cable-row', 3, { reps: 12, intensity: rpe(8), rest: 90 }),
-          b('face-pull', 3, { reps: 15, rest: 60 }),
-          b('barbell-curl', 3, { reps: 12, rest: 60 }),
-        ]),
-        d(days.legs, [
-          b('back-squat', 4, pyramid(MAIN_LIFT, 180)),
-          b('romanian-deadlift', 3, { reps: 10, intensity: rpe(8), rest: 120 }),
-          b('leg-press', 3, { reps: 12, intensity: rpe(8), rest: 90 }),
-          b('seated-leg-curl', 3, { reps: 12, rest: 60 }),
-          b('standing-calf-raise', 3, { reps: 15, rest: 60 }),
-        ]),
-      ]
-    },
-  },
   {
     id: 'gym-machines-ppl',
     sport: 'gym',
     build: (b, d) => {
       const { days, notes } = currentMessages().presets
-      /** A double progression: the bottom of the range is the target, the top is when the load goes up. */
-      const range = (low: number, high: number, intensity: number, rest: number, ...extra: string[]): BlockSpec => ({
-        reps: low,
-        intensity: rpe(intensity),
-        rest,
-        notes: [...extra, notes.repRange(low, high)].join(' '),
-      })
       return [
         d(days.push, [
-          b('machine-chest-press', 3, range(6, 10, 8, 150, notes.rampUp)),
+          b('machine-chest-press', 4, range(6, 10, 8, 150, notes.rampUp)),
           b('incline-machine-press', 3, range(8, 12, 8, 120)),
+          b('seated-dip-machine', 3, range(8, 12, 8, 120)),
           b('pec-deck', 3, range(10, 15, 9, 90)),
           b('machine-lateral-raise', 4, range(12, 20, 9, 90)),
-          b('seated-dip-machine', 3, range(8, 12, 8, 120)),
-          b('overhead-triceps-extension', 3, range(10, 15, 9, 90, notes.onCable)),
+          b('triceps-pushdown', 3, range(10, 15, 9, 90)),
+          b('ab-crunch-machine', 3, range(10, 15, 8, 60)),
         ]),
         d(days.pull, [
-          b('lat-pulldown', 3, range(8, 12, 8, 150, notes.rampUp)),
-          b('machine-row', 3, range(8, 12, 8, 150)),
-          b('machine-high-row', 3, range(8, 12, 8, 120)),
-          b('reverse-pec-deck', 3, range(12, 20, 9, 90)),
-          b('machine-biceps-curl', 3, range(10, 15, 9, 90)),
-          b('cable-curl', 2, range(10, 15, 9, 60)),
-          b('cable-lateral-raise', 3, range(12, 20, 9, 60)),
+          b('lat-pulldown', 4, range(8, 12, 8, 150, notes.rampUp)),
+          b('machine-row', 4, range(8, 12, 8, 150)),
+          b('reverse-pec-deck', 4, range(12, 20, 9, 90)),
+          b('cable-lateral-raise', 4, range(12, 20, 9, 60, notes.oneArmBehind)),
+          b('machine-biceps-curl', 4, range(10, 15, 9, 90)),
+          b('cable-curl', 3, range(10, 15, 9, 60)),
         ]),
         d(days.legs, [
-          b('leg-press', 4, range(8, 12, 8, 180, notes.rampUp)),
-          b('seated-leg-curl', 4, range(10, 15, 9, 90)),
+          b('leg-press', 4, range(10, 15, 8, 180, notes.rampUp)),
           b('leg-extension', 3, range(10, 15, 9, 90)),
+          b('seated-leg-curl', 4, range(10, 15, 9, 90)),
+          b('lying-leg-curl', 3, range(10, 15, 9, 90)),
           b('hip-adduction-machine', 3, range(12, 15, 8, 90)),
-          b('standing-calf-raise', 4, range(10, 15, 9, 90, notes.pauseInStretch)),
+          b('hip-abduction-machine', 3, range(12, 15, 8, 60)),
+          b('standing-calf-raise', 3, range(10, 15, 9, 90, notes.pauseInStretch)),
+        ]),
+      ]
+    },
+  },
+  {
+    id: 'gym-machines-full-body',
+    sport: 'gym',
+    build: (b, d) => {
+      const { days, notes } = currentMessages().presets
+      return [
+        d(days.fullBodyA, [
+          b('leg-press', 3, range(8, 12, 8, 180, notes.rampUp)),
+          b('machine-chest-press', 3, range(6, 10, 8, 150)),
+          b('lat-pulldown', 3, range(8, 12, 8, 150)),
+          b('seated-leg-curl', 2, range(10, 15, 9, 90)),
+          b('machine-lateral-raise', 3, range(12, 20, 9, 90)),
+          b('triceps-pushdown', 2, range(10, 15, 9, 90)),
+          b('standing-calf-raise', 2, range(10, 15, 9, 90, notes.pauseInStretch)),
+        ]),
+        d(days.fullBodyB, [
+          b('hack-squat', 3, range(8, 12, 8, 180, notes.rampUp)),
+          b('machine-row', 3, range(8, 12, 8, 150)),
+          b('incline-machine-press', 3, range(8, 12, 8, 120)),
+          b('lying-leg-curl', 2, range(10, 15, 9, 90)),
+          b('overhead-triceps-extension', 2, range(10, 15, 9, 90)),
+          b('machine-biceps-curl', 2, range(10, 15, 9, 90)),
+          b('standing-calf-raise', 2, range(10, 15, 9, 90, notes.pauseInStretch)),
           b('ab-crunch-machine', 2, range(10, 15, 8, 60)),
+        ]),
+        d(days.fullBodyC, [
+          b('machine-shoulder-press', 3, range(8, 12, 8, 120, notes.rampUp)),
+          b('machine-high-row', 3, range(8, 12, 8, 120)),
+          b('leg-extension', 3, range(10, 15, 9, 90)),
+          b('hip-thrust-machine', 2, range(8, 12, 8, 120)),
+          b('seated-leg-curl', 3, range(10, 15, 9, 90)),
+          b('pec-deck', 2, range(10, 15, 9, 90)),
+          b('reverse-pec-deck', 3, range(12, 20, 9, 90)),
+          b('cable-curl', 2, range(10, 15, 9, 60)),
+        ]),
+      ]
+    },
+  },
+  {
+    id: 'gym-machines-upper-lower',
+    sport: 'gym',
+    build: (b, d) => {
+      const { days, notes } = currentMessages().presets
+      const topSetThenBackOff = [
+        [6, 8],
+        [8, 8],
+        [10, 8],
+      ] as const
+      return [
+        d(days.upperA, [
+          b('machine-chest-press', 3, pyramid(topSetThenBackOff, 150, [notes.rampUp, notes.backOff].join(' '))),
+          b('lat-pulldown', 3, range(8, 12, 8, 150)),
+          b('incline-machine-press', 3, range(8, 12, 8, 120)),
+          b('machine-row', 3, range(8, 12, 8, 150)),
+          b('machine-lateral-raise', 3, range(12, 20, 9, 90)),
+          b('triceps-pushdown', 2, range(10, 15, 9, 90)),
+          b('machine-biceps-curl', 2, range(10, 15, 9, 90)),
+        ]),
+        d(days.lowerA, [
+          b('leg-press', 4, range(8, 12, 8, 180, notes.rampUp)),
+          b('seated-leg-curl', 3, range(10, 15, 9, 90)),
+          b('leg-extension', 3, range(10, 15, 9, 90)),
+          b('hip-adduction-machine', 2, range(12, 15, 8, 90)),
+          b('standing-calf-raise', 3, range(10, 15, 9, 90, notes.pauseInStretch)),
+          b('ab-crunch-machine', 2, range(10, 15, 8, 60)),
+        ]),
+        d(days.upperB, [
+          b('machine-shoulder-press', 3, range(8, 12, 8, 120, notes.rampUp)),
+          b('machine-high-row', 3, range(8, 12, 8, 120)),
+          b('pec-deck', 3, range(10, 15, 9, 90)),
+          b('reverse-pec-deck', 3, range(12, 20, 9, 90)),
+          b('cable-lateral-raise', 3, range(12, 20, 9, 60, notes.oneArmBehind)),
+          b('overhead-triceps-extension', 2, range(10, 15, 9, 90)),
+          b('cable-curl', 2, range(10, 15, 9, 60)),
+        ]),
+        d(days.lowerB, [
+          b('hack-squat', 3, range(8, 12, 8, 180, notes.rampUp)),
+          b('hip-thrust-machine', 3, range(8, 12, 8, 120)),
+          b('lying-leg-curl', 3, range(10, 15, 9, 90)),
+          b('leg-extension', 2, range(10, 15, 9, 90)),
+          b('hip-abduction-machine', 2, range(12, 15, 8, 60)),
+          b('seated-calf-raise', 3, range(10, 15, 9, 90, notes.pauseInStretch)),
+          b('cable-crunch', 2, range(10, 15, 8, 60)),
+        ]),
+      ]
+    },
+  },
+  {
+    id: 'gym-machines-full-body-2x',
+    sport: 'gym',
+    build: (b, d) => {
+      const { days, notes } = currentMessages().presets
+      return [
+        d(days.fullBodyA, [
+          b('leg-press', 3, range(8, 12, 8, 180, notes.rampUp)),
+          b('machine-chest-press', 3, range(6, 10, 8, 150)),
+          b('lat-pulldown', 3, range(8, 12, 8, 150)),
+          b('seated-leg-curl', 3, range(10, 15, 9, 90)),
+          b('machine-lateral-raise', 3, range(12, 20, 9, 90)),
+          b('triceps-pushdown', 2, range(10, 15, 9, 90)),
+          b('ab-crunch-machine', 2, range(10, 15, 8, 60)),
+        ]),
+        d(days.fullBodyB, [
+          b('hack-squat', 3, range(8, 12, 8, 180, notes.rampUp)),
+          b('machine-row', 3, range(8, 12, 8, 150)),
+          b('incline-machine-press', 3, range(8, 12, 8, 120)),
+          b('lying-leg-curl', 2, range(10, 15, 9, 90)),
+          b('reverse-pec-deck', 2, range(12, 20, 9, 90)),
+          b('machine-biceps-curl', 2, range(10, 15, 9, 90)),
+          b('standing-calf-raise', 3, range(10, 15, 9, 90, notes.pauseInStretch)),
         ]),
       ]
     },
