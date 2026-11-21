@@ -34,6 +34,8 @@ test('optional exercises are offered beside the session, and one added becomes a
   const shrug = page.getByRole('button', { name: /^Shrug\s*Optional/ })
   await expect(shrug).toBeVisible()
   await expect(page.getByRole('button', { name: /^Overhead triceps extension\s*Optional/ })).toBeVisible()
+  await expect(page.getByRole('button', { name: /^Ab crunch machine\s*Optional/ })).toBeVisible()
+  await expect(page.getByRole('button', { name: /^Cable crunch/ })).toHaveCount(0)
   await expect(page.getByRole('button', { name: /^Leg press\s*Optional/ })).toHaveCount(0)
   await accessible(page, 'program with optional blocks')
 
@@ -48,18 +50,18 @@ test('optional exercises are offered beside the session, and one added becomes a
   await expect(page.getByRole('article', { name: 'Shrug' })).toHaveCount(0)
   const offered = page.getByRole('region', { name: 'Optional' })
   await expect(offered.getByText('Shrug', { exact: true })).toBeVisible()
-  await expect(offered.getByText('2×10').first()).toBeVisible()
-  await expect(offered.getByRole('button', { name: /to the session$/ })).toHaveCount(3)
+  await expect(offered.getByText('3×10').first()).toBeVisible()
+  await expect(offered.getByRole('button', { name: /to the session$/ })).toHaveCount(2)
   await accessible(page, 'log with optional exercises')
 
   // One tap: the shrug is an entry, pre-filled from its plan, and leaves the offer.
   await offered.getByRole('button', { name: 'Add Shrug to the session' }).click()
   const entry = page.getByRole('article', { name: 'Shrug' })
   await expect(entry).toBeVisible()
-  await expect(entry.getByText('Plan 2×10')).toBeVisible()
-  await expect(page.getByText('0 of 25 sets')).toBeVisible()
+  await expect(entry.getByText('Plan 3×10')).toBeVisible()
+  await expect(page.getByText('0 of 26 sets')).toBeVisible()
   await expect(offered.getByText('Shrug', { exact: true })).toHaveCount(0)
-  await expect(offered.getByRole('button', { name: /to the session$/ })).toHaveCount(2)
+  await expect(offered.getByRole('button', { name: /to the session$/ })).toHaveCount(1)
 
   // It is stored with the session; the others still wait.
   await page.reload()

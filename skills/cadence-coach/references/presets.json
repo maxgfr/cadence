@@ -2182,7 +2182,7 @@
             },
             {
               "slug": "overhead-triceps-extension",
-              "sets": 2,
+              "sets": 3,
               "reps": 10,
               "intensity": {
                 "kind": "rpe",
@@ -2297,7 +2297,7 @@
             },
             {
               "slug": "shrug",
-              "sets": 2,
+              "sets": 3,
               "reps": 10,
               "intensity": {
                 "kind": "rpe",
@@ -2313,7 +2313,7 @@
             },
             {
               "slug": "hammer-curl",
-              "sets": 2,
+              "sets": 3,
               "reps": 10,
               "intensity": {
                 "kind": "rpe",
@@ -2325,22 +2325,6 @@
                 "en": "On a cable with a rope. 10–15 reps. Once every set reaches 15, add the smallest load step.",
                 "fr": "À la poulie, avec une corde. 10 à 15 répétitions. Dès que chaque série atteint 15, monte la charge du plus petit cran.",
                 "de": "Am Kabelzug mit Seil. 10–15 Wiederholungen. Schaffst du in jedem Satz 15, erhöhe das Gewicht um die kleinste Stufe."
-              }
-            },
-            {
-              "slug": "cable-crunch",
-              "sets": 2,
-              "reps": 10,
-              "intensity": {
-                "kind": "rpe",
-                "value": 8
-              },
-              "rest": 60,
-              "optional": true,
-              "notes": {
-                "en": "10–15 reps. Once every set reaches 15, add the smallest load step.",
-                "fr": "10 à 15 répétitions. Dès que chaque série atteint 15, monte la charge du plus petit cran.",
-                "de": "10–15 Wiederholungen. Schaffst du in jedem Satz 15, erhöhe das Gewicht um die kleinste Stufe."
               }
             }
           ]
@@ -2455,6 +2439,22 @@
                 "en": "Pause one second at the bottom, in the stretch. 10–15 reps. Once every set reaches 15, add the smallest load step.",
                 "fr": "Marque une seconde de pause en bas, en position étirée. 10 à 15 répétitions. Dès que chaque série atteint 15, monte la charge du plus petit cran.",
                 "de": "Unten eine Sekunde in der Dehnung halten. 10–15 Wiederholungen. Schaffst du in jedem Satz 15, erhöhe das Gewicht um die kleinste Stufe."
+              }
+            },
+            {
+              "slug": "ab-crunch-machine",
+              "sets": 3,
+              "reps": 10,
+              "intensity": {
+                "kind": "rpe",
+                "value": 8
+              },
+              "rest": 60,
+              "optional": true,
+              "notes": {
+                "en": "10–15 reps. Once every set reaches 15, add the smallest load step.",
+                "fr": "10 à 15 répétitions. Dès que chaque série atteint 15, monte la charge du plus petit cran.",
+                "de": "10–15 Wiederholungen. Schaffst du in jedem Satz 15, erhöhe das Gewicht um die kleinste Stufe."
               }
             }
           ]

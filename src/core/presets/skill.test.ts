@@ -600,7 +600,7 @@ describe('cadence-coach skill', () => {
       'preset-overhead-triceps-extension',
       'preset-shrug',
       'preset-hammer-curl',
-      'preset-cable-crunch',
+      'preset-ab-crunch-machine',
     ])
 
     const v = run('volume', example, '--json')

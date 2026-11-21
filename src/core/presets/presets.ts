@@ -59,7 +59,7 @@ export const PRESET_PROGRAMS: readonly PresetProgram[] = [
           b('machine-lateral-raise', 4, range(12, 20, 9, 90)),
           b('triceps-pushdown', 3, range(10, 15, 9, 90)),
           b('ab-crunch-machine', 3, range(10, 15, 8, 60)),
-          b('overhead-triceps-extension', 2, optional(range(10, 15, 9, 90, notes.onCable))),
+          b('overhead-triceps-extension', 3, optional(range(10, 15, 9, 90, notes.onCable))),
         ]),
         d(days.pull, [
           b('lat-pulldown', 4, range(8, 12, 8, 150, notes.rampUp)),
@@ -68,9 +68,8 @@ export const PRESET_PROGRAMS: readonly PresetProgram[] = [
           b('machine-lateral-raise', 4, range(12, 20, 9, 90)),
           b('machine-biceps-curl', 4, range(10, 15, 9, 90)),
           b('cable-curl', 3, range(10, 15, 9, 60)),
-          b('shrug', 2, optional(range(10, 15, 9, 60))),
-          b('hammer-curl', 2, optional(range(10, 15, 9, 60, notes.withRope))),
-          b('cable-crunch', 2, optional(range(10, 15, 8, 60))),
+          b('shrug', 3, optional(range(10, 15, 9, 60))),
+          b('hammer-curl', 3, optional(range(10, 15, 9, 60, notes.withRope))),
         ]),
         d(days.legs, [
           b('leg-press', 4, range(10, 15, 8, 180, notes.rampUp)),
@@ -80,6 +79,7 @@ export const PRESET_PROGRAMS: readonly PresetProgram[] = [
           b('hip-adduction-machine', 3, range(12, 15, 8, 90)),
           b('hip-abduction-machine', 3, range(12, 15, 8, 60)),
           b('standing-calf-raise', 3, range(10, 15, 9, 90, notes.pauseInStretch)),
+          b('ab-crunch-machine', 3, optional(range(10, 15, 8, 60))),
         ]),
       ]
     },

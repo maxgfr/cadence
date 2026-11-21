@@ -94,17 +94,16 @@ describe('presets', () => {
     expect(press?.perSet?.map((s) => s.reps)).toEqual([6, 8, 10])
   })
 
-  test('the Push Pull Legs offers a few exercises in case there is time, at the end of Push and Pull', () => {
+  test('the Push Pull Legs offers a few exercises in case there is time, at the end of every day', () => {
     const ppl = all({ sports: ['gym'] }).programs.find((p) => p.id === 'preset-program-gym-machines-ppl')
     const days = ppl?.weeks[0]?.days ?? []
     expect(days.map((d) => d.blocks.filter(isOptional).map((b) => [b.exerciseId, b.sets]))).toEqual([
-      [['preset-overhead-triceps-extension', 2]],
+      [['preset-overhead-triceps-extension', 3]],
       [
-        ['preset-shrug', 2],
-        ['preset-hammer-curl', 2],
-        ['preset-cable-crunch', 2],
+        ['preset-shrug', 3],
+        ['preset-hammer-curl', 3],
       ],
-      [],
+      [['preset-ab-crunch-machine', 3]],
     ])
     const hammer = days[1]?.blocks.find((b) => b.exerciseId === 'preset-hammer-curl')
     expect(hammer?.notes).toStartWith('On a cable with a rope.')
