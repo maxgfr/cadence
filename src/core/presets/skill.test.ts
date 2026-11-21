@@ -611,11 +611,11 @@ describe('cadence-coach skill', () => {
       chest: 11.5,
       biceps: 11,
       back: 10,
+      quads: 8,
       triceps: 8,
-      hamstrings: 7,
-      quads: 7,
-      glutes: 5,
-      calves: 3,
+      glutes: 6,
+      hamstrings: 5,
+      calves: 5,
       core: 3,
     })
     const readme = readFileSync(skill('references/examples/README.md'), 'utf8')

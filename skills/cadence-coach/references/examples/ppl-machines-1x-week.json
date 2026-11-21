@@ -156,14 +156,6 @@
         },
         {
           "slug": "leg-extension",
-          "sets": 3,
-          "reps": 10,
-          "intensity": { "kind": "rpe", "value": 9 },
-          "rest": 90,
-          "notes": "10–15 reps. Once every set reaches 15, add the smallest load step."
-        },
-        {
-          "slug": "seated-leg-curl",
           "sets": 4,
           "reps": 10,
           "intensity": { "kind": "rpe", "value": 9 },
@@ -172,7 +164,7 @@
         },
         {
           "slug": "lying-leg-curl",
-          "sets": 3,
+          "sets": 5,
           "reps": 10,
           "intensity": { "kind": "rpe", "value": 9 },
           "rest": 90,
@@ -188,7 +180,7 @@
         },
         {
           "slug": "hip-abduction-machine",
-          "sets": 3,
+          "sets": 4,
           "reps": 12,
           "intensity": { "kind": "rpe", "value": 8 },
           "rest": 60,
@@ -196,7 +188,7 @@
         },
         {
           "slug": "standing-calf-raise",
-          "sets": 3,
+          "sets": 5,
           "reps": 10,
           "intensity": { "kind": "rpe", "value": 9 },
           "rest": 90,

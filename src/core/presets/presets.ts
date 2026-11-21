@@ -73,12 +73,11 @@ export const PRESET_PROGRAMS: readonly PresetProgram[] = [
         ]),
         d(days.legs, [
           b('leg-press', 4, range(10, 15, 8, 180, notes.rampUp)),
-          b('leg-extension', 3, range(10, 15, 9, 90)),
-          b('seated-leg-curl', 4, range(10, 15, 9, 90)),
-          b('lying-leg-curl', 3, range(10, 15, 9, 90)),
+          b('leg-extension', 4, range(10, 15, 9, 90)),
+          b('lying-leg-curl', 5, range(10, 15, 9, 90)),
           b('hip-adduction-machine', 3, range(12, 15, 8, 90)),
-          b('hip-abduction-machine', 3, range(12, 15, 8, 60)),
-          b('standing-calf-raise', 3, range(10, 15, 9, 90, notes.pauseInStretch)),
+          b('hip-abduction-machine', 4, range(12, 15, 8, 60)),
+          b('standing-calf-raise', 5, range(10, 15, 9, 90, notes.pauseInStretch)),
           b('ab-crunch-machine', 3, optional(range(10, 15, 8, 60))),
         ]),
       ]

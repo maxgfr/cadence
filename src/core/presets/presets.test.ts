@@ -111,6 +111,20 @@ describe('presets', () => {
     expect(hammer?.rest).toBe(60)
   })
 
+  test('the Push Pull Legs trains the hamstrings on a lying leg curl, the gym it was built in having no seated one', () => {
+    const ppl = all({ sports: ['gym'] }).programs.find((p) => p.id === 'preset-program-gym-machines-ppl')
+    const legs = ppl?.weeks[0]?.days[2]?.blocks ?? []
+    expect(legs.map((b) => [b.exerciseId, b.sets, b.optional ?? false])).toEqual([
+      ['preset-leg-press', 4, false],
+      ['preset-leg-extension', 4, false],
+      ['preset-lying-leg-curl', 5, false],
+      ['preset-hip-adduction-machine', 3, false],
+      ['preset-hip-abduction-machine', 4, false],
+      ['preset-standing-calf-raise', 5, false],
+      ['preset-ab-crunch-machine', 3, true],
+    ])
+  })
+
   test('every gym program uses gym exercises only, with few blocks and sets a day, in every language', () => {
     const gym = new Set(PRESET_EXERCISES.filter((e) => e.sport === 'gym').map((e) => `preset-${e.slug}`))
     const gymPrograms = PRESET_PROGRAMS.filter((p) => p.sport === 'gym').map((p) => `preset-program-${p.id}`)
@@ -130,11 +144,13 @@ describe('presets', () => {
       for (const program of programs) {
         const days = Program.parse(program).weeks[0]?.days ?? []
         expect(days.length).toBe(dayCounts[program.id as keyof typeof dayCounts])
-        for (const d of days) {
+        for (const [index, d] of days.entries()) {
           // The limits hold for the session as it starts: optional blocks are only offered.
           const required = requiredBlocks(d)
-          expect(required.length).toBeLessThanOrEqual(program.id === 'preset-program-gym-machines-ppl' ? 7 : 8)
-          expect(required.reduce((n, b) => n + b.sets, 0)).toBeLessThanOrEqual(23)
+          const ppl = program.id === 'preset-program-gym-machines-ppl'
+          expect(required.length).toBeLessThanOrEqual(ppl ? 7 : 8)
+          // The Push Pull Legs' Legs day trains four counted muscle groups and the adductors in one weekly session.
+          expect(required.reduce((n, b) => n + b.sets, 0)).toBeLessThanOrEqual(ppl && index === 2 ? 25 : 23)
           // Optional blocks come last, a few at most.
           const optional = d.blocks.filter(isOptional)
           expect(optional.length).toBeLessThanOrEqual(3)
