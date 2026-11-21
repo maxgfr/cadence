@@ -118,6 +118,47 @@ export const PRESET_PROGRAMS: readonly PresetProgram[] = [
     },
   },
   {
+    id: 'gym-machines-ppl',
+    sport: 'gym',
+    build: (b, d) => {
+      const { days, notes } = currentMessages().presets
+      /** A double progression: the bottom of the range is the target, the top is when the load goes up. */
+      const range = (low: number, high: number, intensity: number, rest: number, ...extra: string[]): BlockSpec => ({
+        reps: low,
+        intensity: rpe(intensity),
+        rest,
+        notes: [...extra, notes.repRange(low, high)].join(' '),
+      })
+      return [
+        d(days.push, [
+          b('machine-chest-press', 3, range(6, 10, 8, 150, notes.rampUp)),
+          b('incline-machine-press', 3, range(8, 12, 8, 120)),
+          b('pec-deck', 3, range(10, 15, 9, 90)),
+          b('machine-lateral-raise', 4, range(12, 20, 9, 90)),
+          b('seated-dip-machine', 3, range(8, 12, 8, 120)),
+          b('overhead-triceps-extension', 3, range(10, 15, 9, 90, notes.onCable)),
+        ]),
+        d(days.pull, [
+          b('lat-pulldown', 3, range(8, 12, 8, 150, notes.rampUp)),
+          b('machine-row', 3, range(8, 12, 8, 150)),
+          b('machine-high-row', 3, range(8, 12, 8, 120)),
+          b('reverse-pec-deck', 3, range(12, 20, 9, 90)),
+          b('machine-biceps-curl', 3, range(10, 15, 9, 90)),
+          b('cable-curl', 2, range(10, 15, 9, 60)),
+          b('cable-lateral-raise', 3, range(12, 20, 9, 60)),
+        ]),
+        d(days.legs, [
+          b('leg-press', 4, range(8, 12, 8, 180, notes.rampUp)),
+          b('seated-leg-curl', 4, range(10, 15, 9, 90)),
+          b('leg-extension', 3, range(10, 15, 9, 90)),
+          b('hip-adduction-machine', 3, range(12, 15, 8, 90)),
+          b('standing-calf-raise', 4, range(10, 15, 9, 90, notes.pauseInStretch)),
+          b('ab-crunch-machine', 2, range(10, 15, 8, 60)),
+        ]),
+      ]
+    },
+  },
+  {
     id: 'swim-endurance',
     sport: 'swim',
     build: (b, d) => {

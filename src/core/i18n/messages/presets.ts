@@ -24,6 +24,10 @@ export const presets = namespace(
     programs: {
       'gym-full-body': { name: 'Full body', goal: 'Build strength with two sessions repeated in turn' },
       'gym-push-pull-legs': { name: 'Push Pull Legs', goal: 'Build muscle and strength, main lifts in pyramid sets' },
+      'gym-machines-ppl': {
+        name: 'Push Pull Legs — machines',
+        goal: 'Build muscle on machines and cables, one session of each per week: few sets close to failure, more load once the top of the range is reached',
+      },
       'swim-endurance': { name: 'Swim endurance', goal: 'Swim longer and smoother' },
       'running-10k': { name: 'Running base', goal: 'Build your endurance with four sessions in turn' },
     },
@@ -41,7 +45,16 @@ export const presets = namespace(
       tempo: 'Tempo',
       long: 'Long run',
     },
-    notes: { warmUp: 'Warm-up', coolDown: 'Cool-down, easy', conversational: 'At a pace where you can still talk' },
+    notes: {
+      warmUp: 'Warm-up',
+      coolDown: 'Cool-down, easy',
+      conversational: 'At a pace where you can still talk',
+      rampUp: 'Two warm-up sets first (about 50% then 75% of the working load), not logged.',
+      repRange: (low: number, high: number) =>
+        `${low}–${high} reps. Once every set reaches ${high}, add the smallest load step.`,
+      pauseInStretch: 'Pause one second at the bottom, in the stretch.',
+      onCable: 'On a cable.',
+    },
     exercises: {
       'barbell-bench-press': 'Barbell bench press',
       'incline-barbell-bench-press': 'Incline barbell bench press',
@@ -239,6 +252,10 @@ export const presets = namespace(
         name: 'Push Pull Legs',
         goal: 'Prendre du muscle et de la force, exercices clés en pyramide',
       },
+      'gym-machines-ppl': {
+        name: 'Push Pull Legs — machines',
+        goal: 'Prendre du muscle sur machines et poulies, une séance de chaque par semaine : peu de séries, proches de l’échec, et plus de charge dès le haut de la fourchette atteint',
+      },
       'swim-endurance': { name: 'Endurance natation', goal: 'Nager plus longtemps et plus fluide' },
       'running-10k': { name: 'Base course à pied', goal: 'Construire ton endurance avec quatre séances en alternance' },
     },
@@ -260,6 +277,11 @@ export const presets = namespace(
       warmUp: 'Échauffement',
       coolDown: 'Retour au calme, facile',
       conversational: 'À une allure où tu peux parler',
+      rampUp: 'D’abord deux séries d’échauffement (environ 50 % puis 75 % de la charge de travail), sans les noter.',
+      repRange: (low: number, high: number) =>
+        `${low} à ${high} répétitions. Dès que chaque série atteint ${high}, monte la charge du plus petit cran.`,
+      pauseInStretch: 'Marque une seconde de pause en bas, en position étirée.',
+      onCable: 'À la poulie.',
     },
     exercises: {
       'barbell-bench-press': 'Développé couché barre',
@@ -450,6 +472,10 @@ export const presets = namespace(
     programs: {
       'gym-full-body': { name: 'Ganzkörper', goal: 'Kraft aufbauen mit zwei Einheiten im Wechsel' },
       'gym-push-pull-legs': { name: 'Push Pull Legs', goal: 'Muskeln und Kraft aufbauen, Hauptübungen als Pyramide' },
+      'gym-machines-ppl': {
+        name: 'Push Pull Legs – Maschinen',
+        goal: 'Muskeln aufbauen an Maschinen und Kabelzug, jede Einheit einmal pro Woche: wenige Sätze nah am Muskelversagen, mehr Gewicht, sobald das obere Ende des Bereichs erreicht ist',
+      },
       'swim-endurance': { name: 'Schwimmausdauer', goal: 'Länger und runder schwimmen' },
       'running-10k': { name: 'Lauf-Grundlage', goal: 'Ausdauer aufbauen mit vier Einheiten im Wechsel' },
     },
@@ -471,6 +497,11 @@ export const presets = namespace(
       warmUp: 'Aufwärmen',
       coolDown: 'Cool-down, locker',
       conversational: 'In einem Tempo, bei dem du noch reden kannst',
+      rampUp: 'Vorher zwei Aufwärmsätze (etwa 50 %, dann 75 % des Arbeitsgewichts), nicht eingetragen.',
+      repRange: (low: number, high: number) =>
+        `${low}–${high} Wiederholungen. Schaffst du in jedem Satz ${high}, erhöhe das Gewicht um die kleinste Stufe.`,
+      pauseInStretch: 'Unten eine Sekunde in der Dehnung halten.',
+      onCable: 'Am Kabelzug.',
     },
     exercises: {
       'barbell-bench-press': 'Bankdrücken mit Langhantel',

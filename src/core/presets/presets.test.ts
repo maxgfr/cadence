@@ -1,8 +1,10 @@
-import { describe, expect, test } from 'bun:test'
-import { LOCALES, messagesFor } from '../i18n/index.ts'
+import { afterEach, describe, expect, test } from 'bun:test'
+import { LOCALES, messagesFor, setDisplayLocale } from '../i18n/index.ts'
 import { Discipline, Exercise, Program } from '../model/schemas.ts'
 import { PRESET_EXERCISES, PRESET_SPORTS } from './catalog.ts'
 import { buildPreset, PRESET_PROGRAMS } from './presets.ts'
+
+afterEach(() => setDisplayLocale('en'))
 
 const empty = { exercises: [], disciplines: [] }
 const all = (over: Partial<Parameters<typeof buildPreset>[0]> = {}) =>
@@ -89,6 +91,27 @@ describe('presets', () => {
     const row = pull?.weeks[0]?.days[1]?.blocks[0]
     expect(row?.intensity?.kind).toBe('rpe')
     expect(row?.perSet?.map((s) => s.reps)).toEqual([15, 10, 8, 6])
+  })
+
+  test('the machine Push Pull Legs uses gym exercises only, with few blocks and sets a day, in every language', () => {
+    const gym = new Set(PRESET_EXERCISES.filter((e) => e.sport === 'gym').map((e) => `preset-${e.slug}`))
+    for (const l of LOCALES) {
+      setDisplayLocale(l)
+      const { exercises, programs } = all({ sports: ['gym'] })
+      const ids = new Set(exercises.map((e) => e.id))
+      const machines = programs.find((p) => p.id === 'preset-program-gym-machines-ppl')
+      expect(machines).toBeDefined()
+      expect(Program.parse(machines).weeks[0]?.days.length).toBe(3)
+      for (const d of machines?.weeks[0]?.days ?? []) {
+        expect(d.blocks.length).toBeLessThanOrEqual(7)
+        expect(d.blocks.reduce((n, b) => n + b.sets, 0)).toBeLessThanOrEqual(20)
+        for (const b of d.blocks) {
+          expect(gym.has(b.exerciseId)).toBe(true)
+          expect(ids.has(b.exerciseId)).toBe(true)
+          expect(b.notes?.length).toBeGreaterThan(0)
+        }
+      }
+    }
   })
 
   test('one exercise can be added on its own, with its sport only when it is missing', () => {
