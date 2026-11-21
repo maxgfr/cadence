@@ -148,6 +148,16 @@ home screen: to sync that app, scan from inside it (*Settings › Sync with anot
 - `maxgfr.github.io` is shared by every site the author publishes on GitHub Pages. If you rely on Cadence, deploy your
   own fork on your own domain, and export a backup now and then.
 
+## Agent skill
+
+The repository ships an agent skill, [`skills/cadence-coach`](skills/cadence-coach/SKILL.md), installable with
+`npx skills add maxgfr/cadence`. Given a backup exported from the app, it summarises the training history (sessions,
+best and last sets, weekly sets per muscle), moves the athlete's own exercises onto the app's presets, and designs a
+program from the preset exercises, written into a new backup to import after erasing the app's data. It runs one Node
+script with no install, never changes the original file, and carries an evidence summary for hypertrophy programming.
+`bun run skill:presets` regenerates its preset reference (`references/presets.json`) from the app's source; a test fails
+when it is stale.
+
 ## Development
 
 Requirements: [Bun](https://bun.sh).

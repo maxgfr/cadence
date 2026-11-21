@@ -47,6 +47,7 @@
     "test": "bun test src",
     "test:e2e": "bunx playwright test",
     "catalog": "bun scripts/build-catalog.ts",
+    "skill:presets": "bun scripts/build-skill-presets.ts",
     "check": "bun run typecheck && bun run lint && bun run test && bun run build"
   }
 }
