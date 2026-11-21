@@ -25,6 +25,9 @@ Commands:
       A backup whose exercises are all presets, sessions and programs moved onto them.
   program <spec.json> --into <backup.json> -o <out.json>
       Adds a program, built from preset exercises, to a backup.
+  volume <spec.json> [--json] [--ceiling 11] [--floor 6]
+  volume <backup.json> --program <name or id> [--week 1] [--json] [--ceiling 11] [--floor 6]
+      Fractional sets per muscle per day and per week of a program, with what to look at.
 `
 
 /** A failure to report as is: printed to stderr, exit code 1. */
@@ -131,7 +134,17 @@ function writeOutput(out, data, inputs) {
 // ---------------------------------------------------------------------------------------------------------------
 // Arguments.
 
-const VALUE_FLAGS = new Set(['-o', '--out', '--into', '--sport', '--muscle'])
+const VALUE_FLAGS = new Set([
+  '-o',
+  '--out',
+  '--into',
+  '--sport',
+  '--muscle',
+  '--program',
+  '--week',
+  '--ceiling',
+  '--floor',
+])
 const BOOLEAN_FLAGS = new Set(['--json', '--drop-programs', '--keep-unused', '--help', '-h'])
 
 function parseArgs(argv) {
@@ -1189,6 +1202,161 @@ function addProgram(backup, spec, { now }) {
 }
 
 // ---------------------------------------------------------------------------------------------------------------
+// volume
+
+const VOLUME_ASSUMPTION = "Each day is one session of the week: the week is the program's days summed."
+const VOLUME_COUNTING =
+  'Fractional sets: a set counts 1 for the first muscle its exercise lists (direct) and 0.5 for each other one (indirect).'
+const REPEATED_HINT = 'Another exercise for the same muscle gives variety (machine vs cable, for example).'
+
+/** The days of a program spec, each block resolved to its preset: key, name, sets, muscles. */
+function specDays(spec) {
+  const errors = checkSpec(spec)
+  if (errors.length > 0) fail(`invalid program spec:\n  ${errors.join('\n  ')}`)
+  return {
+    name: spec.name.trim(),
+    days: spec.days.map((day) => ({
+      name: day.name.trim(),
+      blocks: day.blocks.map((b) => {
+        const p = presetBySlug().get(toSlug(b.slug))
+        return { key: p.slug, name: p.names.en, sets: b.sets, muscles: p.muscles ?? [] }
+      }),
+    })),
+  }
+}
+
+/**
+ * The days of one week of a backup's program, found by id or by name (as the app compares names), each block
+ * resolved through the backup's exercise record, else its preset by id.
+ */
+function backupDays(backup, which, weekNumber) {
+  const byId = backup.programs.find((p) => p.id === which)
+  const byName = backup.programs.filter((p) => normalizeName(String(p.name ?? '')) === normalizeName(which))
+  const list = () => backup.programs.map((p) => `  ${p.name} [${p.id}]`).join('\n') || '  (none)'
+  if (!byId && byName.length > 1)
+    fail(
+      `${byName.length} programs are named "${which}"; give one's id:\n${byName.map((p) => `  ${p.name} [${p.id}]`).join('\n')}`,
+    )
+  const program = byId ?? byName[0]
+  if (!program) fail(`no program "${which}" in the backup; its programs:\n${list()}`)
+  const weeks = Array.isArray(program.weeks) ? program.weeks : []
+  if (weekNumber > weeks.length)
+    fail(`program "${program.name}" has ${weeks.length} week${weeks.length === 1 ? '' : 's'}, no week ${weekNumber}`)
+  const exercises = new Map(backup.exercises.map((e) => [e.id, e]))
+  const days = (weeks[weekNumber - 1].days ?? []).map((d) => ({
+    name: String(d.name ?? ''),
+    blocks: (d.blocks ?? []).map((b) => {
+      const ex = exercises.get(b.exerciseId)
+      const preset = presetOfId(b.exerciseId)
+      return {
+        key: b.exerciseId,
+        name: ex?.name ?? preset?.names[exerciseLanguage(backup.settings)] ?? `(missing exercise ${b.exerciseId})`,
+        sets: isInt(b.sets) && b.sets > 0 ? b.sets : 0,
+        muscles: musclesOf(b.exerciseId, ex),
+      }
+    }),
+  }))
+  return { name: String(program.name ?? ''), id: program.id, weeks: weeks.length, week: weekNumber, days }
+}
+
+/** Fractional sets per muscle per day and per week, and the flags: above the ceiling, below the floor, repeated. */
+function volume(program, { ceiling, floor }) {
+  const week = {}
+  let weekNotCounted = 0
+  const seen = new Map()
+  const flags = []
+  const days = program.days.map((day) => {
+    const muscles = {}
+    const notCounted = []
+    for (const b of day.blocks) {
+      const list = [...new Set(b.muscles)]
+      if (list.length === 0) notCounted.push({ exercise: b.key, name: b.name, sets: b.sets })
+      for (const [i, m] of list.entries()) muscles[m] = (muscles[m] ?? 0) + (i === 0 ? b.sets : b.sets * 0.5)
+      let where = seen.get(b.key)
+      if (!where) {
+        where = { name: b.name, days: [] }
+        seen.set(b.key, where)
+      }
+      if (!where.days.includes(day.name)) where.days.push(day.name)
+    }
+    for (const [m, n] of Object.entries(muscles)) week[m] = (week[m] ?? 0) + n
+    for (const [m, n] of Object.entries(muscles))
+      if (n > ceiling) flags.push({ flag: 'above ceiling', day: day.name, muscle: m, sets: round(n), ceiling })
+    weekNotCounted += notCounted.reduce((n, x) => n + x.sets, 0)
+    return {
+      name: day.name,
+      sets: day.blocks.reduce((n, b) => n + b.sets, 0),
+      exercises: day.blocks.length,
+      muscles: sortedMuscles(Object.fromEntries(Object.entries(muscles).map(([m, n]) => [m, round(n)]))),
+      notCounted,
+    }
+  })
+  const low = Object.keys(presets().muscles)
+    .filter((m) => m !== 'full_body' && (week[m] ?? 0) < floor)
+    .map((m) => ({
+      flag: 'below floor',
+      muscle: m,
+      sets: round(week[m] ?? 0),
+      floor,
+      ...(week[m] ? {} : { noWork: true }),
+    }))
+    .sort((a, b) => a.sets - b.sets || a.muscle.localeCompare(b.muscle))
+  flags.push(...low)
+  for (const [key, where] of seen)
+    if (where.days.length > 1)
+      flags.push({ flag: 'repeated', exercise: key, name: where.name, days: where.days, hint: REPEATED_HINT })
+  return {
+    program: program.name,
+    ...(program.id ? { id: program.id, week: program.week, weeks: program.weeks } : {}),
+    assumption: VOLUME_ASSUMPTION,
+    counting: VOLUME_COUNTING,
+    ceiling,
+    floor,
+    days,
+    perWeek: {
+      muscles: sortedMuscles(Object.fromEntries(Object.entries(week).map(([m, n]) => [m, round(n)]))),
+      notCounted: weekNotCounted,
+    },
+    flags,
+  }
+}
+
+function printVolume(v) {
+  const muscles = (o) =>
+    Object.entries(o)
+      .map(([m, n]) => `${m} ${n}`)
+      .join(', ') || '-'
+  const out = [`${v.program}: ${v.days.length} days`]
+  if (v.weeks > 1) out.push(`Week ${v.week} of ${v.weeks} (--week to choose another).`)
+  out.push(v.assumption, v.counting)
+  for (const d of v.days) {
+    out.push('', `${d.name}: ${d.sets} sets, ${d.exercises} exercises`, `  ${muscles(d.muscles)}`)
+    if (d.notCounted.length > 0)
+      out.push(`  not counted (no muscles): ${d.notCounted.map((x) => `${x.name} ${x.sets}`).join(', ')}`)
+  }
+  out.push('', 'Per week', `  ${muscles(v.perWeek.muscles)}`)
+  if (v.perWeek.notCounted > 0) out.push(`  not counted (no muscles): ${v.perWeek.notCounted} sets`)
+  out.push('', `Flags (advice: ceiling ${v.ceiling} per muscle per session, floor ${v.floor} per muscle per week)`)
+  if (v.flags.length === 0) out.push('  none')
+  for (const f of v.flags) {
+    if (f.flag === 'above ceiling') out.push(`  above ceiling: ${f.muscle} ${f.sets} on ${f.day}`)
+    else if (f.flag === 'below floor') out.push(`  below floor: ${f.muscle} ${f.sets}${f.noWork ? ' (no work)' : ''}`)
+    else out.push(`  repeated: ${f.name} on ${f.days.join(', ')}. ${f.hint}`)
+  }
+  return `${out.join('\n')}\n`
+}
+
+/** A `--ceiling`, `--floor` or `--week` value: a number, above 0 unless `zero` allows it, whole if `whole`. */
+function numberFlag(flags, name, fallback, { zero = false, whole = false } = {}) {
+  const raw = flags[name]
+  if (raw === undefined) return fallback
+  const n = Number(raw)
+  if (!Number.isFinite(n) || n < 0 || (!zero && n === 0) || (whole && !isInt(n)))
+    fail(`${name} must be ${whole ? 'a whole number' : 'a number'} ${zero ? '0 or more' : 'above 0'} (got ${raw})`)
+  return n
+}
+
+// ---------------------------------------------------------------------------------------------------------------
 // Main.
 
 function main(argv) {
@@ -1255,6 +1423,33 @@ function main(argv) {
       ]
       if (sameName) lines.push('  note: the backup already had a program with this name; both are kept')
       process.stdout.write(`${lines.join('\n')}\n`)
+      return 0
+    }
+    case 'volume': {
+      need(
+        1,
+        'volume <spec.json | backup.json> [--program <name or id>] [--week 1] [--json] [--ceiling 11] [--floor 6]',
+      )
+      const path = positional[0]
+      const ceiling = numberFlag(flags, '--ceiling', 11)
+      const floor = numberFlag(flags, '--floor', 6, { zero: true })
+      const raw = readJson(path, 'program spec or backup')
+      const isBackup = typeof raw === 'object' && raw !== null && raw.app === 'cadence'
+      let program
+      if (isBackup) {
+        if (!flags['--program']) fail(`${path} is a backup: add --program <name or id>`)
+        program = backupDays(
+          readBackup(path, { write: false }),
+          flags['--program'],
+          numberFlag(flags, '--week', 1, { whole: true }),
+        )
+      } else {
+        if (flags['--program']) fail(`--program reads a backup, and ${path} is not one`)
+        if (flags['--week']) fail(`--week reads a backup's program, and ${path} is not a backup`)
+        program = specDays(raw)
+      }
+      const v = volume(program, { ceiling, floor })
+      process.stdout.write(flags['--json'] ? `${JSON.stringify(v, null, 2)}\n` : printVolume(v))
       return 0
     }
     default:

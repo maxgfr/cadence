@@ -7,7 +7,7 @@ import { buildSkillPresets } from '../../../scripts/build-skill-presets.ts'
 import { buildDemo } from '../demo/demo.ts'
 import { messagesFor } from '../i18n/index.ts'
 import { newId } from '../model/ids.ts'
-import { BACKUP_VERSION, Backup, DEFAULT_SETTINGS } from '../model/schemas.ts'
+import { BACKUP_VERSION, Backup, DEFAULT_SETTINGS, MUSCLES } from '../model/schemas.ts'
 import { parseBackup } from '../storage/backup.ts'
 
 /** The cadence-coach skill: its preset reference and its backup script, run as an athlete's agent would. */
@@ -28,6 +28,34 @@ const file = (name: string, data: unknown) => {
 function run(...args: string[]) {
   const r = Bun.spawnSync([RUNTIME, SCRIPT, ...args], { stdout: 'pipe', stderr: 'pipe' })
   return { code: r.exitCode, stdout: r.stdout.toString(), stderr: r.stderr.toString() }
+}
+
+/** What `volume --json` prints. */
+interface Volume {
+  assumption: string
+  ceiling: number
+  floor: number
+  days: {
+    name: string
+    sets: number
+    exercises: number
+    muscles: Record<string, number>
+    notCounted: { exercise: string; name: string; sets: number }[]
+  }[]
+  perWeek: { muscles: Record<string, number>; notCounted: number }
+  flags: {
+    flag: string
+    day?: string
+    muscle?: string
+    sets?: number
+    noWork?: boolean
+    ceiling?: number
+    floor?: number
+    exercise?: string
+    name?: string
+    days?: string[]
+    hint?: string
+  }[]
 }
 
 const fr = messagesFor('fr').presets.exercises
@@ -224,6 +252,181 @@ describe('cadence-coach skill', () => {
     )
     expect(reps.code).not.toBe(0)
     expect(reps.stderr).toContain('reps')
+  })
+
+  test('volume: direct sets count 1 for the first muscle, 0.5 for the others; no muscle is not counted', () => {
+    const spec = {
+      name: 'Small',
+      days: [
+        {
+          name: 'A',
+          blocks: [
+            { slug: 'machine-chest-press', sets: 4, reps: 8 },
+            { slug: 'triceps-pushdown', sets: 3, reps: 10 },
+            { slug: 'hip-adduction-machine', sets: 2, reps: 12 },
+            { slug: 'assisted-pull-up', sets: 3, reps: 8 },
+          ],
+        },
+        { name: 'B', blocks: [{ slug: 'leg-press', sets: 5, reps: 10 }] },
+      ],
+    }
+    const r = run('volume', file('volume-small.json', spec), '--json')
+    expect(r.stderr).toBe('')
+    expect(r.code).toBe(0)
+    const v = JSON.parse(r.stdout) as Volume
+    const [a, b] = v.days
+    expect(a?.sets).toBe(12)
+    expect(a?.exercises).toBe(4)
+    // Chest press: chest, triceps. Pushdown: triceps. Assisted pull-up: back, biceps (assisted machines count).
+    expect(a?.muscles).toEqual({ chest: 4, triceps: 5, back: 3, biceps: 1.5 })
+    expect(a?.notCounted).toEqual([{ exercise: 'hip-adduction-machine', name: 'Hip adduction machine', sets: 2 }])
+    expect(b?.muscles).toEqual({ quads: 5, glutes: 2.5 })
+    expect(v.perWeek.muscles).toEqual({ quads: 5, triceps: 5, chest: 4, back: 3, glutes: 2.5, biceps: 1.5 })
+    expect(Object.keys(v.perWeek.muscles)).toEqual(['quads', 'triceps', 'chest', 'back', 'glutes', 'biceps'])
+    expect(v.perWeek.notCounted).toBe(2)
+    expect(v.assumption).toContain('one session of the week')
+    expect(v.flags.filter((f) => f.flag === 'above ceiling')).toEqual([])
+
+    const text = run('volume', file('volume-small.json', spec))
+    expect(text.code).toBe(0)
+    expect(text.stdout).toContain('one session of the week')
+    expect(text.stdout).toContain('A: 12 sets, 4 exercises\n  triceps 5, chest 4, back 3, biceps 1.5')
+    expect(text.stdout).toContain('not counted (no muscles): Hip adduction machine 2')
+  })
+
+  test('volume: above the ceiling in a session, below the floor in the week, an exercise on two days', () => {
+    const spec = {
+      name: 'Flags',
+      days: [
+        {
+          name: 'Chest day',
+          blocks: [
+            { slug: 'pec-deck', sets: 12, reps: 10 },
+            { slug: 'triceps-pushdown', sets: 6, reps: 10 },
+          ],
+        },
+        { name: 'Arms day', blocks: [{ slug: 'triceps-pushdown', sets: 6, reps: 10 }] },
+      ],
+    }
+    const path = file('volume-flags.json', spec)
+    const v = JSON.parse(run('volume', path, '--json').stdout) as Volume
+    expect(v.ceiling).toBe(11)
+    expect(v.floor).toBe(6)
+    expect(v.flags.filter((f) => f.flag === 'above ceiling')).toEqual([
+      { flag: 'above ceiling', day: 'Chest day', muscle: 'chest', sets: 12, ceiling: 11 },
+    ])
+    const low = v.flags.filter((f) => f.flag === 'below floor')
+    // Every muscle of the app's enum but the trained ones, at 0, and never full_body.
+    expect(low.map((f) => f.muscle).sort()).toEqual(
+      MUSCLES.filter((m) => !['chest', 'triceps', 'full_body'].includes(m)).sort(),
+    )
+    expect(low.every((f) => f.sets === 0 && f.noWork === true)).toBe(true)
+    expect(v.flags.filter((f) => f.flag === 'repeated')).toEqual([
+      {
+        flag: 'repeated',
+        exercise: 'triceps-pushdown',
+        name: 'Triceps pushdown',
+        days: ['Chest day', 'Arms day'],
+        hint: expect.stringContaining('variety'),
+      },
+    ])
+
+    // Thresholds: the ceiling is strict (6 triceps sets on a day is not above 6), the floor too (12 is not below 12).
+    const tuned = JSON.parse(run('volume', path, '--json', '--ceiling', '6', '--floor', '12').stdout) as Volume
+    expect(tuned.flags.filter((f) => f.flag === 'above ceiling').map((f) => `${f.day}:${f.muscle}`)).toEqual([
+      'Chest day:chest',
+    ])
+    expect(tuned.flags.find((f) => f.flag === 'below floor' && f.muscle === 'triceps')).toBeUndefined()
+    expect(tuned.flags.find((f) => f.flag === 'below floor' && f.muscle === 'chest')).toBeUndefined()
+    const lower = JSON.parse(run('volume', path, '--json', '--floor', '13').stdout) as Volume
+    expect(lower.flags.find((f) => f.flag === 'below floor' && f.muscle === 'chest')).toEqual({
+      flag: 'below floor',
+      muscle: 'chest',
+      sets: 12,
+      floor: 13,
+    })
+
+    const text = run('volume', path).stdout
+    expect(text).toContain('above ceiling: chest 12 on Chest day')
+    expect(text).toContain('below floor: core 0 (no work)')
+    expect(text).toContain('repeated: Triceps pushdown on Chest day, Arms day')
+
+    expect(run('volume', path, '--ceiling', 'many').code).toBe(1)
+    expect(run('volume', file('volume-bad.json', { name: 'X', days: [] })).code).toBe(1)
+    expect(run('volume', join(dir, 'nowhere.json')).code).toBe(1)
+  })
+
+  test('volume: a program in a backup, by name or id, counts as its spec does', () => {
+    const into = join(dir, 'volume-remapped.json')
+    if (run('remap', input, file('volume-mapping.json', mapping), '-o', into, '--drop-programs').code !== 0)
+      throw new Error('remap failed')
+    const spec = {
+      name: 'Upper lower volume',
+      days: [
+        {
+          name: 'Upper',
+          blocks: [
+            { slug: 'barbell-bench-press', sets: 4, reps: 6 },
+            { slug: 'lat-pulldown', sets: 3, reps: 10 },
+            { slug: 'wrist-curl', sets: 2, reps: 15 },
+          ],
+        },
+        { name: 'Lower', blocks: [{ slug: 'back-squat', sets: 4, reps: 5 }] },
+      ],
+    }
+    const specPath = file('volume-spec.json', spec)
+    const out = join(dir, 'volume-with-program.json')
+    expect(run('program', specPath, '--into', into, '-o', out).code).toBe(0)
+    const fromSpec = JSON.parse(run('volume', specPath, '--json').stdout) as Volume
+    const byName = run('volume', out, '--program', 'upper lower VOLUME', '--json')
+    expect(byName.stderr).toBe('')
+    expect(byName.code).toBe(0)
+    const v = JSON.parse(byName.stdout) as Volume
+    expect(v.days.map((d) => d.muscles)).toEqual(fromSpec.days.map((d) => d.muscles))
+    expect(v.perWeek).toEqual(fromSpec.perWeek)
+    expect(v.days[0]?.notCounted.map((x) => x.sets)).toEqual([2])
+    const id = parseBackup(readFileSync(out, 'utf8')).programs.find((p) => p.name === spec.name)?.id ?? ''
+    const byId = JSON.parse(run('volume', out, '--program', id, '--json').stdout) as Volume
+    expect(byId.perWeek).toEqual(fromSpec.perWeek)
+
+    expect(run('volume', out).code).toBe(1)
+    const missing = run('volume', out, '--program', 'No such program')
+    expect(missing.code).toBe(1)
+    expect(missing.stderr).toContain(spec.name)
+    expect(run('volume', specPath, '--program', 'Upper lower volume').code).toBe(1)
+  })
+
+  test('the worked example builds into a backup the app accepts, and volume reads it', () => {
+    const example = skill('references/examples/ppl-machines-1x-week.json')
+    const into = join(dir, 'example-remapped.json')
+    if (run('remap', input, file('example-mapping.json', mapping), '-o', into, '--drop-programs').code !== 0)
+      throw new Error('remap failed')
+    const out = join(dir, 'example-with-program.json')
+    const r = run('program', example, '--into', into, '-o', out)
+    expect(r.stderr).toBe('')
+    expect(r.code).toBe(0)
+    const result = parseBackup(readFileSync(out, 'utf8'))
+    const program = result.programs.find((p) => p.name === 'Push Pull Legs — machines (1×/week)')
+    expect(program?.weeks[0]?.days.map((d) => d.name)).toEqual(['Push', 'Pull', 'Legs'])
+    const blocks = program?.weeks[0]?.days.flatMap((d) => d.blocks) ?? []
+    expect(blocks.every((b) => b.intensity?.kind === 'rpe')).toBe(true)
+
+    const v = run('volume', example, '--json')
+    expect(v.code).toBe(0)
+    const volume = JSON.parse(v.stdout) as Volume
+    expect(volume.perWeek.muscles).toEqual({
+      shoulders: 15,
+      back: 13,
+      chest: 11.5,
+      biceps: 9.5,
+      triceps: 8,
+      hamstrings: 7,
+      quads: 7,
+      glutes: 5,
+      calves: 3,
+    })
+    const readme = readFileSync(skill('references/examples/README.md'), 'utf8')
+    expect(readme).toContain(run('volume', example).stdout.trim())
   })
 
   test('summary reads the history; an unknown command fails with the usage', () => {

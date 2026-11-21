@@ -1,0 +1,173 @@
+{
+  "name": "Push Pull Legs — machines (1×/week)",
+  "goal": "Build muscle on machines and cables, one session of each per week: 3–4 hard sets per exercise close to failure, more load once the top of the range is reached.",
+  "days": [
+    {
+      "name": "Push",
+      "blocks": [
+        {
+          "slug": "machine-chest-press",
+          "sets": 4,
+          "reps": 6,
+          "intensity": { "kind": "rpe", "value": 8 },
+          "rest": 150,
+          "notes": "Two warm-up sets first (about 50% then 75% of the working load), not logged. 6–10 reps. Once every set reaches 10, add the smallest load step."
+        },
+        {
+          "slug": "incline-machine-press",
+          "sets": 3,
+          "reps": 8,
+          "intensity": { "kind": "rpe", "value": 8 },
+          "rest": 120,
+          "notes": "8–12 reps. Once every set reaches 12, add the smallest load step."
+        },
+        {
+          "slug": "seated-dip-machine",
+          "sets": 3,
+          "reps": 8,
+          "intensity": { "kind": "rpe", "value": 8 },
+          "rest": 120,
+          "notes": "8–12 reps. Once every set reaches 12, add the smallest load step."
+        },
+        {
+          "slug": "pec-deck",
+          "sets": 3,
+          "reps": 10,
+          "intensity": { "kind": "rpe", "value": 9 },
+          "rest": 90,
+          "notes": "10–15 reps. Once every set reaches 15, add the smallest load step."
+        },
+        {
+          "slug": "machine-lateral-raise",
+          "sets": 4,
+          "reps": 12,
+          "intensity": { "kind": "rpe", "value": 9 },
+          "rest": 90,
+          "notes": "12–20 reps. Once every set reaches 20, add the smallest load step."
+        },
+        {
+          "slug": "triceps-pushdown",
+          "sets": 3,
+          "reps": 10,
+          "intensity": { "kind": "rpe", "value": 9 },
+          "rest": 90,
+          "notes": "10–15 reps. Once every set reaches 15, add the smallest load step."
+        }
+      ]
+    },
+    {
+      "name": "Pull",
+      "blocks": [
+        {
+          "slug": "lat-pulldown",
+          "sets": 4,
+          "reps": 8,
+          "intensity": { "kind": "rpe", "value": 8 },
+          "rest": 150,
+          "notes": "Two warm-up sets first (about 50% then 75% of the working load), not logged. 8–12 reps. Once every set reaches 12, add the smallest load step."
+        },
+        {
+          "slug": "machine-row",
+          "sets": 4,
+          "reps": 8,
+          "intensity": { "kind": "rpe", "value": 8 },
+          "rest": 150,
+          "notes": "8–12 reps. Once every set reaches 12, add the smallest load step."
+        },
+        {
+          "slug": "machine-high-row",
+          "sets": 3,
+          "reps": 8,
+          "intensity": { "kind": "rpe", "value": 8 },
+          "rest": 120,
+          "notes": "8–12 reps. Once every set reaches 12, add the smallest load step."
+        },
+        {
+          "slug": "reverse-pec-deck",
+          "sets": 4,
+          "reps": 12,
+          "intensity": { "kind": "rpe", "value": 9 },
+          "rest": 90,
+          "notes": "12–20 reps. Once every set reaches 20, add the smallest load step."
+        },
+        {
+          "slug": "cable-lateral-raise",
+          "sets": 4,
+          "reps": 12,
+          "intensity": { "kind": "rpe", "value": 9 },
+          "rest": 60,
+          "notes": "One arm at a time, the cable behind the body. 12–20 reps. Once every set reaches 20, add the smallest load step."
+        },
+        {
+          "slug": "machine-biceps-curl",
+          "sets": 4,
+          "reps": 10,
+          "intensity": { "kind": "rpe", "value": 9 },
+          "rest": 90,
+          "notes": "10–15 reps. Once every set reaches 15, add the smallest load step."
+        }
+      ]
+    },
+    {
+      "name": "Legs",
+      "blocks": [
+        {
+          "slug": "leg-press",
+          "sets": 4,
+          "reps": 10,
+          "intensity": { "kind": "rpe", "value": 8 },
+          "rest": 180,
+          "notes": "Two warm-up sets first (about 50% then 75% of the working load), not logged. 10–15 reps. Once every set reaches 15, add the smallest load step."
+        },
+        {
+          "slug": "leg-extension",
+          "sets": 3,
+          "reps": 10,
+          "intensity": { "kind": "rpe", "value": 9 },
+          "rest": 90,
+          "notes": "10–15 reps. Once every set reaches 15, add the smallest load step."
+        },
+        {
+          "slug": "seated-leg-curl",
+          "sets": 4,
+          "reps": 10,
+          "intensity": { "kind": "rpe", "value": 9 },
+          "rest": 90,
+          "notes": "10–15 reps. Once every set reaches 15, add the smallest load step."
+        },
+        {
+          "slug": "lying-leg-curl",
+          "sets": 3,
+          "reps": 10,
+          "intensity": { "kind": "rpe", "value": 9 },
+          "rest": 90,
+          "notes": "10–15 reps. Once every set reaches 15, add the smallest load step."
+        },
+        {
+          "slug": "hip-adduction-machine",
+          "sets": 3,
+          "reps": 12,
+          "intensity": { "kind": "rpe", "value": 8 },
+          "rest": 90,
+          "notes": "12–15 reps. Once every set reaches 15, add the smallest load step."
+        },
+        {
+          "slug": "hip-abduction-machine",
+          "sets": 3,
+          "reps": 12,
+          "intensity": { "kind": "rpe", "value": 8 },
+          "rest": 60,
+          "notes": "12–15 reps. Once every set reaches 15, add the smallest load step."
+        },
+        {
+          "slug": "standing-calf-raise",
+          "sets": 3,
+          "reps": 10,
+          "intensity": { "kind": "rpe", "value": 9 },
+          "rest": 90,
+          "notes": "Pause one second at the bottom, in the stretch. 10–15 reps. Once every set reaches 15, add the smallest load step."
+        }
+      ]
+    }
+  ]
+}

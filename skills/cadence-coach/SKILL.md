@@ -16,6 +16,8 @@ References:
   German), the preset disciplines and the app's preset programs. Generated from the app's source.
 - `references/programming.md`: an evidence summary for designing hypertrophy programs (volume, per-session ceiling,
   proximity to failure, rest, exercise selection, progression) and how to read a Cadence history against it.
+- `references/examples/`: a worked example, a Push Pull Legs on machines done once a week (a spec for `program`), with
+  how it was built from an athlete's sessions and what `volume` says about it.
 
 ## Tools
 
@@ -106,6 +108,23 @@ the discipline of their exercises' sport (the backup's own, found as the app fin
 Preset exercises the backup lacks are added; an exercise the athlete already has under a preset's name in any language
 is used as it is.
 
+### volume
+
+```sh
+node <skill-dir>/scripts/cadence.mjs volume <spec.json> [--json] [--ceiling 11] [--floor 6]
+node <skill-dir>/scripts/cadence.mjs volume <backup.json> --program <name or id> [--week 1] [--json] [--ceiling 11] [--floor 6]
+```
+
+Counts a program's sets per muscle, from a spec (as `program` reads it) or from a program in a backup (by id, or by
+name as the app compares names; `--week` picks the week of a program that has several). Fractional counting, as in
+`references/programming.md`: each set counts 1 for the first muscle its exercise lists and 0.5 for each other one. Sets
+on exercises that list no muscle (hip adduction, wrist curl, tibialis raise) are shown apart, not counted. Per day:
+sets, exercises, fractional sets per muscle. Per week: the days summed, since each day is taken as one session of the
+week, sorted from the most. Flags, advice only (the exit code stays 0): `above ceiling`, a muscle above `--ceiling`
+fractional sets in one session; `below floor`, a muscle under `--floor` fractional sets in the week, `no work` at 0
+(`full_body` is never flagged); `repeated`, an exercise on more than one day, where another exercise for the same
+muscle gives variety.
+
 ## Workflow
 
 1. **Find the backup.** Use the newest `cadence-backup-*.json` the athlete points to (often in their Downloads folder).
@@ -125,13 +144,15 @@ is used as it is.
 5. **Design.** Ask for or confirm the constraints: equipment (machines only, for example), sessions per week, session
    length, goals. Then:
    - Use preset slugs only (`presets --sport gym --muscle <muscle>`).
-   - Count fractional sets per muscle per session, and per week.
+   - Count fractional sets per muscle per session, and per week (`volume` does it).
    - Starting loads come from the history (`kg`); for an exercise the athlete has not done, use an `rpe` intensity.
    - Put each block's rep range and progression rule in its notes; `reps` is the bottom of the range.
    - Write program and day names and notes in the language the athlete asks for (English by default). Exercise names
      come from `settings.exerciseLanguage`.
+   - Keep the exercises the athlete says they like; put compound movements first.
+   - Run `volume` on the draft spec and fix what it flags before building, or tell the athlete why a flag is accepted.
    - The app's preset program `gym-machines-ppl` (`src/core/presets/presets.ts` in the Cadence repository, also in
-     `references/presets.json`) is a worked example.
+     `references/presets.json`) and `references/examples/` are worked examples.
 6. **Build.** Run `remap`, usually with `--drop-programs` when the old programs use exercises that are dropped, then
    `program` on its output, writing `cadence-import-<date>.json`. Check the counts the commands print: every session
    kept; run `summary` on the result and compare the ticked sets with the original's.
