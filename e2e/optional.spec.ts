@@ -53,7 +53,7 @@ test('optional exercises are offered beside the session, and one added becomes a
   const offered = page.getByRole('region', { name: 'Optional' })
   await expect(offered.getByText('Hammer curl', { exact: true })).toBeVisible()
   await expect(offered.getByText('3×10').first()).toBeVisible()
-  await expect(offered.getByRole('button', { name: /to the session$/ })).toHaveCount(1)
+  await expect(offered.getByRole('button', { name: /to the session$/ })).toHaveCount(2)
   await accessible(page, 'log with optional exercises')
 
   // One tap: the hammer curl is an entry, pre-filled from its plan, and leaves the offer.
@@ -63,13 +63,16 @@ test('optional exercises are offered beside the session, and one added becomes a
   await expect(entry.getByText('Plan 3×10')).toBeVisible()
   await expect(page.getByText('0 of 26 sets')).toBeVisible()
   await expect(offered.getByText('Hammer curl', { exact: true })).toHaveCount(0)
-  await expect(offered.getByRole('button', { name: /to the session$/ })).toHaveCount(0)
+  await expect(offered.getByRole('button', { name: /to the session$/ })).toHaveCount(1)
 
-  // It is stored with the session: once the write lands, a reload still shows it.
+  // It is stored with the session, and the other still waits: once the write lands, a reload still shows both.
   await expect(async () => {
     await page.reload()
     await expect(page.getByRole('article', { name: 'Hammer curl' })).toBeVisible({ timeout: 1000 })
   }).toPass()
+  await expect(
+    page.getByRole('region', { name: 'Optional' }).getByText('Machine high row', { exact: true }),
+  ).toBeVisible()
 })
 
 test('a planned exercise can be made optional in the editor', async ({ page }) => {

@@ -99,7 +99,10 @@ describe('presets', () => {
     const days = ppl?.weeks[0]?.days ?? []
     expect(days.map((d) => d.blocks.filter(isOptional).map((b) => [b.exerciseId, b.sets]))).toEqual([
       [['preset-overhead-triceps-extension', 3]],
-      [['preset-hammer-curl', 3]],
+      [
+        ['preset-machine-high-row', 3],
+        ['preset-hammer-curl', 3],
+      ],
       [['preset-ab-crunch-machine', 3]],
     ])
     const hammer = days[1]?.blocks.find((b) => b.exerciseId === 'preset-hammer-curl')
@@ -108,7 +111,7 @@ describe('presets', () => {
     expect(hammer?.rest).toBe(60)
   })
 
-  test('the Push Pull Legs Pull day has one biceps curl and the shrug, the hammer curl only if there is time', () => {
+  test('the Push Pull Legs Pull day has one biceps curl and the shrug, the high row and the hammer curl only if there is time', () => {
     const ppl = all({ sports: ['gym'] }).programs.find((p) => p.id === 'preset-program-gym-machines-ppl')
     const pull = ppl?.weeks[0]?.days[1]?.blocks ?? []
     expect(pull.map((b) => [b.exerciseId, b.sets, b.optional ?? false])).toEqual([
@@ -118,6 +121,7 @@ describe('presets', () => {
       ['preset-machine-lateral-raise', 4, false],
       ['preset-machine-biceps-curl', 4, false],
       ['preset-shrug', 3, false],
+      ['preset-machine-high-row', 3, true],
       ['preset-hammer-curl', 3, true],
     ])
   })

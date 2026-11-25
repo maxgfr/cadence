@@ -2296,6 +2296,22 @@
               }
             },
             {
+              "slug": "machine-high-row",
+              "sets": 3,
+              "reps": 8,
+              "intensity": {
+                "kind": "rpe",
+                "value": 8
+              },
+              "rest": 120,
+              "optional": true,
+              "notes": {
+                "en": "8–12 reps. Once every set reaches 12, add the smallest load step.",
+                "fr": "8 à 12 répétitions. Dès que chaque série atteint 12, monte la charge du plus petit cran.",
+                "de": "8–12 Wiederholungen. Schaffst du in jedem Satz 12, erhöhe das Gewicht um die kleinste Stufe."
+              }
+            },
+            {
               "slug": "hammer-curl",
               "sets": 3,
               "reps": 10,
