@@ -31,8 +31,9 @@ test('optional exercises are offered beside the session, and one added becomes a
   // The program marks its optional exercises, in their place at the end of the day.
   await page.goto('./#/programs')
   await page.getByRole('link', { name: /^Push Pull Legs/ }).click()
-  const shrug = page.getByRole('button', { name: /^Shrug\s*Optional/ })
-  await expect(shrug).toBeVisible()
+  const hammer = page.getByRole('button', { name: /^Hammer curl\s*Optional/ })
+  await expect(hammer).toBeVisible()
+  await expect(page.getByRole('button', { name: /^Shrug\s*Optional/ })).toHaveCount(0)
   await expect(page.getByRole('button', { name: /^Overhead triceps extension\s*Optional/ })).toBeVisible()
   await expect(page.getByRole('button', { name: /^Ab crunch machine\s*Optional/ })).toBeVisible()
   await expect(page.getByRole('button', { name: /^Cable crunch/ })).toHaveCount(0)
@@ -42,31 +43,33 @@ test('optional exercises are offered beside the session, and one added becomes a
   // The Pull session starts with its required exercises; the optional ones are offered after them.
   await page
     .locator('li')
-    .filter({ has: shrug })
+    .filter({ has: hammer })
     .getByRole('button', { name: /^Start/ })
     .click()
   await expect(page.getByRole('heading', { level: 1, name: 'Pull' })).toBeVisible()
   await expect(page.getByText('0 of 23 sets')).toBeVisible()
-  await expect(page.getByRole('article', { name: 'Shrug' })).toHaveCount(0)
+  await expect(page.getByRole('article', { name: 'Shrug' })).toBeVisible()
+  await expect(page.getByRole('article', { name: 'Hammer curl' })).toHaveCount(0)
   const offered = page.getByRole('region', { name: 'Optional' })
-  await expect(offered.getByText('Shrug', { exact: true })).toBeVisible()
+  await expect(offered.getByText('Hammer curl', { exact: true })).toBeVisible()
   await expect(offered.getByText('3×10').first()).toBeVisible()
-  await expect(offered.getByRole('button', { name: /to the session$/ })).toHaveCount(2)
+  await expect(offered.getByRole('button', { name: /to the session$/ })).toHaveCount(1)
   await accessible(page, 'log with optional exercises')
 
-  // One tap: the shrug is an entry, pre-filled from its plan, and leaves the offer.
-  await offered.getByRole('button', { name: 'Add Shrug to the session' }).click()
-  const entry = page.getByRole('article', { name: 'Shrug' })
+  // One tap: the hammer curl is an entry, pre-filled from its plan, and leaves the offer.
+  await offered.getByRole('button', { name: 'Add Hammer curl to the session' }).click()
+  const entry = page.getByRole('article', { name: 'Hammer curl' })
   await expect(entry).toBeVisible()
   await expect(entry.getByText('Plan 3×10')).toBeVisible()
   await expect(page.getByText('0 of 26 sets')).toBeVisible()
-  await expect(offered.getByText('Shrug', { exact: true })).toHaveCount(0)
-  await expect(offered.getByRole('button', { name: /to the session$/ })).toHaveCount(1)
+  await expect(offered.getByText('Hammer curl', { exact: true })).toHaveCount(0)
+  await expect(offered.getByRole('button', { name: /to the session$/ })).toHaveCount(0)
 
-  // It is stored with the session; the others still wait.
-  await page.reload()
-  await expect(page.getByRole('article', { name: 'Shrug' })).toBeVisible()
-  await expect(page.getByRole('region', { name: 'Optional' }).getByText('Hammer curl', { exact: true })).toBeVisible()
+  // It is stored with the session: once the write lands, a reload still shows it.
+  await expect(async () => {
+    await page.reload()
+    await expect(page.getByRole('article', { name: 'Hammer curl' })).toBeVisible({ timeout: 1000 })
+  }).toPass()
 })
 
 test('a planned exercise can be made optional in the editor', async ({ page }) => {
@@ -79,13 +82,13 @@ test('a planned exercise can be made optional in the editor', async ({ page }) =
 
   await page.goto('./#/programs')
   await page.getByRole('link', { name: /^Push Pull Legs/ }).click()
-  await page.getByRole('button', { name: /^Cable curl/ }).click()
+  await page.getByRole('button', { name: /^Machine biceps curl/ }).click()
   const sheet = page.getByRole('dialog')
   const optional = sheet.getByRole('checkbox', { name: /^Optional/ })
   await expect(optional).not.toBeChecked()
   await optional.check()
   await sheet.getByRole('button', { name: 'Done', exact: true }).click()
-  await expect(page.getByRole('button', { name: /^Cable curl\s*Optional/ })).toBeVisible()
+  await expect(page.getByRole('button', { name: /^Machine biceps curl\s*Optional/ })).toBeVisible()
   await page.getByRole('button', { name: 'Save changes' }).click()
   await expect(page.getByText('Program saved')).toBeVisible()
 })
