@@ -98,7 +98,10 @@ describe('presets', () => {
     const ppl = all({ sports: ['gym'] }).programs.find((p) => p.id === 'preset-program-gym-machines-ppl')
     const days = ppl?.weeks[0]?.days ?? []
     expect(days.map((d) => d.blocks.filter(isOptional).map((b) => [b.exerciseId, b.sets]))).toEqual([
-      [['preset-overhead-triceps-extension', 3]],
+      [
+        ['preset-overhead-triceps-extension', 3],
+        ['preset-ab-crunch-machine', 3],
+      ],
       [
         ['preset-machine-high-row', 3],
         ['preset-hammer-curl', 3],
@@ -109,6 +112,21 @@ describe('presets', () => {
     expect(hammer?.notes).toStartWith('On a cable with a rope.')
     expect(hammer?.intensity).toEqual({ kind: 'rpe', value: 9 })
     expect(hammer?.rest).toBe(60)
+  })
+
+  test('the Push Pull Legs Push day has 23 sets without the abs, the ab crunch only if there is time', () => {
+    const ppl = all({ sports: ['gym'] }).programs.find((p) => p.id === 'preset-program-gym-machines-ppl')
+    const push = ppl?.weeks[0]?.days[0]?.blocks ?? []
+    expect(push.map((b) => [b.exerciseId, b.sets, b.optional ?? false])).toEqual([
+      ['preset-machine-chest-press', 4, false],
+      ['preset-incline-machine-press', 4, false],
+      ['preset-seated-dip-machine', 3, false],
+      ['preset-pec-deck', 4, false],
+      ['preset-machine-lateral-raise', 4, false],
+      ['preset-triceps-pushdown', 4, false],
+      ['preset-overhead-triceps-extension', 3, true],
+      ['preset-ab-crunch-machine', 3, true],
+    ])
   })
 
   test('the Push Pull Legs Pull day has one biceps curl and the shrug, the high row and the hammer curl only if there is time', () => {

@@ -35,7 +35,7 @@ test('optional exercises are offered beside the session, and one added becomes a
   await expect(hammer).toBeVisible()
   await expect(page.getByRole('button', { name: /^Shrug\s*Optional/ })).toHaveCount(0)
   await expect(page.getByRole('button', { name: /^Overhead triceps extension\s*Optional/ })).toBeVisible()
-  await expect(page.getByRole('button', { name: /^Ab crunch machine\s*Optional/ })).toBeVisible()
+  await expect(page.getByRole('button', { name: /^Ab crunch machine\s*Optional/ })).toHaveCount(2)
   await expect(page.getByRole('button', { name: /^Cable crunch/ })).toHaveCount(0)
   await expect(page.getByRole('button', { name: /^Leg press\s*Optional/ })).toHaveCount(0)
   await accessible(page, 'program with optional blocks')

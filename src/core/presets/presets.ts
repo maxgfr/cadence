@@ -53,13 +53,13 @@ export const PRESET_PROGRAMS: readonly PresetProgram[] = [
       return [
         d(days.push, [
           b('machine-chest-press', 4, range(6, 10, 8, 150, notes.rampUp)),
-          b('incline-machine-press', 3, range(8, 12, 8, 120)),
+          b('incline-machine-press', 4, range(8, 12, 8, 120)),
           b('seated-dip-machine', 3, range(8, 12, 8, 120)),
-          b('pec-deck', 3, range(10, 15, 9, 90)),
+          b('pec-deck', 4, range(10, 15, 9, 90)),
           b('machine-lateral-raise', 4, range(12, 20, 9, 90)),
-          b('triceps-pushdown', 3, range(10, 15, 9, 90)),
-          b('ab-crunch-machine', 3, range(10, 15, 8, 60)),
+          b('triceps-pushdown', 4, range(10, 15, 9, 90)),
           b('overhead-triceps-extension', 3, optional(range(10, 15, 9, 90, notes.onCable))),
+          b('ab-crunch-machine', 3, optional(range(10, 15, 8, 60))),
         ]),
         d(days.pull, [
           b('lat-pulldown', 4, range(8, 12, 8, 150, notes.rampUp)),
