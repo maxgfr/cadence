@@ -67,8 +67,7 @@ export const PRESET_PROGRAMS: readonly PresetProgram[] = [
           b('reverse-pec-deck', 4, range(12, 20, 9, 90)),
           b('machine-lateral-raise', 4, range(12, 20, 9, 90)),
           b('machine-biceps-curl', 4, range(10, 15, 9, 90)),
-          b('cable-curl', 3, range(10, 15, 9, 60)),
-          b('shrug', 3, optional(range(10, 15, 9, 60))),
+          b('shrug', 3, range(10, 15, 9, 60)),
           b('hammer-curl', 3, optional(range(10, 15, 9, 60, notes.withRope))),
         ]),
         d(days.legs, [
