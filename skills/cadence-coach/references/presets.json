@@ -2297,6 +2297,22 @@
               }
             },
             {
+              "slug": "lower-back-machine",
+              "sets": 3,
+              "reps": 12,
+              "intensity": {
+                "kind": "rpe",
+                "value": 8
+              },
+              "rest": 90,
+              "optional": true,
+              "notes": {
+                "en": "12–15 reps. Once every set reaches 15, add the smallest load step.",
+                "fr": "12 à 15 répétitions. Dès que chaque série atteint 15, monte la charge du plus petit cran.",
+                "de": "12–15 Wiederholungen. Schaffst du in jedem Satz 15, erhöhe das Gewicht um die kleinste Stufe."
+              }
+            },
+            {
               "slug": "machine-high-row",
               "sets": 3,
               "reps": 8,
@@ -2353,7 +2369,22 @@
               }
             },
             {
-              "slug": "leg-extension",
+              "slug": "hip-thrust-machine",
+              "sets": 3,
+              "reps": 8,
+              "intensity": {
+                "kind": "rpe",
+                "value": 8
+              },
+              "rest": 120,
+              "notes": {
+                "en": "8–12 reps. Once every set reaches 12, add the smallest load step.",
+                "fr": "8 à 12 répétitions. Dès que chaque série atteint 12, monte la charge du plus petit cran.",
+                "de": "8–12 Wiederholungen. Schaffst du in jedem Satz 12, erhöhe das Gewicht um die kleinste Stufe."
+              }
+            },
+            {
+              "slug": "lying-leg-curl",
               "sets": 4,
               "reps": 10,
               "intensity": {
@@ -2368,8 +2399,8 @@
               }
             },
             {
-              "slug": "lying-leg-curl",
-              "sets": 5,
+              "slug": "leg-extension",
+              "sets": 3,
               "reps": 10,
               "intensity": {
                 "kind": "rpe",
@@ -2384,7 +2415,7 @@
             },
             {
               "slug": "hip-adduction-machine",
-              "sets": 4,
+              "sets": 3,
               "reps": 12,
               "intensity": {
                 "kind": "rpe",
@@ -2399,7 +2430,7 @@
             },
             {
               "slug": "hip-abduction-machine",
-              "sets": 4,
+              "sets": 3,
               "reps": 12,
               "intensity": {
                 "kind": "rpe",

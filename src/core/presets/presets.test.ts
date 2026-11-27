@@ -103,6 +103,7 @@ describe('presets', () => {
         ['preset-ab-crunch-machine', 3],
       ],
       [
+        ['preset-lower-back-machine', 3],
         ['preset-machine-high-row', 3],
         ['preset-hammer-curl', 3],
       ],
@@ -139,6 +140,7 @@ describe('presets', () => {
       ['preset-machine-lateral-raise', 4, false],
       ['preset-machine-biceps-curl', 4, false],
       ['preset-shrug', 3, false],
+      ['preset-lower-back-machine', 3, true],
       ['preset-machine-high-row', 3, true],
       ['preset-hammer-curl', 3, true],
     ])
@@ -149,10 +151,11 @@ describe('presets', () => {
     const legs = ppl?.weeks[0]?.days[2]?.blocks ?? []
     expect(legs.map((b) => [b.exerciseId, b.sets, b.optional ?? false])).toEqual([
       ['preset-leg-press', 4, false],
-      ['preset-leg-extension', 4, false],
-      ['preset-lying-leg-curl', 5, false],
-      ['preset-hip-adduction-machine', 4, false],
-      ['preset-hip-abduction-machine', 4, false],
+      ['preset-hip-thrust-machine', 3, false],
+      ['preset-lying-leg-curl', 4, false],
+      ['preset-leg-extension', 3, false],
+      ['preset-hip-adduction-machine', 3, false],
+      ['preset-hip-abduction-machine', 3, false],
       ['preset-standing-calf-raise', 5, false],
       ['preset-ab-crunch-machine', 3, true],
     ])
