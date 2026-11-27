@@ -2343,6 +2343,22 @@
                 "fr": "À la poulie, avec une corde. 10 à 15 répétitions. Dès que chaque série atteint 15, monte la charge du plus petit cran.",
                 "de": "Am Kabelzug mit Seil. 10–15 Wiederholungen. Schaffst du in jedem Satz 15, erhöhe das Gewicht um die kleinste Stufe."
               }
+            },
+            {
+              "slug": "ab-crunch-machine",
+              "sets": 3,
+              "reps": 10,
+              "intensity": {
+                "kind": "rpe",
+                "value": 8
+              },
+              "rest": 60,
+              "optional": true,
+              "notes": {
+                "en": "10–15 reps. Once every set reaches 15, add the smallest load step.",
+                "fr": "10 à 15 répétitions. Dès que chaque série atteint 15, monte la charge du plus petit cran.",
+                "de": "10–15 Wiederholungen. Schaffst du in jedem Satz 15, erhöhe das Gewicht um die kleinste Stufe."
+              }
             }
           ]
         },
@@ -2369,22 +2385,7 @@
               }
             },
             {
-              "slug": "hip-thrust-machine",
-              "sets": 3,
-              "reps": 8,
-              "intensity": {
-                "kind": "rpe",
-                "value": 8
-              },
-              "rest": 120,
-              "notes": {
-                "en": "8–12 reps. Once every set reaches 12, add the smallest load step.",
-                "fr": "8 à 12 répétitions. Dès que chaque série atteint 12, monte la charge du plus petit cran.",
-                "de": "8–12 Wiederholungen. Schaffst du in jedem Satz 12, erhöhe das Gewicht um die kleinste Stufe."
-              }
-            },
-            {
-              "slug": "lying-leg-curl",
+              "slug": "leg-extension",
               "sets": 4,
               "reps": 10,
               "intensity": {
@@ -2399,8 +2400,8 @@
               }
             },
             {
-              "slug": "leg-extension",
-              "sets": 3,
+              "slug": "lying-leg-curl",
+              "sets": 5,
               "reps": 10,
               "intensity": {
                 "kind": "rpe",
@@ -2415,7 +2416,7 @@
             },
             {
               "slug": "hip-adduction-machine",
-              "sets": 3,
+              "sets": 4,
               "reps": 12,
               "intensity": {
                 "kind": "rpe",
@@ -2430,7 +2431,7 @@
             },
             {
               "slug": "hip-abduction-machine",
-              "sets": 3,
+              "sets": 4,
               "reps": 12,
               "intensity": {
                 "kind": "rpe",

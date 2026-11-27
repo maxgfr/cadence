@@ -106,6 +106,7 @@ describe('presets', () => {
         ['preset-lower-back-machine', 3],
         ['preset-machine-high-row', 3],
         ['preset-hammer-curl', 3],
+        ['preset-ab-crunch-machine', 3],
       ],
       [['preset-ab-crunch-machine', 3]],
     ])
@@ -130,7 +131,7 @@ describe('presets', () => {
     ])
   })
 
-  test('the Push Pull Legs Pull day has one biceps curl and the shrug, the high row and the hammer curl only if there is time', () => {
+  test('the Push Pull Legs Pull day has one biceps curl and the shrug, the lower back machine, the high row, the hammer curl and the ab crunch only if there is time', () => {
     const ppl = all({ sports: ['gym'] }).programs.find((p) => p.id === 'preset-program-gym-machines-ppl')
     const pull = ppl?.weeks[0]?.days[1]?.blocks ?? []
     expect(pull.map((b) => [b.exerciseId, b.sets, b.optional ?? false])).toEqual([
@@ -143,6 +144,7 @@ describe('presets', () => {
       ['preset-lower-back-machine', 3, true],
       ['preset-machine-high-row', 3, true],
       ['preset-hammer-curl', 3, true],
+      ['preset-ab-crunch-machine', 3, true],
     ])
   })
 
@@ -151,11 +153,10 @@ describe('presets', () => {
     const legs = ppl?.weeks[0]?.days[2]?.blocks ?? []
     expect(legs.map((b) => [b.exerciseId, b.sets, b.optional ?? false])).toEqual([
       ['preset-leg-press', 4, false],
-      ['preset-hip-thrust-machine', 3, false],
-      ['preset-lying-leg-curl', 4, false],
-      ['preset-leg-extension', 3, false],
-      ['preset-hip-adduction-machine', 3, false],
-      ['preset-hip-abduction-machine', 3, false],
+      ['preset-leg-extension', 4, false],
+      ['preset-lying-leg-curl', 5, false],
+      ['preset-hip-adduction-machine', 4, false],
+      ['preset-hip-abduction-machine', 4, false],
       ['preset-standing-calf-raise', 5, false],
       ['preset-ab-crunch-machine', 3, true],
     ])
@@ -189,7 +190,7 @@ describe('presets', () => {
           expect(required.reduce((n, b) => n + b.sets, 0)).toBeLessThanOrEqual(ppl && index === 2 ? 26 : 23)
           // Optional blocks come last, a few at most.
           const optional = d.blocks.filter(isOptional)
-          expect(optional.length).toBeLessThanOrEqual(3)
+          expect(optional.length).toBeLessThanOrEqual(5)
           expect(d.blocks.slice(required.length)).toEqual(optional)
           for (const b of d.blocks) {
             expect(gym.has(b.exerciseId)).toBe(true)

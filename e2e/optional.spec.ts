@@ -35,7 +35,7 @@ test('optional exercises are offered beside the session, and one added becomes a
   await expect(hammer).toBeVisible()
   await expect(page.getByRole('button', { name: /^Shrug\s*Optional/ })).toHaveCount(0)
   await expect(page.getByRole('button', { name: /^Overhead triceps extension\s*Optional/ })).toBeVisible()
-  await expect(page.getByRole('button', { name: /^Ab crunch machine\s*Optional/ })).toHaveCount(2)
+  await expect(page.getByRole('button', { name: /^Ab crunch machine\s*Optional/ })).toHaveCount(3)
   await expect(page.getByRole('button', { name: /^Cable crunch/ })).toHaveCount(0)
   await expect(page.getByRole('button', { name: /^Leg press\s*Optional/ })).toHaveCount(0)
   await accessible(page, 'program with optional blocks')
@@ -53,7 +53,7 @@ test('optional exercises are offered beside the session, and one added becomes a
   const offered = page.getByRole('region', { name: 'Optional' })
   await expect(offered.getByText('Hammer curl', { exact: true })).toBeVisible()
   await expect(offered.getByText('3×10').first()).toBeVisible()
-  await expect(offered.getByRole('button', { name: /to the session$/ })).toHaveCount(3)
+  await expect(offered.getByRole('button', { name: /to the session$/ })).toHaveCount(4)
   await accessible(page, 'log with optional exercises')
 
   // One tap: the hammer curl is an entry, pre-filled from its plan, and leaves the offer.
@@ -63,7 +63,7 @@ test('optional exercises are offered beside the session, and one added becomes a
   await expect(entry.getByText('Plan 3×10')).toBeVisible()
   await expect(page.getByText('0 of 26 sets')).toBeVisible()
   await expect(offered.getByText('Hammer curl', { exact: true })).toHaveCount(0)
-  await expect(offered.getByRole('button', { name: /to the session$/ })).toHaveCount(2)
+  await expect(offered.getByRole('button', { name: /to the session$/ })).toHaveCount(3)
 
   // It is stored with the session, and the others still wait: once the write lands, a reload still shows them all.
   await expect(async () => {
@@ -73,6 +73,7 @@ test('optional exercises are offered beside the session, and one added becomes a
   const waiting = page.getByRole('region', { name: 'Optional' })
   await expect(waiting.getByText('Lower back machine', { exact: true })).toBeVisible()
   await expect(waiting.getByText('Machine high row', { exact: true })).toBeVisible()
+  await expect(waiting.getByText('Ab crunch machine', { exact: true })).toBeVisible()
 })
 
 test('a planned exercise can be made optional in the editor', async ({ page }) => {
